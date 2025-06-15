@@ -40,7 +40,7 @@ class User(db.Model, UserMixin):
     money = db.Column(db.Integer, default=0)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
-
+    
     def add_xp(self, amount):
         self.xp += amount
         # Maybe also increase level if xp passes a threshold
@@ -65,7 +65,17 @@ class ShopItem(db.Model):
     name = db.Column(db.String(64), nullable=False)
     description = db.Column(db.String(256))
     price = db.Column(db.Integer, nullable=False)
-    stock = db.Column(db.Integer, default=0)
+    stock = db.Column(db.Integer, nullable=False, default=0)
+
+class UserInventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=False)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+
+    user = db.relationship('User', backref='inventory')
+    item = db.relationship('ShopItem')
+# Admin -------------------------------
 
 class UserModelView(ModelView):
     column_list = ('id', 'username','password', 'crew_id', 'xp', 'level', 'money', 'last_seen')
@@ -76,7 +86,7 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-
+    column_list = ['id', 'username', 'is_admin', 'money', 'level', 'xp']  # Add is_admin here
     form_extra_fields = {
         'password': PasswordField('Password')
     }
@@ -169,13 +179,32 @@ def shop():
     if request.method == 'POST':
         item_id = request.form.get('item_id')
         item = ShopItem.query.get(item_id)
-        if item and current_user.money >= item.price:
+        if item and current_user.money >= item.price and item.stock > 0:
             current_user.money -= item.price
+            item.stock -= 1
+
+            # Add to inventory or increment quantity
+            inventory_item = UserInventory.query.filter_by(user_id=current_user.id, item_id=item.id).first()
+            if inventory_item:
+                inventory_item.quantity += 1
+            else:
+                inventory_item = UserInventory(user_id=current_user.id, item_id=item.id, quantity=1)
+                db.session.add(inventory_item)
+
             db.session.commit()
             message = f"You bought {item.name} for ${item.price}!"
+        elif item and item.stock <= 0:
+            message = "Sorry, this item is out of stock."
         else:
             message = "Not enough money or item not found."
     return render_template('shop.html', items=items, message=message)
+
+@app.route('/inventory')
+@login_required
+def inventory():
+    inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
+    return render_template('inventory.html', inventory_items=inventory_items)
+
 @app.route('/users_online')
 @login_required
 def users_online():

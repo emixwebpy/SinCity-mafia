@@ -142,8 +142,7 @@ button:disabled {
 <body>
   
   <main>
-    <h1>Sin City</h1>
-    <h2>Welcome to the Dark Side</h2>
+    
     {% block header %}{% endblock %}
     
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -166,7 +165,7 @@ button:disabled {
   </main>
 
   <footer>
-    &copy; {{ current_year if current_year else "2025" }} Sin City - All rights reserved
+    &copy; {{ current_year if current_year else "2025" }} App - All rights reserved
   </footer>
 
 </body>

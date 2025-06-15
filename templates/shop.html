@@ -6,11 +6,12 @@
 {% if message %}
   <p>{{ message }}</p>
 {% endif %}
-<table>
+<table class="shop-table">
   <tr>
     <th>Item</th>
     <th>Description</th>
     <th>Price</th>
+    <th>Stock</th>
     <th>Buy</th>
   </tr>
   {% for item in items %}
@@ -18,14 +19,60 @@
     <td>{{ item.name }}</td>
     <td>{{ item.description }}</td>
     <td>${{ item.price }}</td>
+    <td>{{ item.stock }}</td>
     <td>
+      {% if item.stock > 0 %}
       <form method="post">
         <input type="hidden" name="item_id" value="{{ item.id }}">
         <button type="submit">Buy</button>
       </form>
+      {% else %}
+      <span style="color: #c00;">Out of stock</span>
+      {% endif %}
     </td>
   </tr>
   {% endfor %}
 </table>
 <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+
+<style>
+.shop-table {
+  width: 80%;
+  margin: 30px auto;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  background: #f8f8f8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.shop-table th, .shop-table td {
+  border: 1px solid #ddd;
+  color: #222;
+  padding: 12px 16px;
+  text-align: center;
+}
+.shop-table th {
+  background: #222;
+  color: #ffffff;
+  font-size: 1.1em;
+  letter-spacing: 1px;
+}
+.shop-table tr:nth-child(even) {
+  background: #f0f0f0;
+}
+.shop-table tr:hover {
+  background: #e0eaff;
+}
+.shop-table button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.shop-table button:hover {
+  background: #0056b3;
+}
+</style>
 {% endblock %}
