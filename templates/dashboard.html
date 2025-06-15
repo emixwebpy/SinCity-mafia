@@ -182,7 +182,7 @@ async function updateEarnButton() {
         timerSpan.textContent = ` (Wait ${min}:${sec.toString().padStart(2, '0')})`;
         seconds--;
       }
-    }, 1000);
+    }, 1000); // Update every second
   } else {
     btn.disabled = false;
     timerSpan.textContent = '';
@@ -190,7 +190,7 @@ async function updateEarnButton() {
 }
 
 updateEarnButton();
-setInterval(updateEarnButton, 15000);
+setInterval(updateEarnButton, 15000); // Update every 15 seconds
 
 async function earn() {
   const res = await fetch('/earn');
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fetchMessages();
-  setInterval(fetchMessages, 3000);
+  setInterval(fetchMessages, 1000);
 });
 </script>
 

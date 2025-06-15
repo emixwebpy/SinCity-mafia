@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>{% block title %}Mafia Game{% endblock %}</title>
+  <!-- ...rest of your head... -->
+</head>
+<body>
+
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Oswald:wght@700&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -138,9 +143,9 @@ button:disabled {
   cursor: not-allowed;
 }
   </style>
-</head>
-<body>
-  
+
+
+
   <main>
     
     {% block header %}{% endblock %}

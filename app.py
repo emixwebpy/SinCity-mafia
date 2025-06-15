@@ -1,6 +1,8 @@
+from operator import is_
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+from sqlalchemy import true
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import sqlite3
@@ -9,7 +11,7 @@ from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, AdminIndexView
 from flask_admin.form import SecureForm,BaseForm
-from wtforms import PasswordField, StringField
+from wtforms import PasswordField, StringField, BooleanField, IntegerField
 
 # Database -------------------------------
 app = Flask(__name__)
@@ -40,6 +42,7 @@ class User(db.Model, UserMixin):
     money = db.Column(db.Integer, default=0)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
     
     def add_xp(self, amount):
         self.xp += amount
@@ -57,7 +60,8 @@ class User(db.Model, UserMixin):
 class UserEditForm(SecureForm):
     username = StringField('Username')
     password = PasswordField('Password')
-    Crew_id = StringField('Crew ID')
+    crew_id = StringField('Crew ID')
+    is_admin = BooleanField('Is Admin')
 
 
 class ShopItem(db.Model):
@@ -78,21 +82,21 @@ class UserInventory(db.Model):
 # Admin -------------------------------
 
 class UserModelView(ModelView):
-    column_list = ('id', 'username','password', 'crew_id', 'xp', 'level', 'money', 'last_seen')
+    
     column_searchable_list = ('username',)
-    can_create = False
+    can_create = True
     can_edit = True
     can_delete = False
+    can_view_details = True
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    column_list = ['id', 'username', 'is_admin', 'money', 'level', 'xp']
-    form_extra_fields = {
-        'password': PasswordField('Password')
-    }
+    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin')
+    
 
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.username == 'admin'
+        print("Admin check:", current_user.is_authenticated, current_user.username, current_user.is_admin)
+        return current_user.is_authenticated and current_user.is_admin
 
     def on_model_change(self, form, model, is_created):
         if form.password.data:
@@ -100,9 +104,6 @@ class UserModelView(ModelView):
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('login'))
-    
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.username == 'admin'
 
 
 class Crew(db.Model):
@@ -132,18 +133,15 @@ class CrewInvitation(db.Model):
 
 # customize admin homepage
 class MyAdminIndexView(AdminIndexView):
-    @expose('/')
-    def index(self):
-        if not current_user.is_authenticated or current_user.username != 'admin':
-            return redirect(url_for('login'))
-        return super().index()
-    
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
 admin = Admin(
     app,
     name='Admin Panel',
     template_mode='bootstrap3',
     index_view=MyAdminIndexView(),
-    base_template='admin/base.html'
+    base_template='admin/dood_base.html'
 )
 
 @login_manager.user_loader
@@ -426,7 +424,7 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    cooldown = timedelta(minutes=5)
+    cooldown = timedelta(minutes=3, seconds=0)
     now = datetime.utcnow()
 
     if current_user.last_earned and now - current_user.last_earned < cooldown:
@@ -442,10 +440,11 @@ def earn():
     db.session.commit()
     return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP!"})
 
+
 @app.route('/earn_status')
 @login_required
 def earn_status():
-    cooldown = timedelta(minutes=5)
+    cooldown = timedelta(minutes=2, seconds=30)
     now = datetime.utcnow()
 
     if current_user.last_earned:
@@ -465,12 +464,19 @@ def init_db():
     
 @app.cli.command('create-admin')
 def create_admin():
-    if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin')
-        admin.set_password('yep')  # Change this to a secure password
-        db.session.add(admin)
+    user = User.query.filter_by(username='admin').first()
+    if not user:
+        user = User(username='admin')
+        user.set_password('yep')
+        user.is_admin = True
+        db.session.add(user)
         db.session.commit()
         print("Admin user created.")
+    else:
+        user.is_admin = True
+        db.session.commit()
+        print("Admin user updated.")
+
 
 if __name__ == '__main__':
     if not os.path.exists('users.db'):
