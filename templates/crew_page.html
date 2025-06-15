@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block content %}
+
+<main>
+  <style>
+    #floating-chat {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  height: 400px;
+  border: 1px solid #444;
+  background: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  z-index: 9999;
+  border-radius: 6px;
+}
+
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+
+#chat-form {
+  display: flex;
+  border-top: 1px solid #444;
+}
+
+#chat-input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  font-size: 14px;
+  background: #2c2c2c;
+  color: #f0f0f0;
+}
+
+#chat-input::placeholder {
+  color: #888;
+}
+
+#chat-submit {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#chat-submit:hover {
+  background: #0056b3;
+}
+
+  </style>  
+  <h1>{{ crew.name }}</h1>
+  
+  <h2>Members</h2>
+  <ul>
+    {% for member in members %}
+      <li>{{ member.username }} (Level {{ member.level }}, ${{ member.money }})</li>
+    {% endfor %}
+  </ul>
+<!-- 
+  <h2>Recent Messages</h2>
+  <div style="background:#111;padding:10px;border-radius:6px;color:#ddd;">
+    {% for msg in messages %}
+      <p><strong>{{ msg.user.username }}</strong>: {{ msg.message }} <small>({{ msg.timestamp.strftime('%H:%M') }})</small></p>
+    {% endfor %}
+  </div> -->
+
+  {% if current_user.crew_id == crew.id %}
+    
+    <div class="back">
+            <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+        </div>
+  {% endif %}
+    
+    </div>
+    
+</main>
+<body>
+  <div id="floating-chat">
+  <div id="chat-messages"></div>
+  <form id="chat-form">
+    <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
+    <button type="submit" id="chat-submit">Send</button>
+  </form>
+</div>
+</body>
+
+<script>
+// ---------------- Floating Chat ----------------
+document.addEventListener('DOMContentLoaded', () => {
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const chatMessages = document.getElementById('chat-messages');
+
+  async function fetchMessages() {
+    try {
+      const res = await fetch('/crew_messages');
+      const data = await res.json();
+      chatMessages.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.textContent = `${msg.username}: ${msg.message}`;
+        chatMessages.appendChild(div);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    }
+  }
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    try {
+      const res = await fetch('/send_crew_message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ message })
+      });
+
+      if (res.ok) {
+        chatInput.value = '';
+        fetchMessages();
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to send message.');
+      }
+    } catch (err) {
+      console.error('Send failed:', err);
+    }
+  });
+
+  fetchMessages();
+  setInterval(fetchMessages, 3000);
+});
+</script>
+{% endblock %}

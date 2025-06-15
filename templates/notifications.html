@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Join a Crew{% endblock %}
+
+{% block content %}
+  <hr>
+<h2>Your Invitations</h2>
+{% if invitations %}
+  <ul>
+    {% for invite in invitations %}
+      <li>
+        Invitation from <strong>{{ invite.inviter.username }}</strong> to join crew <strong>{{ invite.crew.name }}</strong>
+        - <a href="{{ url_for('accept_invite', invite_id=invite.id) }}">Accept</a> |
+        <a href="{{ url_for('decline_invite', invite_id=invite.id) }}">Decline</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No invitations.</p>
+{% endif %}
+{% endblock %}

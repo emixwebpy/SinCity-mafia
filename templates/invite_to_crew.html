@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invite to Crew</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #ffae00;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            }
+
+            button:hover {
+            background-color: #ff7300;
+            }
+        .back {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .back a {
+            color: #ccc;
+            text-decoration: none;
+        }
+        .back a:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+        <h2>Invite someone to {{ crew.name }}</h2>
+
+<form method="POST">
+  <label for="username">Username to invite:</label>
+  <input type="text" name="username" id="username" required>
+  <button type="submit">Send Invite</button>
+</form>
+
+        <div class="back">
+            <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

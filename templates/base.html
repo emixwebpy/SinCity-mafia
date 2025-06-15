@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <style>
+    /* Reset some default styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #121212;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+main {
+  width: 100%;
+  max-width: 720px;
+  background: #1e1e1e;
+  margin: 30px 0px;
+  padding: 25px 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+}
+
+h1, h2, h3 {
+  color: #ffffff;
+  margin-bottom: 15px;
+}
+
+a {
+  color: #66b2ff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #3399ff;
+  text-decoration: underline;
+}
+
+form {
+  margin-top: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #cccccc;
+}
+
+input[type="username"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  background: #2c2c2c;
+  border: 1px solid #444;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #f0f0f0;
+  transition: border-color 0.3s ease;
+}
+
+input[type="username"]:focus,
+input[type="password"]:focus,
+select:focus {
+  border-color: #66b2ff;
+  outline: none;
+}
+
+button {
+  background-color: #ffae00;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #ff7300;
+}
+
+ul {
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+
+ul li {
+  margin-bottom: 10px;
+}
+
+/* Flash messages */
+ul.flashes {
+  list-style: none;
+  padding: 10px 15px;
+  background: #2c1a1a;
+  border: 1px solid #993333;
+  color: #ff9999;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  max-width: 720px;
+  width: 100%;
+}
+
+ul.flashes li {
+  margin-bottom: 5px;
+}
+
+/* Footer */
+footer {
+  margin: 20px 0 40px 0;
+  font-size: 0.9rem;
+  color: #999;
+}
+input::placeholder {
+  color: #888;
+}
+
+button:disabled {
+  background-color: #444;
+  cursor: not-allowed;
+}
+  </style>
+</head>
+<body>
+  
+  <main>
+    <h1>Sin City</h1>
+    <h2>Welcome to the Dark Side</h2>
+    {% block header %}{% endblock %}
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    {% block sidebar %}{% endblock %}
+
+    {% block dashboard %}{% endblock %}
+    
+    {% block chat %}{% endblock %}
+    
+    {% block users_online %}{% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    &copy; {{ current_year if current_year else "2025" }} Sin City - All rights reserved
+  </footer>
+
+</body>
+</html>

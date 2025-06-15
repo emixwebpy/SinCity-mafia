@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+  <meta charset="UTF-8" />
+  <title>Users Online</title>
+
+{% block content %}
+  <h2>Users Online</h2>
+  {% if online_users %}
+    <ul>
+      {% for user in online_users %}
+        <li>{{ user.username }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No users online right now.</p>
+  {% endif %}
+  <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<body>
+
+<h2>Crew Chat (Live)</h2>
+
+<div id="chat-box" style="height:300px;overflow-y:scroll;"></div>
+<input id="chat-input" placeholder="Type a message..." />
+<button onclick="sendMessage()">Send</button>
+
+<a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+
+<script>
+async function loadMessages() {
+    const res = await fetch('/get_messages');
+    const data = await res.json();
+    const box = document.getElementById('chat-box');
+    box.innerHTML = '';
+    data.messages.forEach(msg => {
+        box.innerHTML += `<div><b>${msg.username}</b>: ${msg.message}</div>`;
+    });
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value;
+    input.value = '';
+    await fetch('/send_message', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ message })
+    });
+    loadMessages();
+}
+
+setInterval(loadMessages, 3000);  // Poll every 3 seconds
+loadMessages();
+</script>
+{% endblock %}
+</body>
+</html>
