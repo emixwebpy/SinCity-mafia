@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import sqlite3
 from datetime import datetime, timedelta
+import random
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, AdminIndexView
@@ -43,7 +44,9 @@ class User(db.Model, UserMixin):
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
-    
+    premium = db.Column(db.Boolean, default=False)
+    last_known_ip = db.Column(db.String(45))
+
     def add_xp(self, amount):
         self.xp += amount
         # Maybe also increase level if xp passes a threshold
@@ -62,6 +65,10 @@ class UserEditForm(SecureForm):
     password = PasswordField('Password')
     crew_id = StringField('Crew ID')
     is_admin = BooleanField('Is Admin')
+    premium = BooleanField('Premium User')
+    xp = IntegerField('XP')
+    level = IntegerField('Level', default=1, render_kw={"readonly": False})
+    
 
 
 class ShopItem(db.Model):
@@ -91,16 +98,23 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin')
+    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin','premium', 'last_known_ip')
     
 
     def is_accessible(self):
-        print("Admin check:", current_user.is_authenticated, current_user.username, current_user.is_admin)
-        return current_user.is_authenticated and current_user.is_admin
+        """Check if the user is authenticated and is an admin."""
+        return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
 
     def on_model_change(self, form, model, is_created):
         if form.password.data:
             model.set_password(form.password.data)
+        if form.xp.data is not None:
+            model.xp = form.xp.data
+            # Reset level and recalculate based on XP
+            model.level = 1337
+            while model.xp >= model.level * 250:
+                model.xp -= model.level * 250
+                model.level += 1
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('login'))
@@ -134,12 +148,12 @@ class CrewInvitation(db.Model):
 # customize admin homepage
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.is_admin
+        return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
+    
 admin = Admin(
     app,
     name='Admin Panel',
-    index_view=MyAdminIndexView(),
-    base_template='admin/dood_base.html'
+    index_view=MyAdminIndexView()
 )
 # admin = Admin(
 #     app,
@@ -200,6 +214,15 @@ def shop():
             message = "Not enough money or item not found."
     return render_template('shop.html', items=items, message=message)
 
+@app.route('/user_stats')
+@login_required
+def user_stats():
+    return jsonify({
+        'money': current_user.money,
+        'xp': current_user.xp,
+        'level': current_user.level
+    })
+
 @app.route('/inventory')
 @login_required
 def inventory():
@@ -255,8 +278,10 @@ def login():
         username = request.form.get('username').strip()
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+        if user and check_password_hash(user.password_hash, password):
             login_user(user)
+            user.last_known_ip = request.remote_addr
+            db.session.commit()
             return redirect(url_for('dashboard'))
         flash('Invalid credentials.')
     return render_template('login.html')
@@ -429,16 +454,19 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    cooldown = timedelta(minutes=3, seconds=0)
+    cooldown = timedelta(minutes=0, seconds=10)
     now = datetime.utcnow()
 
     if current_user.last_earned and now - current_user.last_earned < cooldown:
         remaining = cooldown - (now - current_user.last_earned)
         minutes, seconds = divmod(remaining.seconds, 60)
         return jsonify({'success': False, 'message': f"Wait {minutes}m {seconds}s before earning again."})
-
-    earned_money = 100
-    earned_xp = 20
+    #randomise earned money and xp
+    # For simplicity, let's say you earn a fixed amount 
+    # In a real application, you might want to randomize this
+    # or make it dependent on some game logic   
+    earned_money = random.randint(200, 2000)
+    earned_xp = random.randint(20, 120)
     current_user.money += earned_money
     current_user.add_xp(earned_xp)
     current_user.last_earned = now
@@ -461,6 +489,14 @@ def earn_status():
 
     return jsonify({'seconds_remaining': seconds_remaining})
 
+@app.route('/upgrade', methods=['POST'])
+@login_required
+def upgrade():
+    current_user.premium = True
+    db.session.commit()
+    flash('Your account has been upgraded to premium!', 'success')
+    return redirect(url_for('dashboard'))
+
 # Create DB (run once, or integrate with a CLI or shell)
 @app.cli.command('init-db')
 def init_db():
@@ -478,7 +514,7 @@ def create_admin():
         db.session.commit()
         print("Admin user created.")
     else:
-        user.is_admin = True
+        user.is_admin = False
         db.session.commit()
         print("Admin user updated.")
 

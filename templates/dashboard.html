@@ -2,9 +2,11 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+  {% if current_user.is_authenticated and current_user.is_admin %}
   <a href="{{ url_for('admin.index') }}">
     <button>Admin</button>
   </a>
+  {% endif %}
   <hr>
   <h1>Dashboard</h1>
   
@@ -24,22 +26,20 @@
     <p class="error">Your account is suspended.</p>
   {% endif %}
 
-  {% if current_user.is_verified %}
-    <p>Your account is verified.</p>
+  
+  {% if not current_user.premium %}
+  <form action="{{ url_for('upgrade') }}" method="post">
+      <button type="submit" class="btn btn-success">Upgrade to Premium</button>
+  </form>
   {% else %}
-    <p class="warning">Your account is not verified. Please check your email.</p>
+  <span class="badge badge-success">Premium Account</span>
   {% endif %}
-
-  {% if current_user.is_premium %}
-    <p>You have a premium account.</p>
-  {% else %}
-    <p>You do not have a premium account.</p>
-  {% endif %}
+  
   <h2>Welcome, {{ current_user.username }}!</h2>
    
-  <p>Money: {{ current_user.money }}</p>
-  <p>XP: {{ user.xp }}</p>
-  <p>Level: {{ current_user.level }}</p>
+  <p>Money: <span id="money">{{ current_user.money }}</span></p>
+  <p>XP: <span id="xp">{{ user.xp }}</span></p>
+  <p>Level: <span id="level">{{ current_user.level }}</span></p>
   <a href="{{ url_for('shop') }}">Go to Shop</a>
   <a href="{{ url_for('inventory') }}">View Inventory</a>
   {% if current_user.crew %}
@@ -152,6 +152,9 @@
   </div>
 
   <script>
+
+
+// ---------------- Earn Button Timer ----------------
 let earnTimerInterval = null; // global to track and clear the countdown
 
 // ---------------- Earn Button Timer ----------------
@@ -196,7 +199,15 @@ async function earn() {
   const res = await fetch('/earn');
   const data = await res.json();
 
-  alert(data.message);
+  // Remove the alert and update the UI instead
+  if (data.success) {
+    // Fetch updated stats from the server
+    const statsRes = await fetch('/user_stats');
+    const stats = await statsRes.json();
+    document.getElementById('money').textContent = stats.money;
+    document.getElementById('xp').textContent = stats.xp;
+    document.getElementById('level').textContent = stats.level;
+  }
   updateEarnButton();
 }
 
@@ -247,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fetchMessages();
-  setInterval(fetchMessages, 1000);
+  setInterval(fetchMessages, 3000);
 });
 </script>
 
