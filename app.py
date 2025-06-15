@@ -28,7 +28,7 @@ def update_last_seen():
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
 
-# Modelstest -------------------------------
+# Modelstestaa -------------------------------
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
