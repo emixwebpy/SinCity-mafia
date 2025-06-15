@@ -86,7 +86,7 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    column_list = ['id', 'username', 'is_admin', 'money', 'level', 'xp']  # Add is_admin here
+    column_list = ['id', 'username', 'is_admin', 'money', 'level', 'xp']
     form_extra_fields = {
         'password': PasswordField('Password')
     }
@@ -130,7 +130,7 @@ class CrewInvitation(db.Model):
     crew = db.relationship('Crew')
 
 
-# Optional: customize admin homepage
+# customize admin homepage
 class MyAdminIndexView(AdminIndexView):
     @expose('/')
     def index(self):
@@ -138,14 +138,12 @@ class MyAdminIndexView(AdminIndexView):
             return redirect(url_for('login'))
         return super().index()
     
-
-
 admin = Admin(
     app,
     name='Admin Panel',
     template_mode='bootstrap3',
     index_view=MyAdminIndexView(),
-    base_template='admin/base.html'  # <-- Add this line
+    base_template='admin/base.html'
 )
 
 @login_manager.user_loader
