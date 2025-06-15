@@ -60,6 +60,13 @@ class UserEditForm(SecureForm):
     Crew_id = StringField('Crew ID')
 
 
+class ShopItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    description = db.Column(db.String(256))
+    price = db.Column(db.Integer, nullable=False)
+    stock = db.Column(db.Integer, default=0)
+
 class UserModelView(ModelView):
     column_list = ('id', 'username','password', 'crew_id', 'xp', 'level', 'money', 'last_seen')
     column_searchable_list = ('username',)
@@ -137,6 +144,7 @@ def load_user(user_id):
 
 
 admin.add_view(UserModelView(User, db.session, endpoint='admin_user'))
+admin.add_view(ModelView(ShopItem, db.session))
 admin.add_view(ModelView(Crew, db.session))
 admin.add_view(ModelView(CrewMessage, db.session))
 admin.add_view(ModelView(CrewInvitation, db.session))
@@ -153,7 +161,21 @@ def crew_page(crew_id):
     messages = CrewMessage.query.filter_by(crew_id=crew.id).order_by(CrewMessage.timestamp.desc()).limit(50).all()
     return render_template('crew_page.html', crew=crew, members=members, messages=messages)
 
-
+@app.route('/shop', methods=['GET', 'POST'])
+@login_required
+def shop():
+    items = ShopItem.query.all()
+    message = None
+    if request.method == 'POST':
+        item_id = request.form.get('item_id')
+        item = ShopItem.query.get(item_id)
+        if item and current_user.money >= item.price:
+            current_user.money -= item.price
+            db.session.commit()
+            message = f"You bought {item.name} for ${item.price}!"
+        else:
+            message = "Not enough money or item not found."
+    return render_template('shop.html', items=items, message=message)
 @app.route('/users_online')
 @login_required
 def users_online():

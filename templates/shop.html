@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Shop{% endblock %}
+{% block content %}
+<h1>Shop</h1>
+<p>Your money: ${{ current_user.money }}</p>
+{% if message %}
+  <p>{{ message }}</p>
+{% endif %}
+<table>
+  <tr>
+    <th>Item</th>
+    <th>Description</th>
+    <th>Price</th>
+    <th>Buy</th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.name }}</td>
+    <td>{{ item.description }}</td>
+    <td>${{ item.price }}</td>
+    <td>
+      <form method="post">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <button type="submit">Buy</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+{% endblock %}

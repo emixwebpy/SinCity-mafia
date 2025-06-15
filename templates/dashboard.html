@@ -40,7 +40,7 @@
   <p>Money: {{ current_user.money }}</p>
   <p>XP: {{ user.xp }}</p>
   <p>Level: {{ current_user.level }}</p>
-  
+  <a href="{{ url_for('shop') }}">Go to Shop</a>
 
   {% if current_user.crew %}
     <p>You are in crew: <a href="{{ url_for('crew_page', crew_id=crew.id) }}">{{ crew.name }}</a></strong></p>
