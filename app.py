@@ -135,21 +135,26 @@ class CrewInvitation(db.Model):
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.is_admin
-
 admin = Admin(
     app,
     name='Admin Panel',
-    template_mode='bootstrap3',
     index_view=MyAdminIndexView(),
     base_template='admin/dood_base.html'
 )
+# admin = Admin(
+#     app,
+#     name='Admin Panel',
+#     index_view=MyAdminIndexView(),
+#     base_template='admin/dood_base.html'
+# )
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 admin.add_view(UserModelView(User, db.session, endpoint='admin_user'))
+admin.add_view(ModelView(UserInventory, db.session))
 admin.add_view(ModelView(ShopItem, db.session))
 admin.add_view(ModelView(Crew, db.session))
 admin.add_view(ModelView(CrewMessage, db.session))
