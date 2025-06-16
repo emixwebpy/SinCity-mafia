@@ -483,13 +483,17 @@
 </head>
 <body>
   <div class="layout-root">
+    {% if request.endpoint != 'login' and request.endpoint != 'register' %}
     <nav class="sidebar">
       <div class="sidebar-header">
         <i class="fas fa-crown"></i>
       </div>
       {% if current_user.is_authenticated %}
       <div class="sidebar-user">
-        <i class="fas fa-user-circle"></i> {{ current_user.username }}
+        <i class="fas fa-user-circle"></i>
+          <a href="{{ url_for('profile', username=current_user.username) }}" style="color:inherit;text-decoration:underline;">
+          {{ current_user.username }}
+          </a>
       </div>
       {% endif %}
       <div class="sidebar-nav">
@@ -501,6 +505,9 @@
         </a>
         <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
           <i class="fas fa-box"></i> <span>Inventory</span>
+        </a>
+        <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
+        <i class="fas fa-crosshairs"></i> <span>Player Search</span>
         </a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
@@ -514,6 +521,7 @@
         {% endif %}
       </div>
     </nav>
+    {% endif %}
     <div class="main-area">
       <header class="topbar">
         <span class="topbar-title">
@@ -548,7 +556,7 @@
         {% block content %}{% endblock %}
       </main>
       <footer>
-        &copy; {{ current_year if current_year else "2025" }} App - All rights reserved
+        &copy; {{ current_year if current_year else "2025" }} Sin City - All rights reserved
       </footer>
     </div>
   </div>

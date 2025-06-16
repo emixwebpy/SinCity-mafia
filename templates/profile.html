@@ -166,11 +166,30 @@
             {{ money_class(user.money) }}
         </div>
     </div>
-    {% if crew %}
-    <div class="profile-crew">
-        <i class="fas fa-users"></i> Crew: <strong>{{ crew.name }}</strong>
+    <div class="profile-stat">
+        <span class="profile-label">Health</span>
+        <span class="profile-value">{{ user.health }}</span>
+    </div>
+    {% if user.gun %}
+    <div class="profile-stat">
+        <span class="profile-label">Gun</span>
+        <span class="profile-value">{{ user.gun.name }} ({{ user.gun.damage }} dmg)</span>
     </div>
     {% endif %}
+    {% if current_user.is_authenticated and current_user.username != user.username and current_user.gun %}
+    <form action="{{ url_for('kill', username=user.username) }}" method="post" style="margin-top:18px;">
+        <button type="submit" class="btn btn-danger">Shoot</button>
+    </form>
+    {% endif %}
+    {% if crew %}
+    <div class="profile-crew">
+        <i class="fas fa-users"></i>
+        Crew:
+        <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color:#8be9fd; font-weight:700;">
+            {{ crew.name }}
+        </a>
+    </div>
+{% endif %}
     {% if user.premium %}
     <div class="profile-premium">
         <i class="fas fa-crown"></i> Premium Member

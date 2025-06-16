@@ -7,6 +7,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
 from wtforms import PasswordField, StringField, BooleanField, IntegerField
+from wtforms.fields import DateTimeField
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import true
@@ -53,7 +54,10 @@ class User(db.Model, UserMixin):
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     premium = db.Column(db.Boolean, default=False)
+    premium_until = db.Column(db.DateTime, nullable=True)
     last_known_ip = db.Column(db.String(45))
+    health = db.Column(db.Integer, default=100)
+    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)  # currently equipped gun
 
     def add_xp(self, amount):
         self.xp += amount
@@ -77,15 +81,20 @@ class UserEditForm(SecureForm):
     xp = IntegerField('XP')
     level = IntegerField('Level')
     money = IntegerField('Money', default=0, render_kw={"readonly": False})
+    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
+    health = IntegerField('Health', default=100, render_kw={"readonly": False})
+    gun_id = IntegerField('Equipped Gun ID', default=None, render_kw={"readonly": False})
     
 class ShopItemModelView(ModelView):
     can_create = True
     can_edit = True
     can_delete = True
     can_view_details = True
-    column_list = ('id', 'name', 'description', 'price', 'stock')
-    form_columns = ('name', 'description', 'price', 'stock')
+    column_list = ('id', 'name', 'description', 'price', 'stock', 'is_gun', 'damage')  # Add is_gun and damage
+    form_columns = ('name', 'description', 'price', 'stock', 'is_gun', 'damage')
     column_searchable_list = ('name', 'description')
+    is_gun = BooleanField('Is Gun', default=False)
+    damage = IntegerField('Damage', default=0) 
 
 class ShopItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -93,6 +102,8 @@ class ShopItem(db.Model):
     description = db.Column(db.String(256))
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False, default=0)
+    is_gun = db.Column(db.Boolean, default=False)
+    damage = db.Column(db.Integer, default=0)
 
 class UserInventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -113,8 +124,8 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    form_columns = ['username', 'password', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money']  # <-- Add 'level'
-    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin','premium', 'last_known_ip')
+    form_columns = ['username', 'password', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money', 'health', 'gun_id']  # <-- Add 'level'
+    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin','premium', 'premium_until', 'last_known_ip', 'health', 'gun_id')
 
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
@@ -184,6 +195,31 @@ def crew_page(crew_id):
     messages = CrewMessage.query.filter_by(crew_id=crew.id).order_by(CrewMessage.timestamp.desc()).limit(50).all()
     return render_template('crew_page.html', crew=crew, members=members, messages=messages)
 
+@app.route('/kill/<username>', methods=['POST'])
+@login_required
+def kill(username):
+    if current_user.gun is None:
+        flash("You need to own and equip a gun to attack!", "danger")
+        return redirect(url_for('profile', username=username))
+    target = User.query.filter_by(username=username).first_or_404()
+    if target.id == current_user.id:
+        flash("You can't attack yourself!", "danger")
+        return redirect(url_for('profile', username=username))
+    if target.health <= 0:
+        flash("Target is already dead!", "danger")
+        return redirect(url_for('profile', username=username))
+
+    # Simple attack logic: subtract gun damage from target's health
+    damage = current_user.gun.damage or 10
+    target.health -= damage
+    if target.health <= 0:
+        target.health = 0
+        flash(f"You killed {target.username}!", "success")
+    else:
+        flash(f"You shot {target.username} for {damage} damage! They have {target.health} health left.", "info")
+    db.session.commit()
+    return redirect(url_for('profile', username=username))
+
 @app.route('/shop', methods=['GET', 'POST'])
 @login_required
 def shop():
@@ -204,8 +240,14 @@ def shop():
                 inventory_item = UserInventory(user_id=current_user.id, item_id=item.id, quantity=1)
                 db.session.add(inventory_item)
 
+            # If it's a gun, equip it
+            if item.is_gun:
+                current_user.gun_id = item.id
+                message = f"You bought and equipped {item.name}!"
+            else:
+                message = f"You bought {item.name} for ${item.price}!"
+
             db.session.commit()
-            message = f"You bought {item.name} for ${item.price}!"
         elif item and item.stock <= 0:
             message = "Sorry, this item is out of stock."
         else:
@@ -233,6 +275,21 @@ def users_online():
     online_threshold = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_threshold).all()
     return jsonify([u.username for u in online_users])
+
+@app.route('/player_search', methods=['GET', 'POST'])
+@login_required
+def player_search():
+    results = []
+    query = ""
+    if request.method == 'POST':
+        query = request.form.get('query', '').strip()
+        if query:
+            # Exclude self from results
+            results = User.query.filter(
+                User.username.ilike(f"%{query}%"),
+                User.id != current_user.id
+            ).all()
+    return render_template('player_search.html', results=results, query=query)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -503,17 +560,23 @@ def earn_status():
 @app.route('/upgrade', methods=['POST'])
 @login_required
 def upgrade():
-    PREMIUM_COST = 50000
-    if current_user.premium:
-        flash('You are already a premium user!', 'info')
-        return redirect(url_for('dashboard'))
+    PREMIUM_COST = 1500000
+    PREMIUM_DAYS = 30  # Set how many days premium lasts
+
+    now = datetime.utcnow()
+    # If already premium, extend time
+    if current_user.premium_until and current_user.premium_until > now:
+        current_user.premium_until += timedelta(days=PREMIUM_DAYS)
+    else:
+        current_user.premium_until = now + timedelta(days=PREMIUM_DAYS)
+        current_user.premium = True
+
     if current_user.money < PREMIUM_COST:
         flash(f'You need at least ${PREMIUM_COST} to upgrade to premium.', 'danger')
         return redirect(url_for('dashboard'))
     current_user.money -= PREMIUM_COST
-    current_user.premium = True
     db.session.commit()
-    flash(f'Your account has been upgraded to premium for ${PREMIUM_COST}!', 'success')
+    flash(f'Your account has been upgraded to premium for {PREMIUM_DAYS} days for ${PREMIUM_COST}!', 'success')
     return redirect(url_for('dashboard'))
 
 @app.route('/profile/<username>')

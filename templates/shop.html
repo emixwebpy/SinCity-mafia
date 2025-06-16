@@ -5,6 +5,8 @@
 
 .shop-container {
     max-width: 700px;
+    width: 100%;
+    min-width: 0;
     margin: 36px auto 0 auto;
     background: rgba(25, 25, 40, 0.98);
     border-radius: 22px;
@@ -16,6 +18,19 @@
     text-align: center;
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
+}
+@media (max-width: 900px) {
+    .shop-container {
+        max-width: 98vw;
+        padding: 18px 2vw 14px 2vw;
+    }
+}
+@media (max-width: 600px) {
+    .shop-container {
+        padding: 10px 2vw 10px 2vw;
+        margin: 12px 0 0 0;
+    }
 }
 .shop-title {
     color: #8be9fd;

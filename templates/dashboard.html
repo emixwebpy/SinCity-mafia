@@ -2,7 +2,197 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
+<style>
+.dashboard-root {
+    width: 100%;
+    min-height: 100vh;
+    background: none;
+}
+.dashboard-center-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.dashboard-cards {
+    display: flex;
+    gap: 36px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+.dashboard-card {
+    background: linear-gradient(135deg, #23243a 60%, #8be9fd22 100%);
+    border-radius: 22px;
+    box-shadow: 0 4px 24px #8be9fd33, 0 1.5px 0 #8be9fd22 inset;
+    padding: 38px 36px 32px 36px;
+    min-width: 180px;
+    flex: 1 1 180px;
+    text-align: center;
+    margin: 0 0 18px 0;
+    max-width: 260px;
+    border: 1.5px solid #8be9fd44;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0; /* allow children to shrink */
+}
+.dashboard-card:hover {
+    transform: translateY(-6px) scale(1.04);
+    box-shadow: 0 8px 32px #8be9fd55;
+}
+.dashboard-card h5 {
+    color: #8be9fd;
+    font-size: 1.3em;
+    margin-bottom: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 12px #23243a;
+}
+.dashboard-card .display-4 {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: clamp(1.2rem, 5vw, 2.6rem); /* shrink on small screens */
+    font-weight: bold;
+    color: #ffd700;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 12px #23243a;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* single line, shrinks instead of wrapping */
+    text-align: center;
+}
+.dashboard-actions {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+.dashboard-actions .btn {
+    border-radius: 16px;
+    font-weight: 600;
+    background: #23243a;
+    color: #8be9fd;
+    border: 1.5px solid #8be9fd;
+    padding: 14px 32px;
+    transition: background 0.18s, color 0.18s, border 0.18s;
+    box-shadow: 0 1px 8px #8be9fd22;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+.dashboard-actions .btn:hover {
+    background: #8be9fd;
+    color: #23243a;
+    border-color: #23243a;
+}
+.invite-form .btn-info {
+    border-radius: 14px;
+    font-weight: 600;
+    background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
+    color: #23243a;
+    border: none;
+    padding: 10px 28px;
+    box-shadow: 0 1px 8px #8be9fd22;
+    font-size: 1.08em;
+    margin-top: 8px;
+    transition: background 0.18s, color 0.18s;
+}
+.invite-form .btn-info:hover {
+    background: #23243a;
+    color: #8be9fd;
+}
+.dashboard-users-online {
+    background: rgba(139,233,253,0.10);
+    border-radius: 18px;
+    padding: 28px;
+    margin-top: 36px;
+    box-shadow: 0 2px 12px #8be9fd33;
+    border: 1.5px solid #8be9fd44;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+.dashboard-users-online h2 {
+    color: #8be9fd;
+    margin-bottom: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 1.3em;
+}
+.dashboard-users-online ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.dashboard-users-online li {
+    background: rgba(139,233,253,0.08);
+    border-radius: 10px;
+    padding: 6px 16px;
+    color: #fff;
+    font-size: 1.05em;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 4px #8be9fd22;
+    transition: background 0.15s;
+}
+.dashboard-users-online li:hover {
+    background: #8be9fd;
+    color: #23243a;
+}
+@media (max-width: 991px) {
+    .dashboard-center-container {
+        max-width: 98vw;
+    }
+    .dashboard-cards {
+        gap: 16px;
+    }
+    .dashboard-card {
+        min-width: 120px;
+        padding: 18px 8px;
+        font-size: 0.95em;
+        max-width: 180px;
+    }
+}
+@media (max-width: 767px) {
+    .dashboard-cards {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .dashboard-card {
+        min-width: 0;
+        max-width: 100vw;
+        width: 100%;
+        padding: 12px 6px;
+        font-size: 0.95em;
+    }
+    .dashboard-users-online {
+        padding: 12px;
+    }
+}
+@media (max-width: 500px) {
+    .dashboard-card .display-4 {
+        font-size: 1.3rem;
+    }
+}
+</style>
 
 <div class="dashboard-root">
     <div class="main-area">
@@ -10,15 +200,15 @@
             <div class="dashboard-center-container">
                 <div class="dashboard-cards">
                     <div class="dashboard-card">
-                        <h5>Money</h5>
+                        <h5><i class="fas fa-money-bill-wave"></i> Money</h5>
                         <div class="display-4" id="money">${{ current_user.money }}</div>
                     </div>
                     <div class="dashboard-card">
-                        <h5>XP</h5>
+                        <h5><i class="fas fa-star"></i> XP</h5>
                         <div class="display-4" id="xp">{{ current_user.xp }}</div>
                     </div>
                     <div class="dashboard-card">
-                        <h5>Level</h5>
+                        <h5><i class="fas fa-layer-group"></i> Level</h5>
                         <div class="display-4" id="level">{{ current_user.level }}</div>
                     </div>
                 </div>
@@ -45,7 +235,7 @@
                     </button>
                 </div>
                 <div class="dashboard-users-online">
-                    <h2>Users Online</h2>
+                    <h2><i class="fas fa-user-friends"></i> Users Online</h2>
                     {% if online_users %}
                     <ul id="users-online-list">
                         {% for user in online_users %}
