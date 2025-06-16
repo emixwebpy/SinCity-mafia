@@ -1,11 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head><title>Dashboard</title></head>
-<h2>Create a Crew</h2>
-<form method="post">
-    <label>Crew Name:</label>
-    <input type="text" name="crew_name" required>
-    <input type="submit" value="Create">
-</form>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Create a Crew{% endblock %}
+{% block content %}
+
+<div class="container min-vh-100 d-flex flex-column justify-content-center align-items-center">
+  <h2 class="text-center mb-4">Create a Crew</h2>
+
+  <div class="alert alert-info text-center w-100" style="max-width: 400px;">
+    <strong>Requirements:</strong><br>
+    • Minimum Level: <span class="badge badge-primary">15</span><br>
+    • Cost: <span class="badge badge-success">$1,000,000</span>
+  </div>
+
+  <form method="post" class="w-100" style="max-width: 400px;">
+      <div class="form-group">
+          <label for="crew_name">Crew Name:</label>
+          <input type="text" id="crew_name" name="crew_name" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Create</button>
+  </form>
+</div>
+
+{% endblock %}

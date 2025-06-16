@@ -1,18 +1,27 @@
-from operator import is_
+
+from email.mime import base
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
-from sqlalchemy import true
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
-import sqlite3
-from datetime import datetime, timedelta
-import random
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import expose, AdminIndexView
-from flask_admin.form import SecureForm,BaseForm
+from flask_admin import expose, AdminIndexView, BaseView
+from flask_admin.form import SecureForm, BaseForm
 from wtforms import PasswordField, StringField, BooleanField, IntegerField
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
+from sqlalchemy import true
+from operator import is_
+import random
+import sqlite3
+import os
+
+
+
+
+
+
+
 
 # Database -------------------------------
 app = Flask(__name__)
@@ -150,29 +159,11 @@ class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
     
-admin = Admin(
-    app,
-    name='Admin Panel',
-    index_view=MyAdminIndexView()
-)
-# admin = Admin(
-#     app,
-#     name='Admin Panel',
-#     index_view=MyAdminIndexView(),
-#     base_template='admin/dood_base.html'
-# )
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
-
-
-admin.add_view(UserModelView(User, db.session, endpoint='admin_user'))
-admin.add_view(ModelView(UserInventory, db.session))
-admin.add_view(ModelView(ShopItem, db.session))
-admin.add_view(ModelView(Crew, db.session))
-admin.add_view(ModelView(CrewMessage, db.session))
-admin.add_view(ModelView(CrewInvitation, db.session))
 # Routes -------------------------------
 @app.route('/')
 def home():
@@ -435,18 +426,31 @@ def decline_invite(invite_id):
 @app.route('/create_crew', methods=['GET', 'POST'])
 @login_required
 def create_crew():
+    MIN_LEVEL = 15         # Set your required level here
+    CREW_COST = 1000000      # Set your required money cost here
+
     if request.method == 'POST':
         crew_name = request.form.get('crew_name', '').strip()
         if Crew.query.filter_by(name=crew_name).first():
             flash("Crew name already exists.")
             return redirect(url_for('create_crew'))
 
+        if current_user.level < MIN_LEVEL:
+            flash(f"You must be at least level {MIN_LEVEL} to create a crew.")
+            return redirect(url_for('create_crew'))
+
+        if current_user.money < CREW_COST:
+            flash(f"You need at least ${CREW_COST} to create a crew.")
+            return redirect(url_for('create_crew'))
+
+        # Deduct money and create crew
+        current_user.money -= CREW_COST
         new_crew = Crew(name=crew_name)
         db.session.add(new_crew)
         db.session.commit()
         current_user.crew_id = new_crew.id
         db.session.commit()
-        flash("Crew created and joined!")
+        flash(f"Crew created and joined! You spent ${CREW_COST}.")
         return redirect(url_for('dashboard'))
 
     return render_template('create_crew.html')
@@ -498,6 +502,21 @@ def upgrade():
     return redirect(url_for('dashboard'))
 
 # Create DB (run once, or integrate with a CLI or shell)
+
+admin = Admin(
+    app, template_mode='bootstrap4',
+    name='Admin Panel',
+    index_view=MyAdminIndexView(),
+    base_template='admin/dood_base.html'
+)
+
+admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
+admin.add_view(ModelView(UserInventory, db.session))
+admin.add_view(ModelView(ShopItem, db.session))
+admin.add_view(ModelView(Crew, db.session))
+admin.add_view(ModelView(CrewMessage, db.session))
+admin.add_view(ModelView(CrewInvitation, db.session))
+
 @app.cli.command('init-db')
 def init_db():
     db.create_all()

@@ -1,9 +1,132 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'bootstrap4/admin/base.html' %}
+
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Admin{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 3 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+        .navbar-inverse {
+            background: linear-gradient(90deg, #232526 0%, #414345 100%);
+            border: none;
+            border-radius: 0;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5em;
+            color: #ffd700 !important;
+        }
+        .navbar-btn {
+            margin-left: 20px;
+        }
+        .admin-sidebar {
+            background: #232526;
+            min-height: 80vh;
+            border-radius: 10px;
+            padding: 20px 10px;
+            color: #fff;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.12);
+        }
+        .admin-sidebar .nav > li > a {
+            color: #fff;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .admin-sidebar .nav > li.active > a,
+        .admin-sidebar .nav > li > a:hover {
+            background: #ffd700;
+            color: #232526 !important;
+            border-radius: 5px;
+        }
+        .admin-content {
+            background: #fff;
+            border-radius: 10px;
+            margin-top: 20px;
+            padding: 30px 25px;
+            min-height: 80vh;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+        }
+        .admin-header {
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: bold;
+            color: #232526;
+            letter-spacing: 1px;
+        }
+        .btn-primary, .btn-success, .btn-danger {
+            border-radius: 20px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary:hover, .btn-success:hover, .btn-danger:hover {
+            filter: brightness(0.95);
+        }
+        .table {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(44,62,80,0.05);
+        }
+        .table > thead > tr > th {
+            background: #f5f6fa;
+            color: #232526;
+            font-weight: 600;
+        }
+        .form-control:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 5px #ffd70033;
+        }
+        .alert {
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+        .fa-crown {
+            color: #ffd700;
+            margin-right: 6px;
+        }
+        /* Custom scrollbar for sidebar */
+        .admin-sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #232526;
+        }
+        .admin-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: #232526;
+        }
+        @media (max-width: 991px) {
+            .admin-header {
+                font-size: 1.3em;
+            }
+        }
+        @media (max-width: 767px) {
+            .admin-sidebar {
+                min-height: auto;
+                margin-bottom: 20px;
+                border-radius: 6px;
+                padding: 10px 5px;
+            }
+            .admin-content {
+                min-height: auto;
+                padding: 15px 5px;
+                border-radius: 6px;
+            }
+            .navbar-brand {
+                font-size: 1.1em;
+            }
+        }
+    </style>
     {% block head_css %}{% endblock %}
     {% block head %}{% endblock %}
 </head>
@@ -11,21 +134,33 @@
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="{{ url_for('admin.index') }}">Admin Panel</a>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary navbar-btn">Back to Dashboard</a>
+                <a class="navbar-brand" href="{{ url_for('admin.index') }}">
+                    <i class="fas fa-crown"></i> Admin Panel
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary navbar-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
             </div>
         </div>
     </nav>
     <div class="container-fluid">
-        {% block messages %}{% endblock %}
+        {% block messages %}
+        {% endblock %}
         <div class="row">
             <div class="col-sm-3">
-                {% block menu %}{% endblock %}
+                <div class="admin-sidebar">
+                    {% block menu %}{% endblock %}
+                </div>
             </div>
             <div class="col-sm-9">
-                {% block page_body %}
-                    {% block content %}{% endblock %}
-                {% endblock %}
+                <div class="admin-content">
+                    <div class="admin-header">
+                        {% block admin_header %}{% endblock %}
+                    </div>
+                    {% block page_body %}
+                        {% block content %}{% endblock %}
+                    {% endblock %}
+                </div>
             </div>
         </div>
     </div>

@@ -3,19 +3,35 @@
 {% block title %}Join a Crew{% endblock %}
 
 {% block content %}
-  <hr>
-<h2>Your Invitations</h2>
-{% if invitations %}
-  <ul>
-    {% for invite in invitations %}
-      <li>
-        Invitation from <strong>{{ invite.inviter.username }}</strong> to join crew <strong>{{ invite.crew.name }}</strong>
-        - <a href="{{ url_for('accept_invite', invite_id=invite.id) }}">Accept</a> |
-        <a href="{{ url_for('decline_invite', invite_id=invite.id) }}">Decline</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No invitations.</p>
-{% endif %}
+<style>
+  span{
+
+    color: black;
+    }
+</style>
+<div class="container min-vh-100 d-flex flex-column justify-content-center align-items-center">
+
+  <hr class="w-100">
+  <h2 class="text-center mb-4">Your Invitations</h2>
+
+  {% if invitations %}
+    <ul class="list-group w-100" style="max-width: 600px;">
+      {% for invite in invitations %}
+        <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-center mb-2">
+          <span>
+            Invitation from <strong>{{ invite.inviter.username }}</strong>
+            to join crew <strong>{{ invite.crew.name }}</strong>
+          </span>
+          <span class="mt-2 mt-md-0">
+            <a href="{{ url_for('accept_invite', invite_id=invite.id) }}" class="btn btn-success btn-sm mx-1">Accept</a>
+            <a href="{{ url_for('decline_invite', invite_id=invite.id) }}" class="btn btn-danger btn-sm mx-1">Decline</a>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-center">No invitations.</p>
+  {% endif %}
+
+</div>
 {% endblock %}
