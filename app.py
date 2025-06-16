@@ -1,4 +1,3 @@
-
 from email.mime import base
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
@@ -76,9 +75,17 @@ class UserEditForm(SecureForm):
     is_admin = BooleanField('Is Admin')
     premium = BooleanField('Premium User')
     xp = IntegerField('XP')
-    level = IntegerField('Level', default=1, render_kw={"readonly": False})
+    level = IntegerField('Level')
+    money = IntegerField('Money', default=0, render_kw={"readonly": False})
     
-
+class ShopItemModelView(ModelView):
+    can_create = True
+    can_edit = True
+    can_delete = True
+    can_view_details = True
+    column_list = ('id', 'name', 'description', 'price', 'stock')
+    form_columns = ('name', 'description', 'price', 'stock')
+    column_searchable_list = ('name', 'description')
 
 class ShopItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -98,7 +105,6 @@ class UserInventory(db.Model):
 # Admin -------------------------------
 
 class UserModelView(ModelView):
-    
     column_searchable_list = ('username',)
     can_create = True
     can_edit = True
@@ -107,11 +113,10 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
+    form_columns = ['username', 'password', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money']  # <-- Add 'level'
     column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin','premium', 'last_known_ip')
-    
 
     def is_accessible(self):
-        """Check if the user is authenticated and is an admin."""
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
 
     def on_model_change(self, form, model, is_created):
@@ -120,10 +125,12 @@ class UserModelView(ModelView):
         if form.xp.data is not None:
             model.xp = form.xp.data
             # Reset level and recalculate based on XP
-            model.level = 1337
+            model.level = 1
             while model.xp >= model.level * 250:
                 model.xp -= model.level * 250
                 model.level += 1
+        if form.level.data is not None:
+            model.level = form.level.data  # <-- Allow manual level set
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('login'))
@@ -509,18 +516,23 @@ def upgrade():
     flash(f'Your account has been upgraded to premium for ${PREMIUM_COST}!', 'success')
     return redirect(url_for('dashboard'))
 
+@app.route('/profile/<username>')
+def profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    crew = Crew.query.get(user.crew_id) if user.crew_id else None
+    return render_template('profile.html', user=user, crew=crew)
 # Create DB (run once, or integrate with a CLI or shell)
 
 admin = Admin(
     app,
     name='Admin Panel',
-    template_mode='bootstrap3',  # or 'bootstrap2' if you prefer
-    base_template='admin/dood_base.html'  # <--- use your custom base
+    template_mode='bootstrap3',
+    base_template='admin/dood_base.html'
 )
 
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
 admin.add_view(ModelView(UserInventory, db.session))
-admin.add_view(ModelView(ShopItem, db.session))
+admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
 admin.add_view(ModelView(Crew, db.session))
 admin.add_view(ModelView(CrewMessage, db.session))
 admin.add_view(ModelView(CrewInvitation, db.session))

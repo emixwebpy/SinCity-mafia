@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<style>
+.profile-container {
+    max-width: 420px;
+    margin: 48px auto 0 auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 28px;
+    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+    padding: 38px 28px 32px 28px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8be9fd 60%, #23243a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px auto;
+    box-shadow: 0 2px 16px #8be9fd33;
+    font-size: 2.8em;
+    color: #23243a;
+    border: 3px solid #8be9fd;
+}
+.profile-container h1 {
+    color: #8be9fd;
+    font-size: 1.7em;
+    font-weight: 900;
+    margin-bottom: 6px;
+    font-family: 'Oswald', 'Cinzel', serif;
+    letter-spacing: 1px;
+}
+.profile-username {
+    font-size: 1.15em;
+    color: #b8b8ff;
+    font-weight: 600;
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+}
+.profile-stats {
+    margin: 24px 0 18px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 16px;
+    padding: 18px 0 12px 0;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 8px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    min-width: 80px;
+    flex: 1 1 0;
+    margin: 0 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: box-shadow 0.18s, transform 0.18s;
+}
+.profile-stat:hover {
+    box-shadow: 0 4px 16px #8be9fd55;
+    transform: translateY(-2px) scale(1.04);
+}
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0;
+}
+.profile-wealth {
+    font-size: 1.08em;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 12px;
+    margin-top: 4px;
+    display: inline-block;
+}
+.profile-wealth-poor { background: #23243a; color: #8be9fd; }
+.profile-wealth-working { background: #3a3a5a; color: #8be9fd; }
+.profile-wealth-middle { background: #8be9fd; color: #23243a; }
+.profile-wealth-rich { background: #ffd700; color: #23243a; }
+.profile-wealth-elite { background: linear-gradient(90deg, #ffd700 60%, #8be9fd 100%); color: #23243a; }
+.profile-crew {
+    margin-top: 18px;
+    color: #b8b8ff;
+    font-size: 1.08em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.profile-premium {
+    margin-top: 18px;
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+}
+@media (max-width: 600px) {
+    .profile-container {
+        padding: 18px 4vw 16px 4vw;
+        margin: 18px 0 0 0;
+    }
+    .profile-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .profile-stat {
+        margin: 0;
+        min-width: 0;
+    }
+}
+</style>
+
+{% macro money_class(money) -%}
+    {%- if money < 1000 -%}
+        <span class="profile-wealth profile-wealth-poor">Poor</span>
+    {%- elif money < 10000 -%}
+        <span class="profile-wealth profile-wealth-working">Working Class</span>
+    {%- elif money < 100000 -%}
+        <span class="profile-wealth profile-wealth-middle">Middle Class</span>
+    {%- elif money < 1000000 -%}
+        <span class="profile-wealth profile-wealth-rich">Rich</span>
+    {%- else -%}
+        <span class="profile-wealth profile-wealth-elite">Elite</span>
+    {%- endif -%}
+{%- endmacro %}
+
+<div class="profile-container">
+    <div class="profile-avatar">
+        <i class="fas fa-user"></i>
+    </div>
+    <h1>{{ user.username }}</h1>
+    <div class="profile-username">
+        @{{ user.username }}
+    </div>
+    <div class="profile-stats">
+        <div class="profile-stat">
+            <span class="profile-label">Level</span>
+            {{ user.level }}
+        </div>
+        <div class="profile-stat">
+            <span class="profile-label">XP</span>
+            {{ user.xp }}
+        </div>
+        <div class="profile-stat">
+            <span class="profile-label">Wealth</span>
+            {{ money_class(user.money) }}
+        </div>
+    </div>
+    {% if crew %}
+    <div class="profile-crew">
+        <i class="fas fa-users"></i> Crew: <strong>{{ crew.name }}</strong>
+    </div>
+    {% endif %}
+    {% if user.premium %}
+    <div class="profile-premium">
+        <i class="fas fa-crown"></i> Premium Member
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
