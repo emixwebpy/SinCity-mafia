@@ -91,7 +91,7 @@ class User(db.Model, UserMixin):
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
     character = db.relationship('Character', backref='user', uselist=False)
     kills = db.Column(db.Integer, default=0)
-
+    
 
     def add_xp(self, amount):
         self.xp += amount
@@ -161,6 +161,9 @@ class Character(db.Model):
     gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
     gun = db.relationship('Gun', backref='characters', uselist=False)
     profile_image = db.Column(db.String(256), nullable=True)
+    earn_streak = db.Column(db.Integer, default=0)
+    last_earned = db.Column(db.DateTime, nullable=True)
+
 
 
 class Gun(db.Model):
@@ -325,11 +328,47 @@ def shop():
     return render_template('shop.html', items=items, message=message, character=character)
 # ...existing code...
 
-@app.route('/inventory')
+@app.route('/inventory', methods=['GET', 'POST'])
 @login_required
 def inventory():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        item_id = int(request.form.get('item_id'))
+        inventory_item = UserInventory.query.filter_by(user_id=current_user.id, item_id=item_id).first()
+        item = ShopItem.query.get(item_id)
+
+        if not inventory_item or not item:
+            flash("Item not found in your inventory.", 'danger')
+            return redirect(url_for('inventory'))
+
+        sell_price = item.price // 2
+        character.money += sell_price
+        inventory_item.quantity -= 1
+
+        # If it's the equipped gun, unequip it
+        if current_user.gun_id == item.id:
+            current_user.gun_id = None
+            flash(f"You sold your equipped gun: {item.name}.", "info")
+
+        if inventory_item.quantity <= 0:
+            db.session.delete(inventory_item)
+
+        # ✅ Add back to shop (increase stock)
+        item.stock += 1
+
+        db.session.commit()
+        flash(f"Sold 1x {item.name} for ${sell_price}.", "success")
+        return redirect(url_for('inventory'))
+
+    equipped_gun = current_user.gun
     inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
-    return render_template('inventory.html', inventory_items=inventory_items)
+
+    return render_template('inventory.html', inventory_items=inventory_items, equipped_gun=equipped_gun)
+
 
 @app.route('/users_online')
 @login_required
@@ -544,11 +583,16 @@ def upload_profile_image():
     if request.method == 'POST':
         file = request.files.get('profile_image')
         if file and allowed_file(file.filename):
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             filename = secure_filename(f"{current_user.id}_{file.filename}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            current_user.profile_image = f'uploads/{filename}'
-            db.session.commit()
+
+            character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+            if character:
+                character.profile_image = f'uploads/{filename}'
+                db.session.commit()
+
             flash('Profile image updated!', 'success')
             return redirect(url_for('profile', username=current_user.username))
         else:
@@ -637,31 +681,55 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    from datetime import datetime, timedelta
-    import random
-
-    cooldown = timedelta(seconds=10)
+    cooldown = timedelta(minutes=2, seconds=10)
     now = datetime.utcnow()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         return jsonify({'success': False, 'message': "No character found."})
 
-    if current_user.last_earned and now - current_user.last_earned < cooldown:
-        remaining = cooldown - (now - current_user.last_earned)
-        minutes, seconds = divmod(remaining.seconds, 60)
-        return jsonify({'success': False, 'message': f"Wait {minutes}m {seconds}s before earning again."})
+    # ✅ Make sure cooldown check works
+    if character.last_earned and (now - character.last_earned) < cooldown:
+        remaining = cooldown - (now - character.last_earned)
+        minutes, seconds = divmod(int(remaining.total_seconds()), 60)
+        return jsonify({
+            'success': False,
+            'message': f"Wait {minutes}m {seconds}s before earning again."
+        })
 
+    # Earnings and streak handling (unchanged)
     earned_money = random.randint(200, 2000)
     earned_xp = random.randint(20, 120)
     character.money += earned_money
     character.xp += earned_xp
+    character.last_earned = now
+
+    # Level-up
     while character.xp >= character.level * 250:
         character.xp -= character.level * 250
         character.level += 1
 
-    current_user.last_earned = now
+    # Streak and reward
+    character.earn_streak = (character.earn_streak or 0) + 1
+    reward_msg = ""
+    if character.earn_streak >= 5:
+        gun = ShopItem.query.filter_by(name='Starter Pistol').first()
+        if gun:
+            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=gun.id).first()
+            if inventory:
+                inventory.quantity += 1
+            else:
+                db.session.add(UserInventory(user_id=current_user.id, item_id=gun.id, quantity=1))
+            if not character.gun_id:
+                character.gun_id = gun.id
+            reward_msg = f" You received a {gun.name}!"
+        character.earn_streak = 0
+
     db.session.commit()
-    return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP!"})
+    return jsonify({
+        'success': True,
+        'message': f"You earned ${earned_money} and {earned_xp} XP!{reward_msg}"
+    })
+
 
 @app.route('/user_stats')
 @login_required

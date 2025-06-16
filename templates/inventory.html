@@ -591,23 +591,43 @@ body {
     }
 }
 </style>
-<div class="inventory-container">
-    <div class="inventory-title"><i class="fas fa-box"></i> Inventory</div>
-    {% if inventory_items %}
-    <ul class="inventory-list">
-      {% for inv in inventory_items %}
-      <li class="inventory-item">
-        <span class="item-name">{{ inv.item.name }}</span>
-        <span class="item-desc">{{ inv.item.description }}</span>
-        <span class="item-qty">x{{ inv.quantity }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <div class="inventory-empty">
-        <i class="fas fa-box-open"></i> No items in your inventory.
+<h1 style="text-align:center; color:#8be9fd;">Your Inventory</h1>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 24px; background: #1b1c2b; border-radius: 12px; box-shadow: 0 0 12px #8be9fd33;">
+
+    {% if equipped_gun %}
+    <div style="background:#35374a; color:#fff; padding:16px; margin-bottom:20px; border-radius:8px;">
+        <h4 style="color:#ffd700;">Equipped Gun</h4>
+        <p>
+            <strong>{{ equipped_gun.name }}</strong> - {{ equipped_gun.damage }} damage<br>
+            <small style="color:#8be9fd;">Currently equipped</small>
+        </p>
+        <form method="POST" action="{{ url_for('inventory') }}">
+            <input type="hidden" name="item_id" value="{{ equipped_gun.id }}">
+            <button type="submit" class="btn btn-danger btn-sm">Sell for ${{ equipped_gun.price // 2 }}</button>
+        </form>
     </div>
     {% endif %}
-    
+
+    {% for entry in inventory_items %}
+    <div style="background:#2a2b3d; color:#fff; padding:12px 16px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <strong>{{ entry.item.name }}</strong> (x{{ entry.quantity }})<br>
+            <small style="color:#8be9fd;">Original Price: ${{ entry.item.price }}</small>
+        </div>
+        <form method="POST" action="{{ url_for('inventory') }}">
+            <input type="hidden" name="item_id" value="{{ entry.item.id }}">
+            <button type="submit" class="btn btn-warning btn-sm">Sell for ${{ entry.item.price // 2 }}</button>
+        </form>
+    </div>
+    {% else %}
+    <p style="text-align:center; color:#aaa;">You have no items in your inventory.</p>
+    {% endfor %}
 </div>
+<script>
+    if (current_user.gun_id== (item.gun_id)) {
+        flash("You can't sell your currently equipped gun.", "danger")
+        return redirect(url_for('inventory'))
+    }
+</script>
 {% endblock %}
