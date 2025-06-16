@@ -171,6 +171,12 @@
         <span class="profile-label">Health</span>
         <span class="profile-value">{{ character.health }}</span>
     </div>
+    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+    <div class="profile-stat">
+        <span class="profile-label">Kills</span>
+        <span class="profile-value">{{ current_user.kills }}</span>
+    </div>
+    {% endif %}
     {% if character.gun %}
     <div class="profile-stat">
         <span class="profile-label">Gun</span>
@@ -201,10 +207,8 @@
         This user does not have a character yet.
     </div>
     {% endif %}
-    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
-        <div style="display:none;" id="my-kills-count">
-            <span>Kills: {{ current_user.kills }}</span>
-        </div>
+    {% if user.profile_image %}
+    <img src="{{ url_for('static', filename=user.profile_image) }}" alt="Profile Image" class="profile-img" style="max-width:120px;max-height:120px;border-radius:50%;">
     {% endif %}
 </div>
     

@@ -6,9 +6,11 @@ from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
+from flask_migrate import Migrate
 from wtforms import PasswordField, StringField, BooleanField, IntegerField
 from wtforms.fields import DateTimeField
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import true
 from operator import is_
@@ -23,13 +25,22 @@ import os
 
 
 
+
 # Database -------------------------------
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 DATABASE = 'users.db'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -38,6 +49,10 @@ login_manager.login_view = 'login'
 def update_last_seen():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
+        # Premium status auto-expiry
+        if current_user.premium and current_user.premium_until and current_user.premium_until < datetime.utcnow():
+            current_user.premium = False
+            db.session.commit()
         db.session.commit()
 
 @app.before_request
@@ -48,7 +63,7 @@ def check_character_alive():
             if request.endpoint not in ('create_character', 'logout', 'static'):
                 return redirect(url_for('create_character'))
 
-# Models -------------------------------
+#Models -------------------------------
 class MasterAccount(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
@@ -145,6 +160,8 @@ class Character(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
     gun = db.relationship('Gun', backref='characters', uselist=False)
+    profile_image = db.Column(db.String(256), nullable=True)
+
 
 class Gun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -268,16 +285,21 @@ def kill(username):
         db.session.commit()
     return redirect(url_for('profile', username=username))
 
+# ...existing code...
 @app.route('/shop', methods=['GET', 'POST'])
 @login_required
 def shop():
     items = ShopItem.query.all()
     message = None
+    # Get the current user's character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if request.method == 'POST':
         item_id = request.form.get('item_id')
         item = ShopItem.query.get(item_id)
-        if item and current_user.money >= item.price and item.stock > 0:
-            current_user.money -= item.price
+        if not character:
+            message = "No character found."
+        elif item and character.money >= item.price and item.stock > 0:
+            character.money -= item.price
             item.stock -= 1
 
             # Add to inventory or increment quantity
@@ -300,9 +322,8 @@ def shop():
             message = "Sorry, this item is out of stock."
         else:
             message = "Not enough money or item not found."
-    return render_template('shop.html', items=items, message=message)
-
-
+    return render_template('shop.html', items=items, message=message, character=character)
+# ...existing code...
 
 @app.route('/inventory')
 @login_required
@@ -517,6 +538,23 @@ def invite_to_crew():
 
     return render_template('invite_to_crew.html', crew=current_user.crew)
 
+@app.route('/upload_profile_image', methods=['GET', 'POST'])
+@login_required
+def upload_profile_image():
+    if request.method == 'POST':
+        file = request.files.get('profile_image')
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"{current_user.id}_{file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            current_user.profile_image = f'uploads/{filename}'
+            db.session.commit()
+            flash('Profile image updated!', 'success')
+            return redirect(url_for('profile', username=current_user.username))
+        else:
+            flash('Invalid file type.', 'danger')
+    return render_template('upload_profile_image.html')
+
 @app.route('/crew_messages')
 @login_required
 def crew_messages():
@@ -706,9 +744,9 @@ admin = Admin(
 )
 
 
-admin.add_view(ModelView(Character, db.session))
-admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
 admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
+admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
+
 admin.add_view(ModelView(UserInventory, db.session))
 admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
 admin.add_view(ModelView(Crew, db.session))
@@ -738,7 +776,7 @@ def create_admin():
 
 @app.route('/create_fake_profile', methods=['GET', 'POST'])
 def create_fake_profile():
-    npc_price = 1000  # Set the price for creating an NPC
+    npc_price = 150000  # Set the price for creating an NPC
 
     if request.method == 'POST':
         npc_name = request.form.get('npc_name')
