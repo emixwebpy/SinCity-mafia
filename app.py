@@ -106,6 +106,15 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+class CrewMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(20), default='member')  # leader, right_hand, left_hand, member
+
+    crew = db.relationship('Crew', backref='crew_members')
+    user = db.relationship('User', backref='crew_membership')
+
 class UserEditForm(SecureForm):
     username = StringField('Username')
     password = PasswordField('Password')
@@ -252,7 +261,7 @@ def home():
 @login_required
 def crew_page(crew_id):
     crew = Crew.query.get_or_404(crew_id)
-    members = User.query.filter_by(crew_id=crew.id).all()
+    members = CrewMember.query.filter_by(crew_id=crew.id).all()
     messages = CrewMessage.query.filter_by(crew_id=crew.id).order_by(CrewMessage.timestamp.desc()).limit(50).all()
     return render_template('crew_page.html', crew=crew, members=members, messages=messages)
 
@@ -631,6 +640,8 @@ def accept_invite(invite_id):
     invitation = CrewInvitation.query.get(invite_id)
     if invitation and invitation.invitee_id == current_user.id:
         current_user.crew_id = invitation.crew_id
+        CrewMember.query.filter_by(user_id=current_user.id).delete()
+        db.session.add(CrewMember(crew_id=invitation.crew_id, user_id=current_user.id, role='member'))
         db.session.delete(invitation)
         db.session.commit()
         flash("You’ve joined the crew!")
@@ -653,8 +664,13 @@ def decline_invite(invite_id):
 @app.route('/create_crew', methods=['GET', 'POST'])
 @login_required
 def create_crew():
-    MIN_LEVEL = 15         # Set your required level here
-    CREW_COST = 1000000      # Set your required money cost here
+    MIN_LEVEL = 15
+    CREW_COST = 1000000
+
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("You must have a character to create a crew.", "danger")
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         crew_name = request.form.get('crew_name', '').strip()
@@ -662,22 +678,27 @@ def create_crew():
             flash("Crew name already exists.")
             return redirect(url_for('create_crew'))
 
-        if current_user.level < MIN_LEVEL:
+        if character.level < MIN_LEVEL:
             flash(f"You must be at least level {MIN_LEVEL} to create a crew.")
             return redirect(url_for('create_crew'))
 
-        if current_user.money < CREW_COST:
+        if character.money < CREW_COST:
             flash(f"You need at least ${CREW_COST} to create a crew.")
             return redirect(url_for('create_crew'))
 
         # Deduct money and create crew
-        current_user.money -= CREW_COST
+        character.money -= CREW_COST
         new_crew = Crew(name=crew_name)
         db.session.add(new_crew)
         db.session.commit()
+
+        # Insert creator as leader
+        crew_member = CrewMember(crew_id=new_crew.id, user_id=current_user.id, role='leader')
+        db.session.add(crew_member)
         current_user.crew_id = new_crew.id
         db.session.commit()
-        flash(f"Crew created and joined! You spent ${CREW_COST}.")
+
+        flash(f"Crew created and joined! You spent ${CREW_COST}.", "success")
         return redirect(url_for('dashboard'))
 
     return render_template('create_crew.html')
@@ -715,7 +736,7 @@ def earn():
     # Streak and reward
     character.earn_streak = (character.earn_streak or 0) + 1
     reward_msg = ""
-    if character.earn_streak >= 5:
+    if character.earn_streak >= 1:
         gun = ShopItem.query.filter_by(name='Starter Pistol').first()
         if gun:
             inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=gun.id).first()
@@ -832,7 +853,7 @@ admin = Admin(
 
 admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
-
+admin.add_view(ModelView(CrewMember, db.session))
 admin.add_view(ModelView(UserInventory, db.session))
 admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
 admin.add_view(ModelView(Crew, db.session))

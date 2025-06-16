@@ -110,18 +110,9 @@
 .profile-wealth-working { background: #3a3a5a; color: #8be9fd; }
 .profile-wealth-middle { background: #8be9fd; color: #23243a; }
 .profile-wealth-rich { background: #ffd700; color: #23243a; }
-.profile-wealth-elite {
-    background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%);
-    color: #1d1d1d;
-}
-.profile-wealth-platinum {
-    background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%);
-    color: #1d1d1d;
-}
-.profile-wealth-billionair {
-    background: linear-gradient(90deg, #ffd700 50%, #8bcafd 100%);
-    color: #1d1d1d;
-}
+.profile-wealth-elite { background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%); color: #1d1d1d;}
+.profile-wealth-platinum {background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%); color: #1d1d1d;}
+.profile-wealth-billionair { background: linear-gradient(90deg, #ffd700 50%, #8bcafd 100%); color: #1d1d1d;}
 
 .profile-crew {
     margin-top: 18px;
@@ -178,17 +169,17 @@
     {%- if character.money < 1000 -%}
         <span class="profile-wealth profile-wealth-poor">Poor</span>
     {%- elif character.money < 10000 -%}
-        <span class="profile-wealth profile-wealth-working">Working</span>
+        <span class="profile-wealth profile-wealth-working">Working Class</span>
     {%- elif character.money < 100000 -%}
-        <span class="profile-wealth profile-wealth-middle">Middle</span>
+        <span class="profile-wealth profile-wealth-middle">Middle Class</span>
     {%- elif character.money < 1000000 -%}
         <span class="profile-wealth profile-wealth-rich">Rich</span>
     {%- elif character.money < 10000000 -%}
-        <span class="profile-wealth profile-wealth-elite">Elite</span>
+        <span class="profile-wealth profile-wealth-elite">Elite Class</span>
     {%- elif character.money < 100000000 -%}
-        <span class="profile-wealth profile-wealth-platinum">Platinum</span>
-    {%- elif character.money > 1000000000 -%}
-        <span class="profile-wealth profile-wealth-billionair">Billionair</span>
+        <span class="profile-wealth profile-wealth-platinum">Platinum Star</span>
+    {%- else -%}
+        <span class="profile-wealth profile-wealth-billionair">Billionair Rich's</span>
     {%- endif -%}
 {%- endmacro %}
 

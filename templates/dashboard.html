@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
 
+{% block title %}Dashboard{% endblock %}
+<link rel="shortcut icon" href="{{ url_for('static', filename='gang.png') }}">
 {% block content %}
 <style>
 html, body {
@@ -39,7 +40,7 @@ html, body {
     height: 100vh;
     position: sticky;
     top: 0;
-    font-size: 0.95em;
+    font-size: 18px;
     padding: 0;
   }
   .sidebar .sidebar-header {
@@ -399,7 +400,7 @@ html, body {
     html, body { font-size: 13px; }
     .content-area { padding: 6px 1vw 6px 1vw; }
     .topbar { padding: 0 2px; }
-    .sidebar { width: 90px; }
+    .sidebar { width: 60px; }
     .sidebar .sidebar-header { font-size: 0.95em; padding: 8px 0 6px 0; }
     .sidebar .sidebar-nav a span { 
       display: none; 
@@ -432,8 +433,8 @@ html, body {
       min-height: 0;
       height: auto;
     }
-    .sidebar .sidebar-header { font-size: 0.8em; margin-bottom: 0; margin-right: 8px; padding: 0 4px; }
-    .sidebar .sidebar-nav { flex-direction: row; gap: 4px; }
+    .sidebar .sidebar-header { font-size: 0.8em; margin-bottom: 0; margin-right: 0; padding: 0 10px; }
+    .sidebar .sidebar-nav { flex-direction: row; gap: 20px;padding: 0 10px; }
     .sidebar .sidebar-nav a { font-size: 0.85em; padding: 4px 4px; border-radius: 4px; }
     .sidebar .sidebar-nav a span { display: none !important; }
     .sidebar .sidebar-footer { padding: 2px; border-top: none; margin-left: auto; }
