@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Create a Fake Profile (NPC)</h2>
+<p>Price: ${{ npc_price }}</p>
+<form method="post">
+    <label for="npc_name">NPC Name:</label>
+    <input type="text" name="npc_name" id="npc_name" required>
+    <button type="submit" class="btn btn-primary">Create NPC</button>
+</form>
+{% endblock %}

@@ -201,5 +201,11 @@
         This user does not have a character yet.
     </div>
     {% endif %}
+    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+        <div style="display:none;" id="my-kills-count">
+            <span>Kills: {{ current_user.kills }}</span>
+        </div>
+    {% endif %}
 </div>
+    
 {% endblock %}

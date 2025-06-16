@@ -74,6 +74,9 @@ class User(db.Model, UserMixin):
     health = db.Column(db.Integer, default=100)
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
+    character = db.relationship('Character', backref='user', uselist=False)
+    kills = db.Column(db.Integer, default=0)
+
 
     def add_xp(self, amount):
         self.xp += amount
@@ -137,7 +140,16 @@ class Character(db.Model):
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
+    xp = db.Column(db.Integer, default=0)
     is_alive = db.Column(db.Boolean, default=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
+    gun = db.relationship('Gun', backref='characters', uselist=False)
+
+class Gun(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32))
+    damage = db.Column(db.Integer)
 
 class CharacterModelView(ModelView):
     column_list = ('id', 'name', 'master_id', 'health', 'money', 'level', 'is_alive')
@@ -227,26 +239,33 @@ def crew_page(crew_id):
 @app.route('/kill/<username>', methods=['POST'])
 @login_required
 def kill(username):
-    if current_user.gun is None:
-        flash("You need to own and equip a gun to attack!", "danger")
-        return redirect(url_for('profile', username=username))
-    target = User.query.filter_by(username=username).first_or_404()
-    if target.id == current_user.id:
-        flash("You can't attack yourself!", "danger")
-        return redirect(url_for('profile', username=username))
-    if target.health <= 0:
-        flash("Target is already dead!", "danger")
+    # Find target: real user or NPC
+    user = User.query.filter_by(username=username).first()
+    if user:
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+    else:
+        character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
+    if not character:
+        flash("Target not found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Use current_user.gun (from ShopItem)
+    if not current_user.gun or not character.is_alive:
+        flash("You can't shoot!", "danger")
         return redirect(url_for('profile', username=username))
 
-    # Simple attack logic: subtract gun damage from target's health
-    damage = current_user.gun.damage or 10
-    target.health -= damage
-    if target.health <= 0:
-        target.health = 0
-        flash(f"You killed {target.username}!", "success")
+    character.health -= current_user.gun.damage
+    killed = False
+    if character.health <= 0:
+        character.is_alive = False
+        killed = True
+        flash(f"You killed {character.name}!", "success")
     else:
-        flash(f"You shot {target.username} for {damage} damage! They have {target.health} health left.", "info")
-    db.session.commit()
+            flash(f"You shot {character.name}!", "success")
+            db.session.commit()
+    if killed:
+        current_user.kills = (current_user.kills or 0) + 1
+        db.session.commit()
     return redirect(url_for('profile', username=username))
 
 @app.route('/shop', methods=['GET', 'POST'])
@@ -283,17 +302,7 @@ def shop():
             message = "Not enough money or item not found."
     return render_template('shop.html', items=items, message=message)
 
-@app.route('/user_stats')
-@login_required
-def user_stats():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        return jsonify(money=0, xp=0, level=1)
-    return jsonify(
-        money=character.money,
-        xp=character.xp,
-        level=character.level
-    )
+
 
 @app.route('/inventory')
 @login_required
@@ -453,13 +462,14 @@ def dashboard():
     online_threshold = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_threshold).all()
     crew = current_user.crew if hasattr(current_user, 'crew') else None
-    # Get the alive character for the logged-in user
+    
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     online_users = User.query.all()  # however you get this list
-    # Get all character objects for online users in one query
+    
+    
     user_ids = [user.id for user in online_users]
     characters = Character.query.filter(Character.master_id.in_(user_ids), Character.is_alive == True).all()
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     char_map = {char.master_id: char for char in characters}
     return render_template(
         "dashboard.html",
@@ -467,8 +477,10 @@ def dashboard():
         online_users=online_users,
         char_map=char_map,
         user=current_user,
-        crew=crew
+        crew=crew,
+        npcs=npcs
     )
+
 
 @app.route('/invite_to_crew', methods=['GET', 'POST'])
 @login_required
@@ -589,13 +601,13 @@ def create_crew():
 def earn():
     from datetime import datetime, timedelta
     import random
+
     cooldown = timedelta(seconds=10)
     now = datetime.utcnow()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         return jsonify({'success': False, 'message': "No character found."})
 
-    # Use a last_earned field on User for cooldown
     if current_user.last_earned and now - current_user.last_earned < cooldown:
         remaining = cooldown - (now - current_user.last_earned)
         minutes, seconds = divmod(remaining.seconds, 60)
@@ -605,7 +617,6 @@ def earn():
     earned_xp = random.randint(20, 120)
     character.money += earned_money
     character.xp += earned_xp
-    # Level up logic
     while character.xp >= character.level * 250:
         character.xp -= character.level * 250
         character.level += 1
@@ -614,6 +625,17 @@ def earn():
     db.session.commit()
     return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP!"})
 
+@app.route('/user_stats')
+@login_required
+def user_stats():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        return jsonify(money=0, xp=0, level=1)
+    return jsonify(
+        money=character.money,
+        xp=character.xp,
+        level=character.level
+    )
 
 @app.route('/earn_status')
 @login_required
@@ -654,11 +676,18 @@ def upgrade():
 
 @app.route('/profile/<username>')
 def profile(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    crew = Crew.query.get(user.crew_id) if user.crew_id else None
-    # Get the character for this user (if using master/character split)
-    character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-    return render_template('profile.html', user=user, crew=crew, character=character)
+    # Try to find a real user first
+    user = User.query.filter_by(username=username).first()
+    if user:
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        crew = db.session.get(Crew, user.crew_id) if user.crew_id else None
+        return render_template('profile.html', user=user, crew=crew, character=character)
+    # If not found, try to find an NPC by name
+    character = Character.query.filter_by(name=username, master_id=0).first()
+    if character:
+        return render_template('profile.html', user=None, crew=None, character=character)
+    # Not found
+    return render_template('404.html'), 404
 
 @app.context_processor
 def inject_current_character():
@@ -688,7 +717,6 @@ admin.add_view(ModelView(CrewInvitation, db.session))
 
 @app.cli.command("init-db")
 def init_db():
-    from app import db
     db.create_all()
     print("Database tables created.")
     
@@ -707,6 +735,50 @@ def create_admin():
         db.session.commit()
         print("Admin user updated.")
 
+
+@app.route('/create_fake_profile', methods=['GET', 'POST'])
+def create_fake_profile():
+    npc_price = 1000  # Set the price for creating an NPC
+
+    if request.method == 'POST':
+        npc_name = request.form.get('npc_name')
+        if not npc_name:
+            flash("NPC name is required.", "danger")
+            return redirect(url_for('create_fake_profile'))
+
+        # Check if user has enough money
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if not character or character.money < npc_price:
+            flash("Not enough money to create a fake profile.", "danger")
+            return redirect(url_for('create_fake_profile'))
+
+        # Deduct money and create NPC
+        character.money -= npc_price
+        npc = Character(
+            master_id=0,
+            name=npc_name,
+            money=500,  # Starting money for NPC
+            xp=0,
+            level=1,
+            is_alive=True,
+            health=100
+        )
+        db.session.add(npc)
+        db.session.commit()
+        flash(f"Fake profile '{npc_name}' created!", "success")
+        return redirect(url_for('dashboard'))
+
+    # Render the form for GET requests
+    return render_template('create_npc.html', npc_price=npc_price)
+
+def get_online_users():
+    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    # Real users online
+    real_online = User.query.filter(User.last_seen >= cutoff).all()
+    # NPCs: Characters with master_id=0 (or whatever you use)
+    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
+    # Optionally, create a fake User object for each NPC if your template expects User
+    return real_online, npcs
 
 if __name__ == '__main__':
     if not os.path.exists('users.db'):
