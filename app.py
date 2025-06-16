@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import expose, AdminIndexView, BaseView
+from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
 from wtforms import PasswordField, StringField, BooleanField, IntegerField
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -496,18 +496,26 @@ def earn_status():
 @app.route('/upgrade', methods=['POST'])
 @login_required
 def upgrade():
+    PREMIUM_COST = 50000
+    if current_user.premium:
+        flash('You are already a premium user!', 'info')
+        return redirect(url_for('dashboard'))
+    if current_user.money < PREMIUM_COST:
+        flash(f'You need at least ${PREMIUM_COST} to upgrade to premium.', 'danger')
+        return redirect(url_for('dashboard'))
+    current_user.money -= PREMIUM_COST
     current_user.premium = True
     db.session.commit()
-    flash('Your account has been upgraded to premium!', 'success')
+    flash(f'Your account has been upgraded to premium for ${PREMIUM_COST}!', 'success')
     return redirect(url_for('dashboard'))
 
 # Create DB (run once, or integrate with a CLI or shell)
 
 admin = Admin(
-    app, template_mode='bootstrap4',
+    app,
     name='Admin Panel',
-    index_view=MyAdminIndexView(),
-    base_template='admin/dood_base.html'
+    template_mode='bootstrap3',  # or 'bootstrap2' if you prefer
+    base_template='admin/dood_base.html'  # <--- use your custom base
 )
 
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))

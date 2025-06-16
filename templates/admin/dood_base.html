@@ -1,5 +1,5 @@
-{% extends 'bootstrap4/admin/base.html' %}
-
+{% extends 'admin/base.html' %}
+{% block head %}
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Admin{% endblock %}</title>
@@ -10,162 +10,348 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         body {
-            background: #f5f6fa;
+            background: linear-gradient(135deg, #23243a 0%, #1a1b2f 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
         }
-        .navbar-inverse {
-            background: linear-gradient(90deg, #232526 0%, #414345 100%);
-            border: none;
-            border-radius: 0;
+        .layout-root {
+            display: flex;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
         }
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5em;
-            color: #ffd700 !important;
+        .sidebar {
+            width: 80px;
+            background: rgba(30,32,60,0.85);
+            backdrop-filter: blur(12px);
+            box-shadow: 2px 0 24px rgba(30,32,60,0.18);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+            z-index: 100;
+            transition: width 0.2s;
         }
-        .navbar-btn {
-            margin-left: 20px;
+        .sidebar:hover {
+            width: 220px;
         }
-        .admin-sidebar {
-            background: #232526;
-            min-height: 80vh;
-            border-radius: 10px;
-            padding: 20px 10px;
-            color: #fff;
-            margin-top: 20px;
-            box-shadow: 0 2px 8px rgba(44,62,80,0.12);
-        }
-        .admin-sidebar .nav > li > a {
-            color: #fff;
-            font-weight: 500;
-            transition: background 0.2s, color 0.2s;
-        }
-        .admin-sidebar .nav > li.active > a,
-        .admin-sidebar .nav > li > a:hover {
-            background: #ffd700;
-            color: #232526 !important;
-            border-radius: 5px;
-        }
-        .admin-content {
-            background: #fff;
-            border-radius: 10px;
-            margin-top: 20px;
-            padding: 30px 25px;
-            min-height: 80vh;
-            box-shadow: 0 2px 8px rgba(44,62,80,0.07);
-        }
-        .admin-header {
-            margin-bottom: 30px;
+        .sidebar .sidebar-logo {
+            color: #7f5af0;
             font-size: 2em;
             font-weight: bold;
-            color: #232526;
+            padding: 32px 0 24px 0;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: color 0.2s;
+        }
+        .sidebar .sidebar-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            align-items: flex-start;
+            padding-left: 0;
+        }
+        .sidebar .sidebar-nav a {
+            color: #e0e0e0;
+            font-size: 1.3em;
+            font-weight: 500;
+            padding: 14px 0 14px 0;
+            border-radius: 0 24px 24px 0;
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            text-decoration: none;
+            width: 100%;
+            transition: background 0.18s, color 0.18s, padding-left 0.18s;
+            position: relative;
+            padding-left: 0;
+        }
+        .sidebar:hover .sidebar-nav a span {
+            display: inline;
+        }
+        .sidebar .sidebar-nav a span {
+            display: none;
+            font-size: 1em;
+            transition: display 0.2s;
+        }
+        .sidebar:hover .sidebar-nav a {
+            padding-left: 32px;
+        }
+        .sidebar .sidebar-nav a.active,
+        .sidebar .sidebar-nav a:hover {
+            background: linear-gradient(90deg, #7f5af0 0%, #23243a 100%);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 2px 12px #7f5af033;
+        }
+        .sidebar .sidebar-footer {
+            padding: 24px 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .sidebar .sidebar-footer .btn {
+            border-radius: 20px;
+            font-weight: 500;
+            background: rgba(127,90,240,0.12);
+            color: #7f5af0;
+            border: 1px solid #7f5af0;
+            transition: background 0.18s, color 0.18s;
+            box-shadow: 0 1px 8px #7f5af022;
+            width: 80%;
+        }
+        .sidebar .sidebar-footer .btn:hover {
+            background: #7f5af0;
+            color: #fff;
+            border-color: #7f5af0;
+        }
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .topbar {
+            height: 64px;
+            background: rgba(30,32,60,0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            padding: 0 36px;
+            box-shadow: 0 2px 12px #7f5af022;
+            z-index: 10;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid #23243a;
+        }
+        .topbar .topbar-title {
+            color: #7f5af0;
+            font-size: 1.4em;
+            font-weight: bold;
             letter-spacing: 1px;
+            margin-right: 24px;
+        }
+        .topbar .topbar-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+        }
+        .topbar .topbar-actions .btn {
+            border-radius: 16px;
+            font-weight: 500;
+            background: #7f5af0;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            transition: background 0.18s, color 0.18s;
+            box-shadow: 0 1px 8px #7f5af022;
+        }
+        .topbar .topbar-actions .btn:hover {
+            background: #23243a;
+            color: #7f5af0;
+        }
+        .content-area {
+            flex: 1;
+            padding: 40px 40px 32px 40px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: none;
+        }
+        .admin-content {
+            background: rgba(30,32,60,0.85);
+            border-radius: 24px;
+            box-shadow: 0 2px 24px #7f5af033;
+            padding: 36px 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            backdrop-filter: blur(8px);
+        }
+        .admin-header {
+            margin-bottom: 32px;
+            font-size: 2.1em;
+            font-weight: bold;
+            color: #7f5af0;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #7f5af055;
+            padding-bottom: 12px;
         }
         .btn-primary, .btn-success, .btn-danger {
             border-radius: 20px;
-            transition: background 0.2s, color 0.2s;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            font-weight: 500;
+            box-shadow: 0 1px 4px #7f5af022;
+            border: none;
         }
-        .btn-primary:hover, .btn-success:hover, .btn-danger:hover {
-            filter: brightness(0.95);
+        .btn-primary {
+            background: #7f5af0;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #23243a;
+            color: #7f5af0;
+        }
+        .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
         }
         .table {
-            background: #fff;
-            border-radius: 8px;
+            background: rgba(30,32,60,0.85);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(44,62,80,0.05);
+            box-shadow: 0 1px 8px #7f5af022;
+            color: #e0e0e0;
         }
         .table > thead > tr > th {
-            background: #f5f6fa;
-            color: #232526;
+            background: rgba(127,90,240,0.12);
+            color: #7f5af0;
             font-weight: 600;
+            border-bottom: 2px solid #7f5af055;
+        }
+        .form-control {
+            background: rgba(127,90,240,0.10);
+            color: #7f5af0;
+            border: 1px solid #7f5af055;
+            border-radius: 12px;
         }
         .form-control:focus {
-            border-color: #ffd700;
-            box-shadow: 0 0 5px #ffd70033;
+            border-color: #7f5af0;
+            box-shadow: 0 0 5px #7f5af033;
+            background: #23243a;
+            color: #fff;
         }
         .alert {
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 1.1em;
+            box-shadow: 0 1px 8px #7f5af022;
+            background: rgba(127,90,240,0.12);
+            color: #7f5af0;
+            border: 1px solid #7f5af055;
         }
         .fa-crown {
-            color: #ffd700;
-            margin-right: 6px;
-        }
-        /* Custom scrollbar for sidebar */
-        .admin-sidebar {
-            scrollbar-width: thin;
-            scrollbar-color: #ffd700 #232526;
-        }
-        .admin-sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .admin-sidebar::-webkit-scrollbar-thumb {
-            background: #ffd700;
-            border-radius: 4px;
-        }
-        .admin-sidebar::-webkit-scrollbar-track {
-            background: #232526;
+            color: #7f5af0;
+            margin-right: 8px;
         }
         @media (max-width: 991px) {
             .admin-header {
                 font-size: 1.3em;
             }
+            .admin-content {
+                padding: 18px 10px;
+            }
+            .content-area {
+                padding: 18px 10px 10px 10px;
+            }
+            .topbar {
+                padding: 0 10px;
+            }
         }
         @media (max-width: 767px) {
-            .admin-sidebar {
-                min-height: auto;
-                margin-bottom: 20px;
-                border-radius: 6px;
-                padding: 10px 5px;
+            .layout-root {
+                flex-direction: column;
             }
-            .admin-content {
-                min-height: auto;
-                padding: 15px 5px;
-                border-radius: 6px;
+            .sidebar {
+                flex-direction: row;
+                width: 100vw;
+                height: 56px;
+                padding: 0;
+                box-shadow: 0 2px 12px #7f5af022;
             }
-            .navbar-brand {
-                font-size: 1.1em;
+            .sidebar .sidebar-logo {
+                font-size: 1.3em;
+                margin-bottom: 0;
+                margin-right: 18px;
+                padding: 0 12px;
+            }
+            .sidebar .sidebar-nav {
+                flex-direction: row;
+                gap: 8px;
+            }
+            .sidebar .sidebar-nav a {
+                font-size: 1em;
+                padding: 8px 10px;
+                border-radius: 8px;
+            }
+            .sidebar .sidebar-nav a span {
+                display: none !important;
+            }
+            .sidebar .sidebar-footer {
+                padding: 8px;
+                border-top: none;
+                margin-left: auto;
+            }
+            .main-area {
+                margin-left: 0;
+            }
+            .content-area {
+                padding: 12px 3px 3px 3px;
             }
         }
     </style>
-    {% block head_css %}{% endblock %}
-    {% block head %}{% endblock %}
 </head>
+{% endblock %}
+{% block body %}
 <body>
-    <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="{{ url_for('admin.index') }}">
-                    <i class="fas fa-crown"></i> Admin Panel
+    <div class="layout-root">
+        <nav class="sidebar">
+            <div class="sidebar-logo" title="Admin Panel">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="sidebar-nav">
+                <a href="{{ url_for('admin.index') }}" title="Dashboard" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
+                    <i class="fas fa-home"></i> <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary navbar-btn">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                <a href="#" title="Users">
+                    <i class="fas fa-users"></i> <span>Users</span>
+                </a>
+                <a href="#" title="Settings">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
                 </a>
             </div>
-        </div>
-    </nav>
-    <div class="container-fluid">
-        {% block messages %}
-        {% endblock %}
-        <div class="row">
-            <div class="col-sm-3">
-                <div class="admin-sidebar">
-                    {% block menu %}{% endblock %}
+            <div class="sidebar-footer">
+                <a href="{{ url_for('dashboard') }}" class="btn" title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </nav>
+        <div class="main-area">
+            <header class="topbar">
+                <span class="topbar-title">
+                    {% block admin_header %}Admin Panel{% endblock %}
+                </span>
+                <div class="topbar-actions">
+                    <button class="btn"><i class="fas fa-user-circle"></i> Account</button>
+                    <button class="btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
-            </div>
-            <div class="col-sm-9">
+            </header>
+            <main class="content-area">
+                {% block messages %}{% endblock %}
                 <div class="admin-content">
-                    <div class="admin-header">
-                        {% block admin_header %}{% endblock %}
-                    </div>
-                    {% block page_body %}
-                        {% block content %}{% endblock %}
-                    {% endblock %}
+                    {% block content %}{% endblock %}
                 </div>
-            </div>
+            </main>
         </div>
     </div>
     {% block tail %}{% endblock %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
     {% block tail_js %}{% endblock %}
 </body>
+{% endblock %}
 </html>

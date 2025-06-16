@@ -100,7 +100,7 @@
     {% if online_users %}
       <ul id="users-online-list" class="list-inline">
         {% for user in online_users %}
-          <li class="list-inline-item">{{ user.username }}</li>
+          <li class="list-inline-item">{{ user.username }} <br> -</li>
         {% endfor %}
       </ul>
     {% else %}
