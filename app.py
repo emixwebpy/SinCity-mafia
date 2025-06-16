@@ -40,7 +40,22 @@ def update_last_seen():
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
 
-# Modelstestaa -------------------------------
+@app.before_request
+def check_character_alive():
+    if current_user.is_authenticated:
+        char = Character.query.filter_by(master_id=current_user.id).first()
+        if not char or not char.is_alive:
+            if request.endpoint not in ('create_character', 'logout', 'static'):
+                return redirect(url_for('create_character'))
+
+# Models -------------------------------
+class MasterAccount(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    # Relationship to character(s)
+    character = db.relationship('Character', backref='master', uselist=False)
+    
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -57,7 +72,8 @@ class User(db.Model, UserMixin):
     premium_until = db.Column(db.DateTime, nullable=True)
     last_known_ip = db.Column(db.String(45))
     health = db.Column(db.Integer, default=100)
-    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)  # currently equipped gun
+    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
+    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
     def add_xp(self, amount):
         self.xp += amount
@@ -113,6 +129,19 @@ class UserInventory(db.Model):
 
     user = db.relationship('User', backref='inventory')
     item = db.relationship('ShopItem')
+
+class Character(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    master_id = db.Column(db.Integer, db.ForeignKey('master_account.id'), nullable=False)
+    name = db.Column(db.String(32), nullable=False)
+    health = db.Column(db.Integer, default=100)
+    money = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    is_alive = db.Column(db.Boolean, default=True)
+
+class CharacterModelView(ModelView):
+    column_list = ('id', 'name', 'master_id', 'health', 'money', 'level', 'is_alive')
+    form_columns = ('name', 'master_id', 'health', 'money', 'level', 'is_alive')
 # Admin -------------------------------
 
 class UserModelView(ModelView):
@@ -257,11 +286,14 @@ def shop():
 @app.route('/user_stats')
 @login_required
 def user_stats():
-    return jsonify({
-        'money': current_user.money,
-        'xp': current_user.xp,
-        'level': current_user.level
-    })
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        return jsonify(money=0, xp=0, level=1)
+    return jsonify(
+        money=character.money,
+        xp=character.xp,
+        level=character.level
+    )
 
 @app.route('/inventory')
 @login_required
@@ -341,6 +373,29 @@ def login():
         flash('Invalid credentials.')
     return render_template('login.html')
 
+@app.route('/create_character', methods=['GET', 'POST'])
+@login_required
+def create_character():
+    if request.method == 'POST':
+        char_name = request.form.get('character_name', '').strip()
+        if not char_name:
+            flash("Character name is required.", "danger")
+            return render_template('create_character.html')
+        # Optionally check for duplicate names or add more validation here
+        new_char = Character(
+            master_id=current_user.id,
+            name=char_name,
+            health=100,
+            money=0,
+            level=1,
+            is_alive=True
+        )
+        db.session.add(new_char)
+        db.session.commit()
+        flash("New character created!", "success")
+        return redirect(url_for('dashboard'))
+    return render_template('create_character.html')
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -398,11 +453,21 @@ def dashboard():
     online_threshold = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_threshold).all()
     crew = current_user.crew if hasattr(current_user, 'crew') else None
+    # Get the alive character for the logged-in user
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_users = User.query.all()  # however you get this list
+    # Get all character objects for online users in one query
+    user_ids = [user.id for user in online_users]
+    characters = Character.query.filter(Character.master_id.in_(user_ids), Character.is_alive == True).all()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    char_map = {char.master_id: char for char in characters}
     return render_template(
-        'dashboard.html',
+        "dashboard.html",
+        current_character=character,
+        online_users=online_users,
+        char_map=char_map,
         user=current_user,
-        crew=crew,
-        online_users=online_users
+        crew=crew
     )
 
 @app.route('/invite_to_crew', methods=['GET', 'POST'])
@@ -522,21 +587,29 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    cooldown = timedelta(minutes=0, seconds=10)
+    from datetime import datetime, timedelta
+    import random
+    cooldown = timedelta(seconds=10)
     now = datetime.utcnow()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        return jsonify({'success': False, 'message': "No character found."})
 
+    # Use a last_earned field on User for cooldown
     if current_user.last_earned and now - current_user.last_earned < cooldown:
         remaining = cooldown - (now - current_user.last_earned)
         minutes, seconds = divmod(remaining.seconds, 60)
         return jsonify({'success': False, 'message': f"Wait {minutes}m {seconds}s before earning again."})
-    #randomise earned money and xp
-    # For simplicity, let's say you earn a fixed amount 
-    # In a real application, you might want to randomize this
-    # or make it dependent on some game logic   
+
     earned_money = random.randint(200, 2000)
     earned_xp = random.randint(20, 120)
-    current_user.money += earned_money
-    current_user.add_xp(earned_xp)
+    character.money += earned_money
+    character.xp += earned_xp
+    # Level up logic
+    while character.xp >= character.level * 250:
+        character.xp -= character.level * 250
+        character.level += 1
+
     current_user.last_earned = now
     db.session.commit()
     return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP!"})
@@ -583,7 +656,17 @@ def upgrade():
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     crew = Crew.query.get(user.crew_id) if user.crew_id else None
-    return render_template('profile.html', user=user, crew=crew)
+    # Get the character for this user (if using master/character split)
+    character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+    return render_template('profile.html', user=user, crew=crew, character=character)
+
+@app.context_processor
+def inject_current_character():
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        return dict(current_character=character)
+    return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
 
 admin = Admin(
@@ -593,17 +676,21 @@ admin = Admin(
     base_template='admin/dood_base.html'
 )
 
+
+admin.add_view(ModelView(Character, db.session))
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
+admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
 admin.add_view(ModelView(UserInventory, db.session))
 admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
 admin.add_view(ModelView(Crew, db.session))
 admin.add_view(ModelView(CrewMessage, db.session))
 admin.add_view(ModelView(CrewInvitation, db.session))
 
-@app.cli.command('init-db')
+@app.cli.command("init-db")
 def init_db():
+    from app import db
     db.create_all()
-    print("Database initialized.")
+    print("Database tables created.")
     
 @app.cli.command('create-admin')
 def create_admin():

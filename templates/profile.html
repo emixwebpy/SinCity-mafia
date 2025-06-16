@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ user.username }}'s Profile{% endblock %}
+{% block title %}{{ character.name if character else user.username }}'s Profile{% endblock %}
 
 {% block content %}
 <style>
@@ -148,36 +148,37 @@
     <div class="profile-avatar">
         <i class="fas fa-user"></i>
     </div>
-    <h1>{{ user.username }}</h1>
+    {% if character %}
+    <h1>{{ character.name }}</h1>
     <div class="profile-username">
-        @{{ user.username }}
+        @{{ character.name }}
     </div>
     <div class="profile-stats">
         <div class="profile-stat">
             <span class="profile-label">Level</span>
-            {{ user.level }}
+            {{ character.level }}
         </div>
         <div class="profile-stat">
             <span class="profile-label">XP</span>
-            {{ user.xp }}
+            {{ character.xp }}
         </div>
         <div class="profile-stat">
             <span class="profile-label">Wealth</span>
-            {{ money_class(user.money) }}
+            {{ money_class(character.money) }}
         </div>
     </div>
     <div class="profile-stat">
         <span class="profile-label">Health</span>
-        <span class="profile-value">{{ user.health }}</span>
+        <span class="profile-value">{{ character.health }}</span>
     </div>
-    {% if user.gun %}
+    {% if character.gun %}
     <div class="profile-stat">
         <span class="profile-label">Gun</span>
-        <span class="profile-value">{{ user.gun.name }} ({{ user.gun.damage }} dmg)</span>
+        <span class="profile-value">{{ character.gun.name }} ({{ character.gun.damage }} dmg)</span>
     </div>
     {% endif %}
-    {% if current_user.is_authenticated and current_user.username != user.username and current_user.gun %}
-    <form action="{{ url_for('kill', username=user.username) }}" method="post" style="margin-top:18px;">
+    {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
+    <form action="{{ url_for('kill', username=character.name) }}" method="post" style="margin-top:18px;">
         <button type="submit" class="btn btn-danger">Shoot</button>
     </form>
     {% endif %}
@@ -189,10 +190,15 @@
             {{ crew.name }}
         </a>
     </div>
-{% endif %}
-    {% if user.premium %}
+    {% endif %}
+    {% if character.premium %}
     <div class="profile-premium">
         <i class="fas fa-crown"></i> Premium Member
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-warning" style="margin: 40px auto; max-width: 500px;">
+        This user does not have a character yet.
     </div>
     {% endif %}
 </div>
