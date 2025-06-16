@@ -4,7 +4,8 @@
 {% block content %}
 <style>
 .profile-container {
-    max-width: 1100px; /* wider container */
+    width: 90%;
+    max-width: 960px;
     margin: 48px auto 0 auto;
     background: rgba(25, 25, 40, 0.98);
     border-radius: 28px;
@@ -17,10 +18,13 @@
     position: relative;
     overflow: hidden;
 }
-/* .profile-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
+
+.profile-img {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    border-radius: 12%;
     background: linear-gradient(135deg, #8be9fd 60%, #23243a 100%);
     display: flex;
     align-items: center;
@@ -30,7 +34,8 @@
     font-size: 2.8em;
     color: #23243a;
     border: 3px solid #8be9fd;
-} */
+}
+
 .profile-container h1 {
     color: #8be9fd;
     font-size: 1.7em;
@@ -39,21 +44,8 @@
     font-family: 'Oswald', 'Cinzel', serif;
     letter-spacing: 1px;
 }
+
 .profile-username {
-    font-size: 1.15em;
-    color: #b8b8ff;
-    font-weight: 600;
-    margin-bottom: 18px;
-    letter-spacing: 0.5px;
-}
-.profile-stats {
-    margin: 24px 0 18px 0;
-    display: flex;
-    flex-wrap: wrap; /* allow wrapping to next line */
-    justify-content: space-between;
-    gap: 50px;
-}
-.profile-stat {
     background: rgba(139,233,253,0.08);
     border-radius: 16px;
     padding: 18px 0 12px 0;
@@ -62,38 +54,48 @@
     font-weight: 500;
     box-shadow: 0 1px 8px #8be9fd22;
     border: 1px solid #8be9fd22;
-    flex: 1 1 calc(25% - 12px); /* allow up to 4 items per row with gaps */
-    min-width: 140px;
-    max-width: 200px;
-    min-height: 20px;
-    max-height: 45px;
+    margin-bottom: 12px;
+}
+
+.profile-stats {
+    margin: 24px 0 18px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
     gap: 20px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 20px;
-    padding-right: 20px;
-    display: inline-flex;    
+}
+
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 16px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 8px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    flex: 1 1 calc(45% - 12px);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
     transition: box-shadow 0.18s, transform 0.18s;
 }
-.profile-stat:hover {
-    box-shadow: 0 4px 16px #8be9fd55;
-    transform: translateY(-2px) scale(1.04);
-}
+
 .profile-label {
     color: #8be9fd;
     font-size: 0.92em;
     font-weight: 700;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     letter-spacing: 0.5px;
 }
+
 .profile-value {
     font-size: 1.25em;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 0;
-    
 }
+
 .profile-wealth {
     font-size: 1.08em;
     font-weight: 700;
@@ -103,11 +105,24 @@
     margin-top: 4px;
     display: inline-block;
 }
+
 .profile-wealth-poor { background: #23243a; color: #8be9fd; }
 .profile-wealth-working { background: #3a3a5a; color: #8be9fd; }
 .profile-wealth-middle { background: #8be9fd; color: #23243a; }
 .profile-wealth-rich { background: #ffd700; color: #23243a; }
-.profile-wealth-elite { background: linear-gradient(90deg, #ffd700 60%, #8be9fd 100%); color: #23243a; }
+.profile-wealth-elite {
+    background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%);
+    color: #1d1d1d;
+}
+.profile-wealth-platinum {
+    background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%);
+    color: #1d1d1d;
+}
+.profile-wealth-billionair {
+    background: linear-gradient(90deg, #ffd700 50%, #8bcafd 100%);
+    color: #1d1d1d;
+}
+
 .profile-crew {
     margin-top: 18px;
     color: #b8b8ff;
@@ -115,6 +130,7 @@
     font-weight: 600;
     letter-spacing: 0.5px;
 }
+
 .profile-premium {
     margin-top: 18px;
     color: #ffd700;
@@ -123,78 +139,103 @@
     letter-spacing: 1px;
 }
 
-@media (max-width: 600px) {
+/* -------------------- RESPONSIVE -------------------- */
+
+@media (max-width: 768px) {
     .profile-container {
-        padding: 18px 4vw 16px 4vw;
-        margin: 18px 0 0 0;
+        padding: 20px;
     }
+
     .profile-stats {
         flex-direction: column;
-        gap: 10px;
+        align-items: center;
     }
+
     .profile-stat {
-        margin: 0;
-        min-width: 0;
+        flex: 1 1 100%;
+        width: 100%;
     }
 }
 
 @media (max-width: 480px) {
-    .profile-stats {
-        flex-direction: column;
+    .profile-img {
+        width: 80%;
     }
+
     .profile-stat {
-        flex: 1 1 100%;
+        font-size: 1em;
+        padding: 10px;
+    }
+
+    .profile-container h1 {
+        font-size: 1.3em;
     }
 }
+
 </style>
 
 {% macro money_class(money) -%}
-    {%- if money < 1000 -%}
+    {%- if character.money < 1000 -%}
         <span class="profile-wealth profile-wealth-poor">Poor</span>
-    {%- elif money < 10000 -%}
-        <span class="profile-wealth profile-wealth-working">Working Class</span>
-    {%- elif money < 100000 -%}
-        <span class="profile-wealth profile-wealth-middle">Middle Class</span>
-    {%- elif money < 1000000 -%}
+    {%- elif character.money < 10000 -%}
+        <span class="profile-wealth profile-wealth-working">Working</span>
+    {%- elif character.money < 100000 -%}
+        <span class="profile-wealth profile-wealth-middle">Middle</span>
+    {%- elif character.money < 1000000 -%}
         <span class="profile-wealth profile-wealth-rich">Rich</span>
-    {%- else -%}
+    {%- elif character.money < 10000000 -%}
         <span class="profile-wealth profile-wealth-elite">Elite</span>
+    {%- elif character.money < 100000000 -%}
+        <span class="profile-wealth profile-wealth-platinum">Platinum</span>
+    {%- elif character.money > 1000000000 -%}
+        <span class="profile-wealth profile-wealth-billionair">Billionair</span>
     {%- endif -%}
 {%- endmacro %}
 
 <div class="profile-container">
-    {% if character.profile_image %}
-    <img src="{{ url_for('static', filename=character.profile_image) }}" alt="Profile Im
-    " class="profile-img" style="max-width:120px;max-height:120px;border-radius:50%;">
+    {% if current_user.username == user.username %}
+    <div style="text-align: right; margin-bottom: 12px;">
+        <a href="{{ url_for('upload_profile_image') }}" class="btn btn-sm"
+        style="background: #8be9fd; color: #23243a; font-weight: 600; border-radius: 10px; 
+                    padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-upload"></i>
+         Upload Image
+        </a>
+    </div>
     {% endif %}
-    <a href="{{ url_for('upload_profile_image') }}" class="btn"><i class="fas fa-plus"></i> upload image</a>
+    {% if character.profile_image %}
+    <img src="{{ url_for('static', filename=character.profile_image) }}" class="profile-img" style="max-width:240px;max-height:340px;border-radius:12%;">
+    {% endif %}
+    
     
     
     {% if character %}
-    <h1>{{ character.name }}</h1>
-    <div class="profile-username">
-        @{{ character.name }}
+    <div  class="profile-username">
+        <h1>Name: &nbsp<strong>{{ character.name }}</strong></h1>
     </div>
+    
     <div class="profile-stats">
         <div class="profile-stat">
             <span class="profile-label">Level:&nbsp </span>
             {{ character.level }}
         </div>
-        {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
-        <div class="profile-stat">
-            <span class="profile-label">XP:&nbsp </span>
-            {{ character.xp }}
-        </div>
-        {% endif %}
+        
         <div class="profile-stat">
             <span class="profile-label">Wealth:&nbsp </span>
-            {{ money_class(character.money) }}
+            {{ money_class(character.money)|safe }}
         </div>
     </div>
     <div class="profile-stat">
         <span class="profile-label">Health: &nbsp</span>
         <span class="profile-value">{{ character.health }}</span>
+        
     </div>
+    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+        <div class="profile-stat">
+            <span class="profile-label">XP:&nbsp </span>
+            {{ character.xp }}
+        </div>
+        {% endif %}
     {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
     <div class="profile-stat">
         <span class="profile-label">Kills: &nbsp</span>

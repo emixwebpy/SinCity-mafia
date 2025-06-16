@@ -386,9 +386,9 @@ def player_search():
         query = request.form.get('query', '').strip()
         if query:
             # Exclude self from results
-            results = User.query.filter(
+            results = Character.query.filter(
                 User.username.ilike(f"%{query}%"),
-                User.id != current_user.id
+                User.id != User.id
             ).all()
     return render_template('player_search.html', results=results, query=query)
 
@@ -580,6 +580,11 @@ def invite_to_crew():
 @app.route('/upload_profile_image', methods=['GET', 'POST'])
 @login_required
 def upload_profile_image():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("You don't have permission to upload a profile image.", "danger")
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
         file = request.files.get('profile_image')
         if file and allowed_file(file.filename):
@@ -588,16 +593,15 @@ def upload_profile_image():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
 
-            character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-            if character:
-                character.profile_image = f'uploads/{filename}'
-                db.session.commit()
+            character.profile_image = f'uploads/{filename}'
+            db.session.commit()
 
             flash('Profile image updated!', 'success')
             return redirect(url_for('profile', username=current_user.username))
         else:
             flash('Invalid file type.', 'danger')
     return render_template('upload_profile_image.html')
+
 
 @app.route('/crew_messages')
 @login_required
@@ -746,11 +750,14 @@ def user_stats():
 @app.route('/earn_status')
 @login_required
 def earn_status():
-    cooldown = timedelta(minutes=2, seconds=30)
-    now = datetime.utcnow()
+    cooldown = timedelta(minutes=2, seconds=30)  # adjust to your cooldown setting
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
 
-    if current_user.last_earned:
-        elapsed = now - current_user.last_earned
+    if not character:
+        return jsonify({'seconds_remaining': 0})
+
+    if character.last_earned:
+        elapsed = datetime.utcnow() - character.last_earned
         remaining = cooldown - elapsed
         seconds_remaining = max(0, int(remaining.total_seconds()))
     else:
@@ -762,23 +769,34 @@ def earn_status():
 @login_required
 def upgrade():
     PREMIUM_COST = 1500000
-    PREMIUM_DAYS = 30  # Set how many days premium lasts
-
+    PREMIUM_DAYS = 30
     now = datetime.utcnow()
-    # If already premium, extend time
+
+    # Get the active character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("You must have a character to upgrade to premium.", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Check if character has enough money
+    if character.money < PREMIUM_COST:
+        flash(f'You need at least ${PREMIUM_COST} to upgrade to premium.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Deduct money from character
+    character.money -= PREMIUM_COST
+
+    # Update user's premium status
     if current_user.premium_until and current_user.premium_until > now:
         current_user.premium_until += timedelta(days=PREMIUM_DAYS)
     else:
         current_user.premium_until = now + timedelta(days=PREMIUM_DAYS)
         current_user.premium = True
 
-    if current_user.money < PREMIUM_COST:
-        flash(f'You need at least ${PREMIUM_COST} to upgrade to premium.', 'danger')
-        return redirect(url_for('dashboard'))
-    current_user.money -= PREMIUM_COST
     db.session.commit()
     flash(f'Your account has been upgraded to premium for {PREMIUM_DAYS} days for ${PREMIUM_COST}!', 'success')
     return redirect(url_for('dashboard'))
+
 
 @app.route('/profile/<username>')
 def profile(username):
@@ -843,25 +861,32 @@ def create_admin():
 
 
 @app.route('/create_fake_profile', methods=['GET', 'POST'])
+@login_required
 def create_fake_profile():
-    npc_price = 150000  # Set the price for creating an NPC
+    npc_price = 150000  # Cost to create a fake NPC profile
 
     if request.method == 'POST':
-        npc_name = request.form.get('npc_name')
+        npc_name = request.form.get('npc_name', '').strip()
+
         if not npc_name:
             flash("NPC name is required.", "danger")
             return redirect(url_for('create_fake_profile'))
 
-        # Check if user has enough money
+        # Check if the player has a character
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-        if not character or character.money < npc_price:
+        if not character:
+            flash("You must have a character to create a fake profile.", "danger")
+            return redirect(url_for('create_fake_profile'))
+
+        # Check if they have enough money
+        if character.money < npc_price:
             flash("Not enough money to create a fake profile.", "danger")
             return redirect(url_for('create_fake_profile'))
 
-        # Deduct money and create NPC
+        # Deduct the cost and create the fake profile
         character.money -= npc_price
         npc = Character(
-            master_id=0,
+            master_id=0,  # 0 = NPC
             name=npc_name,
             money=500,  # Starting money for NPC
             xp=0,
@@ -871,12 +896,12 @@ def create_fake_profile():
         )
         db.session.add(npc)
         db.session.commit()
-        flash(f"Fake profile '{npc_name}' created!", "success")
+
+        flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
         return redirect(url_for('dashboard'))
 
-    # Render the form for GET requests
+    # For GET requests, show the creation form
     return render_template('create_npc.html', npc_price=npc_price)
-
 def get_online_users():
     cutoff = datetime.utcnow() - timedelta(minutes=5)
     # Real users online

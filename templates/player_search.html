@@ -1,34 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Player Search{% endblock %}
+
 {% block content %}
-<div class="inventory-container" style="max-width:500px;">
-    <div class="inventory-title"><i class="fas fa-search"></i> Search for Players</div>
-    <form method="post" class="mb-3">
-        <input type="text" name="query" value="{{ query }}" class="form-control" placeholder="Enter username..." required>
-        <button type="submit" class="btn btn-primary mt-2">Search</button>
+<div class="search-container" style="
+    max-width: 720px;
+    margin: 48px auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 24px;
+    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+    padding: 32px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+">
+    <h2 style="color: #8be9fd; font-family: 'Oswald', sans-serif; font-weight: 800; margin-bottom: 18px;">
+        <i class="fas fa-search"></i> Search for Players
+    </h2>
+
+    <form method="post" class="mb-4">
+        <input type="text" name="query" value="{{ query }}" class="form-control"
+               placeholder="Enter username..." required
+               style="padding: 12px; border-radius: 10px; border: none; outline: none; width: 100%; background: #1c1d2f; color: #f5f6fa; font-size: 1.1em;">
+        <button type="submit" class="btn btn-primary mt-3"
+                style="padding: 10px 20px; background: #8be9fd; color: #23243a; border: none; font-weight: 700; border-radius: 10px;">
+            Search
+        </button>
     </form>
+
     {% if results %}
-        <ul class="inventory-list">
-        {% for user in results %}
-            <li class="inventory-item" style="display:flex;align-items:center;justify-content:space-between;">
-                <div>
-                    <a href="{{ url_for('profile', username=user.username) }}" style="color:#8be9fd;font-weight:700;">{{ user.username }}</a>
-                    <span style="color:#b8b8ff;">(Level {{ user.level }}, Health: {{ user.health }})</span>
+        <ul class="player-list" style="list-style: none; padding: 0; margin-top: 20px;">
+            {% for user in results %}
+            <li class="player-item" style="
+                background: #2a2b3d;
+                padding: 14px 20px;
+                margin-bottom: 12px;
+                border-radius: 14px;
+                box-shadow: 0 1px 8px #8be9fd22;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 1.05em;">
+                <div style="text-align: left;">
+                    <a href="{{ url_for('profile', username=user.username) }}" style="color:#8be9fd; font-weight: 700;">
+                        {{ user.username }}
+                    </a>
+                    <div style="color:#b8b8ff; font-size: 0.95em;">
+                        Level {{ user.level }}, Health: {{ user.health }}
+                    </div>
                 </div>
-                {% if current_user.gun_id and user.health > 0 %}
-                <form action="{{ url_for('kill', username=user.username) }}" method="post" style="margin:0;">
-                    <button type="submit" class="btn btn-danger btn-sm">Shoot</button>
-                </form>
-                {% elif user.health <= 0 %}
-                    <span style="color:#c00;font-size:0.95em;">Dead</span>
-                {% else %}
-                    <span style="color:#888;font-size:0.95em;">No gun</span>
-                {% endif %}
+
+                <div>
+                    {% if current_user.gun_id and user.health > 0 %}
+                        <form action="{{ url_for('kill', username=user.username) }}" method="post" style="margin:0;">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    style="padding: 6px 14px; border-radius: 8px; font-weight: 600;">Shoot</button>
+                        </form>
+                    {% elif user.health <= 0 %}
+                        <span style="color:#ff5e5e; font-weight: 600;">Dead</span>
+                    {% else %}
+                        <span style="color:#888; font-weight: 600;">No gun</span>
+                    {% endif %}
+                </div>
             </li>
-        {% endfor %}
+            {% endfor %}
         </ul>
     {% elif query %}
-        <div class="inventory-empty">No players found.</div>
+        <div style="color:#888; margin-top: 16px;">No players found.</div>
     {% endif %}
 </div>
 {% endblock %}
