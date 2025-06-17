@@ -42,8 +42,8 @@
                 </form>
                 <div class="text-center my-4">
                     <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()">
-                         Earn <i><span id="earn-timer"></i></span>
-                          </button>
+                      Earn <span id="earn-timer"></span>
+                    </button>
                           {% if current_user.gun %}
                             <div class="npc-create-container" style="
                           width: 600px;
@@ -131,58 +131,74 @@
 
 <script>
 // ---------------- Earn Button Timer ----------------
-let earnTimerInterval = null; // global to track and clear the countdown
+let earnTimerInterval = null;
 
 async function updateEarnButton() {
-  const res = await fetch('/earn_status');
-  const data = await res.json();
   const btn = document.getElementById('earn-btn');
   const timerSpan = document.getElementById('earn-timer');
 
-  if (earnTimerInterval) {
-    clearInterval(earnTimerInterval);
-    earnTimerInterval = null;
-  }
+  try {
+    const res = await fetch('/earn_status');
+    const data = await res.json();
 
-  if (data.seconds_remaining > 0) {
-    btn.disabled = true;
-    let seconds = data.seconds_remaining;
+    if (earnTimerInterval) {
+      clearInterval(earnTimerInterval);
+      earnTimerInterval = null;
+    }
 
-    earnTimerInterval = setInterval(() => {
-      if (seconds <= 0) {
-        clearInterval(earnTimerInterval);
-        earnTimerInterval = null;
-        btn.disabled = false;
-        timerSpan.textContent = '';
-      } else {
-        let min = Math.floor(seconds / 60);
-        let sec = seconds % 60;
-        timerSpan.textContent = ` (Wait ${min}:${sec.toString().padStart(2, '0')})`;
-        seconds--;
-      }
-    }, 1000); // Update every second
-  } else {
-    btn.disabled = false;
-    timerSpan.textContent = '';
+    if (data.seconds_remaining > 0) {
+      btn.disabled = true;
+      let seconds = data.seconds_remaining;
+
+      earnTimerInterval = setInterval(() => {
+        if (seconds <= 0) {
+          clearInterval(earnTimerInterval);
+          earnTimerInterval = null;
+          btn.disabled = false;
+          timerSpan.textContent = '';
+        } else {
+          let min = Math.floor(seconds / 60);
+          let sec = seconds % 60;
+          timerSpan.textContent = ` (Wait ${min}:${sec.toString().padStart(2, '0')})`;
+          seconds--;
+        }
+      }, 1000);
+    } else {
+      btn.disabled = false;
+      timerSpan.textContent = '';
+    }
+  } catch (err) {
+    console.error("Error updating earn button:", err);
   }
 }
-
-updateEarnButton();
-setInterval(updateEarnButton, 15000); // Update every 15 seconds
 
 async function earn() {
-  const res = await fetch('/earn');
-  const data = await res.json();
+  try {
+    const res = await fetch('/earn');
+    const data = await res.json();
 
-  if (data.success) {
-    const statsRes = await fetch('/user_stats');
-    const stats = await statsRes.json();
-    document.getElementById('money').textContent = stats.money;
-    document.getElementById('xp').textContent = stats.xp;
-    document.getElementById('level').textContent = stats.level;
+    if (data.success) {
+      const statsRes = await fetch('/user_stats');
+      const stats = await statsRes.json();
+      document.getElementById('money').textContent = stats.money;
+      document.getElementById('xp').textContent = stats.xp;
+      document.getElementById('level').textContent = stats.level;
+
+      if (data.message) alert(data.message);
+    } else if (data.message) {
+      alert(data.message);
+    }
+
+    updateEarnButton();
+  } catch (err) {
+    console.error("Earn failed:", err);
   }
-  updateEarnButton();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateEarnButton();
+  setInterval(updateEarnButton, 15000);
+});
 
 // ---------------- Floating Chat ----------------
 // document.addEventListener('DOMContentLoaded', () => {

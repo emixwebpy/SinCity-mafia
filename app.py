@@ -815,7 +815,8 @@ def earn():
 
             reward_msg += f" You also received a {starter.name} for your streak!"
             character.earn_streak = 0
-            db.session.commit()
+            
+    db.session.commit()
     return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP {reward_msg}" })
 
 @app.route('/user_stats')
@@ -833,22 +834,20 @@ def user_stats():
 @app.route('/earn_status')
 @login_required
 def earn_status():
-    cooldown = timedelta(minutes=2, seconds=30)  # adjust to your cooldown setting
+    cooldown = timedelta(minutes=2, seconds=10)
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
 
     if not character:
-        return jsonify({ 'seconds_remaining': 0})
+        return jsonify({'seconds_remaining': 0})
 
     if character.last_earned:
         elapsed = datetime.utcnow() - character.last_earned
         remaining = cooldown - elapsed
-        minutes_remaining = max(0, int(remaining.total_seconds() // 60))
         seconds_remaining = max(0, int(remaining.total_seconds()))
     else:
-        minutes_remaining = 0
         seconds_remaining = 0
 
-    return jsonify({'minutes_remaining': minutes_remaining, 'seconds_remaining': seconds_remaining })
+    return jsonify({'seconds_remaining': seconds_remaining})
 
 @app.route('/upgrade', methods=['POST'])
 @login_required

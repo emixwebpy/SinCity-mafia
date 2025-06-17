@@ -343,7 +343,7 @@
     box-sizing: border-box;
   }
   .topbar {
-    height: 44px;
+    height: 55px;
     background: rgba(25, 25, 40, 0.98);
     display: flex;
     align-items: center;
@@ -357,8 +357,11 @@
     font-size: 1em;
   }
   .topbar .topbar-title {
+    height: 55px;
+    align-items: center ;
+    text-align: center;
     color: #8be9fd;
-    font-size: 1.1em;
+    font-size: 18px;
     font-weight: 900;
     letter-spacing: 1px;
     margin-right: 12px;
@@ -430,7 +433,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px #8be9fd33;
     padding: 14px 10px;
-    min-width: 80px;
+    min-width: 160px;
     flex: 1 1 80px;
     text-align: center;
     margin: 0 0 8px 0;
@@ -637,7 +640,7 @@
   }
 
     .dashboard-cards { gap: 6px; }
-    .dashboard-card { min-width: 60px; padding: 8px 2px; font-size: 0.85em; max-width: 80px; }
+    .dashboard-card { min-width: 160px; padding: 8px 2px; font-size: 0.85em; max-width: 80px; }
   }
   @media (max-width: 767px) {
     html, body { font-size: 12px; }
@@ -662,6 +665,7 @@
     .content-area { padding: 2vw 1vw 1vw 1vw; min-height: 0; height: auto; }
     .dashboard-cards { flex-direction: column; gap: 4px; align-items: stretch; }
     .dashboard-card { min-width: 0; max-width: 100vw; width: 100%; padding: 4px 2px; font-size: 0.85em; }
+    
     
     #floating-chat {
     width: 92vw;
@@ -702,11 +706,16 @@
     font-size: 0.9em;
     padding: 4px 0;
   }
+  .d-none {
+  display: none !important;
+  }
+  
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
   <div class="layout-root">
+    <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
     <nav class="sidebar">
       <div class="sidebar-header">
         <i class="fas fa-crown"></i>
@@ -719,6 +728,7 @@
           </a>
       </div>
       {% endif %}
+
       <div class="sidebar-nav">
         <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
           <i class="fas fa-home"></i> <span>Dashboard</span>
@@ -744,6 +754,7 @@
         {% endif %}
       </div>
     </nav>
+    </div>
     <div class="main-area">
       <header class="topbar">
         <span class="topbar-title">
@@ -807,6 +818,9 @@
   {% block extra_body %}{% endblock %}
 </body>
 <script >
+  src="{{ url_for('static', filename='js/earn.js') }}"
+
+
   function toggleChat() {
   const chat = document.getElementById('floating-chat');
   const isVisible = chat.style.display !== 'none';
