@@ -103,19 +103,40 @@
   <h1><i class="fas fa-users"></i> {{ crew.name }}</h1>
   
   <h2>Members</h2>
-  <ul class="crew-members-list">
-    {% for member in members %}
-      <li>
-        <strong>
-          <a href="{{ url_for('profile', username=member.username) }}" style="color:#8be9fd; text-decoration:underline;">
-            {{ member.username }}
-          </a>
-        </strong><br>
-        <span style="color:#8be9fd;">Level {{ member.level }}</span>
-        <span style="color:#b8b8ff;">&nbsp;•&nbsp;${{ member.money }}</span>
-      </li>
-    {% endfor %}
-  </ul>
+  <ul class="crew-members">
+  {% for member in members %}
+  <div style="margin-bottom: 12px;">
+    {% if member.user %}
+      <strong>{{ member.user.username }}</strong>
+
+      {% if member.role == 'leader' %}
+        <span class="badge-role badge-leader">Leader</span>
+      {% elif member.role == 'right_hand' %}
+        <span class="badge-role badge-right">Right-Hand</span>
+      {% elif member.role == 'left_hand' %}
+        <span class="badge-role badge-left">Left-Hand</span>
+      {% else %}
+        <span class="badge-role badge-member">Member</span>
+      {% endif %}
+
+      {% if current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
+        <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" style="display:inline; margin-left: 8px;">
+          <select name="new_role">
+            <option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option>
+            <option value="left_hand" {% if member.role == 'left_hand' %}selected{% endif %}>Left-Hand</option>
+            <option value="right_hand" {% if member.role == 'right_hand' %}selected{% endif %}>Right-Hand</option>
+            {% if current_user_role == 'leader' %}
+              <option value="leader" {% if member.role == 'leader' %}selected{% endif %}>Leader</option>
+            {% endif %}
+          </select>
+          <button type="submit">Update</button>
+        </form>
+      {% endif %}
+    {% else %}
+      ⚠️ Unknown user (ID {{ member.user_id }})
+    {% endif %}
+  </div>
+{% endfor %}
 
   {% if current_user.crew_id == crew.id %}
     <div class="back">

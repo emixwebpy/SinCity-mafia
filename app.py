@@ -56,6 +56,12 @@ def update_last_seen():
         db.session.commit()
 
 @app.before_request
+def enable_sqlite_fk():
+    if db.engine.url.drivername == 'sqlite':
+        with db.engine.connect() as conn:
+            conn.execute(db.text("PRAGMA foreign_keys=ON"))
+
+@app.before_request
 def check_character_alive():
     if current_user.is_authenticated:
         char = Character.query.filter_by(master_id=current_user.id).first()
@@ -64,13 +70,7 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Models -------------------------------
-class MasterAccount(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    # Relationship to character(s)
-    character = db.relationship('Character', backref='master', uselist=False)
-    
+
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -109,11 +109,13 @@ class User(db.Model, UserMixin):
 class CrewMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     role = db.Column(db.String(20), default='member')  # leader, right_hand, left_hand, member
 
     crew = db.relationship('Crew', backref='crew_members')
-    user = db.relationship('User', backref='crew_membership')
+    
+    
+    user = db.relationship('User', backref='crew_roles')
 
 class UserEditForm(SecureForm):
     username = StringField('Username')
@@ -159,7 +161,7 @@ class UserInventory(db.Model):
 
 class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    master_id = db.Column(db.Integer, db.ForeignKey('master_account.id'), nullable=False)
+    master_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(32), nullable=False)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=0)
@@ -257,13 +259,57 @@ def load_user(user_id):
 def home():
     return redirect(url_for('dashboard'))
 
+@app.route('/fix_crew_members')
+def fix_crew_members():
+    users = {u.id for u in User.query.all()}
+    broken = CrewMember.query.filter(~CrewMember.user_id.in_(users)).all()
+
+    for b in broken:
+        db.session.delete(b)
+
+    db.session.commit()
+    return f"Removed {len(broken)} broken crew member entries."
+
 @app.route('/crew/<int:crew_id>')
 @login_required
 def crew_page(crew_id):
     crew = Crew.query.get_or_404(crew_id)
     members = CrewMember.query.filter_by(crew_id=crew.id).all()
     messages = CrewMessage.query.filter_by(crew_id=crew.id).order_by(CrewMessage.timestamp.desc()).limit(50).all()
-    return render_template('crew_page.html', crew=crew, members=members, messages=messages)
+    my_role = next((m.role for m in members if m.user_id == current_user.id), None)
+    return render_template('crew_page.html', crew=crew, members=members, messages=messages, current_user_role=my_role)
+
+@app.route('/crew_member/<int:crew_member_id>/update_role', methods=['POST'])
+@login_required
+def update_crew_role(crew_member_id):
+    crew_member = CrewMember.query.get_or_404(crew_member_id)
+    target_user_id = crew_member.user_id
+    target_crew_id = crew_member.crew_id
+
+    # Get current user's role in the crew
+    my_role_entry = CrewMember.query.filter_by(user_id=current_user.id, crew_id=target_crew_id).first()
+    if not my_role_entry or my_role_entry.role not in ['leader', 'right_hand', 'left_hand']:
+        flash("You don't have permission to change roles.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+
+    new_role = request.form.get('new_role')
+
+    # 🚫 Prevent non-leaders from assigning the leader role
+    if new_role == 'leader' and my_role_entry.role != 'leader':
+        flash("Only leaders can assign the leader role.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+
+    # 🚫 Prevent users from changing their own role
+    if current_user.id == target_user_id:
+        flash("You cannot change your own role.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+
+    # Apply update
+    crew_member.role = new_role
+    db.session.commit()
+    flash("Role updated.", "success")
+    return redirect(url_for('crew_page', crew_id=target_crew_id))
+
 
 @app.route('/kill/<username>', methods=['POST'])
 @login_required
@@ -373,10 +419,10 @@ def inventory():
         flash(f"Sold 1x {item.name} for ${sell_price}.", "success")
         return redirect(url_for('inventory'))
 
-    equipped_gun = current_user.gun
+    
     inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
 
-    return render_template('inventory.html', inventory_items=inventory_items, equipped_gun=equipped_gun)
+    return render_template('inventory.html', inventory_items=inventory_items, character=character)
 
 
 @app.route('/users_online')
@@ -733,28 +779,44 @@ def earn():
         character.xp -= character.level * 250
         character.level += 1
 
-    # Streak and reward
+    # Streak and item reward
     character.earn_streak = (character.earn_streak or 0) + 1
     reward_msg = ""
-    if character.earn_streak >= 1:
-        gun = ShopItem.query.filter_by(name='Starter Pistol').first()
-        if gun:
-            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=gun.id).first()
+
+    # 🎲 Chance to find a random item (20% chance)
+    if random.random() < 0.2:
+        possible_items = ShopItem.query.filter(ShopItem.stock > 0).all()
+        if possible_items:
+            found_item = random.choice(possible_items)
+            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=found_item.id).first()
             if inventory:
                 inventory.quantity += 1
             else:
-                db.session.add(UserInventory(user_id=current_user.id, item_id=gun.id, quantity=1))
+                db.session.add(UserInventory(user_id=current_user.id, item_id=found_item.id, quantity=1))
+
+            # Optional: auto-equip if it's a gun and player has none
+            if found_item.is_gun and not character.gun_id:
+                character.gun_id = found_item.id
+
+            reward_msg = f" You found a {found_item.name}!"
+
+    # 🔁 Reset streak every 3 earns, and guarantee a Starter Pistol
+    if character.earn_streak >= 30:
+        starter = ShopItem.query.filter_by(name='Starter Pistol').first()
+        if starter:
+            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=starter.id).first()
+            if inventory:
+                inventory.quantity += 1
+            else:
+                db.session.add(UserInventory(user_id=current_user.id, item_id=starter.id, quantity=1))
+
             if not character.gun_id:
-                character.gun_id = gun.id
-            reward_msg = f" You received a {gun.name}!"
-        character.earn_streak = 0
+                character.gun_id = starter.id
 
-    db.session.commit()
-    return jsonify({
-        'success': True,
-        'message': f"You earned ${earned_money} and {earned_xp} XP!{reward_msg}"
-    })
-
+            reward_msg += f" You also received a {starter.name} for your streak!"
+            character.earn_streak = 0
+            db.session.commit()
+    return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP {reward_msg}" })
 
 @app.route('/user_stats')
 @login_required
@@ -775,16 +837,18 @@ def earn_status():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
 
     if not character:
-        return jsonify({'seconds_remaining': 0})
+        return jsonify({ 'seconds_remaining': 0})
 
     if character.last_earned:
         elapsed = datetime.utcnow() - character.last_earned
         remaining = cooldown - elapsed
+        minutes_remaining = max(0, int(remaining.total_seconds() // 60))
         seconds_remaining = max(0, int(remaining.total_seconds()))
     else:
+        minutes_remaining = 0
         seconds_remaining = 0
 
-    return jsonify({'seconds_remaining': seconds_remaining})
+    return jsonify({'minutes_remaining': minutes_remaining, 'seconds_remaining': seconds_remaining })
 
 @app.route('/upgrade', methods=['POST'])
 @login_required

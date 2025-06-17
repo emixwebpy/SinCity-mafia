@@ -27,7 +27,7 @@
     border-radius: 12%;
     background: linear-gradient(135deg, #8be9fd 60%, #23243a 100%);
     display: flex;
-    align-items: center;
+    align-items: left;
     justify-content: center;
     margin: 0 auto 18px auto;
     box-shadow: 0 2px 16px #8be9fd33;
@@ -63,6 +63,7 @@
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 20px;
+    padding-bottom: 50px;
 }
 
 .profile-stat {
@@ -197,6 +198,15 @@
     {% if character.profile_image %}
     <img src="{{ url_for('static', filename=character.profile_image) }}" class="profile-img" style="max-width:240px;max-height:340px;border-radius:12%;">
     {% endif %}
+    {% if crew %}
+    <div style="padding-bottom: 20px;" class="profile-crew">
+        <i class="fas fa-users"></i>
+        Crew:
+        <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color:#8be9fd; font-weight:700;">
+            {{ crew.name }}
+        </a>
+    </div>
+    {% endif %}
     
     
     
@@ -244,15 +254,7 @@
         <button type="submit" class="btn btn-danger">Shoot</button>
     </form>
     {% endif %}
-    {% if crew %}
-    <div class="profile-crew">
-        <i class="fas fa-users"></i>
-        Crew:
-        <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color:#8be9fd; font-weight:700;">
-            {{ crew.name }}
-        </a>
-    </div>
-    {% endif %}
+    
     {% if character.premium %}
     <div class="profile-premium">
         <i class="fas fa-crown"></i> Premium Member

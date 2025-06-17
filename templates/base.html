@@ -24,6 +24,222 @@
     width: 100vw;
     box-sizing: border-box;
   }
+  .shop-container {
+    width: 50%;
+    max-width: 100%;
+    margin: 36px auto 0 auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 22px;
+    box-shadow: 0 4px 24px #8be9fd33, 0 1.5px 0 #8be9fd22 inset;
+    padding: 32px 32px 24px 32px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+@media (max-width: 900px) {
+    .shop-container {
+        max-width: 98vw;
+        padding: 18px 2vw 14px 2vw;
+    }
+}
+@media (max-width: 600px) {
+    .shop-container {
+        padding: 10px 2vw 10px 2vw;
+        margin: 12px 0 0 0;
+    }
+}
+.shop-title {
+    color: #8be9fd;
+    font-size: 1.5em;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    font-family: 'Oswald', 'Cinzel', serif;
+    text-shadow: 0 2px 12px #23243a;
+}
+.shop-money {
+    color: #ffd700;
+    font-size: 1.1em;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: block;
+}
+.shop-message {
+    margin: 10px 0 18px 0;
+    color: #8be9fd;
+    font-weight: 600;
+    font-size: 1em;
+}
+.shop-list {
+    margin: 0 0 10px 0;
+    padding: 0;
+    list-style: none;
+}
+.shop-item {
+    background: #35374a;
+    border-radius: 12px;
+    padding: 14px 20px 10px 20px;
+    color: #ffd700;;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 6px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: box-shadow 0.15s, transform 0.15s;
+    text-align: left;
+    position: relative;
+}
+.shop-item:last-child {
+    margin-bottom: 0;
+}
+.shop-item:hover {
+    box-shadow: 0 0px 12px #8be9fd55;
+    
+}
+.shop-item-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 2px;
+}
+.shop-item-name {
+    color: #ffd700;;
+    font-size: 1.08em;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    flex: 0 0 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+}
+.shop-item-price {
+    color: #ffd700;
+    font-size: 1em;
+    font-weight: 700;
+    margin-left: 8px;
+    background: rgba(139,233,253,0.12);
+    border-radius: 8px;
+    padding: 2px 14px;
+    display: inline-block;
+}
+.shop-item-desc {
+    color: #ffffff;
+    font-size: 0.98em;
+    margin-bottom: 6px;
+    margin-top: 2px;
+    flex: 1 1 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.shop-item-stock {
+    font-size: 0.98em;
+    color: #fff;
+    margin-bottom: 6px;
+}
+.shop-item-actions {
+    margin-top: 2px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.shop-item-actions form {
+    margin: 0;
+    display: inline;
+}
+.shop-buy-btn {
+    background: #8be9fd ;
+    color: #23243a;
+    border: none;
+    border-radius: 10px;
+    padding: 7px 22px;
+    font-weight: 700;
+    font-size: 1em;
+    box-shadow: 0 1px 8px #8be9fd22;
+    transition: background 0.18s, color 0.18s;
+    cursor: pointer;
+}
+.shop-buy-btn:hover {
+    background: #23243a;
+    color: #8be9fd;
+}
+.shop-out {
+    color: #c00;
+    font-weight: 700;
+    font-size: 1em;
+    margin-left: 6px;
+}
+
+.shop-table {
+  width: 80%;
+  margin: 30px auto;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  background: #f8f8f8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.shop-table th, .shop-table td {
+  border: 1px solid #ddd;
+  color: #222;
+  padding: 12px 16px;
+  text-align: center;
+}
+.shop-table th {
+  background: #222;
+  color: #ffffff;
+  font-size: 1.1em;
+  letter-spacing: 1px;
+}
+.shop-table tr:nth-child(even) {
+  background: #f0f0f0;
+}
+.shop-table tr:hover {
+  background: #e0eaff;
+}
+.shop-table button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.badge-role {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 8px;
+    display: inline-block;
+}
+.badge-leader {
+    background-color: gold;
+    color: #232323;
+}
+.badge-right {
+    background-color: #8be9fd;
+    color: #1d1d1d;
+}
+.badge-left {
+    background-color: #ff79c6;
+    color: #1d1d1d;
+}
+.badge-member {
+    background-color: #44475a;
+    color: #f8f8f2;
+}
+
   .layout-root {
     display: flex;
     min-height: 100vh;
@@ -31,7 +247,7 @@
     overflow-x: hidden;
   }
   .sidebar {
-    width: 140px;
+    width: 180px;
     min-width: 48px;
     background: rgba(25, 25, 40, 0.98);
     box-shadow: 2px 0 12px rgba(30,32,60,0.10);
@@ -662,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fetchMessages();
-  setInterval(fetchMessages, 100);
+  setInterval(fetchMessages, 3000);
 });
 </script>
 </html>
