@@ -39,7 +39,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 db = SQLAlchemy(app)
-
+with app.app_context():
+    db.create_all()
 migrate = Migrate(app, db)
 DATABASE = 'users.db'
 login_manager = LoginManager(app)
@@ -70,6 +71,10 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Models -------------------------------
+class MasterAccount(db.Model):
+    __tablename__ = 'master_account'
+    id = db.Column(db.Integer, primary_key=True)
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
@@ -238,7 +243,6 @@ class CrewInvitation(db.Model):
     inviter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     invitee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
-
     inviter = db.relationship('User', foreign_keys=[inviter_id])
     invitee = db.relationship('User', foreign_keys=[invitee_id])
     crew = db.relationship('Crew')
@@ -295,11 +299,15 @@ def update_crew_role(crew_member_id):
     new_role = request.form.get('new_role')
 
     # 🚫 Prevent non-leaders from assigning the leader role
-    if new_role == 'leader' and my_role_entry.role != 'leader':
+    if new_role == 'leader, right_hand, left_hand' and my_role_entry.role != 'leader, right_hand, left_hand':
         flash("Only leaders can assign the leader role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     # 🚫 Prevent users from changing their own role
+    if current_user.id == target_user_id:
+        flash("You cannot change your own role.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+    
     if current_user.id == target_user_id:
         flash("You cannot change your own role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
@@ -442,8 +450,8 @@ def player_search():
         if query:
             # Exclude self from results
             results = Character.query.filter(
-                User.username.ilike(f"%{query}%"),
-                User.id != User.id
+                Character.username.ilike(f"%{query}%"),
+                Character.user_id != current_user.id
             ).all()
     return render_template('player_search.html', results=results, query=query)
 
