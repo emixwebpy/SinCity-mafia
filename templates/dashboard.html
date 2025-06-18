@@ -12,11 +12,17 @@
                 <div class="dashboard-cards">
                     <div class="dashboard-card">
                         <h5><i class="fas fa-money-bill-wave"></i> Money</h5>
-                        <div class="display-4" id="money">${{ current_character.money }}</div>
+                        <div class="display-4" id="money-container">
+                          $<span id="money">{{ current_character.money }}</span>
+                          <span id="money-effect" style="position: absolute; left: 100%; top: 0; color: #00ff99; font-weight: bold; opacity: 0;">+$</span>
+                        </div>
                     </div>
                     <div class="dashboard-card">
                         <h5><i class="fas fa-star"></i> XP</h5>
-                        <div class="display-4" id="xp">{{ current_character.xp }}</div>
+                        <div class="display-4" id="xp">
+                          <span id="xp"></span>{{ current_character.xp }}
+                        </div>
+                        <span id="xp-effect" style="position: absolute; left: 100%; top: 0; color: #00ccff; font-weight: bold; opacity: 0;">+XP</span>
                     </div>
                     <div class="dashboard-card">
                         <h5><i class="fas fa-layer-group"></i> Level</h5>
@@ -63,10 +69,10 @@
     
     <form method="POST" action="{{ url_for('create_fake_profile') }}">
         <input type="text" name="npc_name" placeholder="Enter NPC Name" required
-               style="padding: 10px; border-radius: 8px; border: none; width: 80%; margin-bottom: 12px; background: #1b1c2d; color: #f5f6fa;">
+               style="padding: 10px; border-radius: 5px; border: none; width: 80%; margin-bottom: 12px; background: #1b1c2d; color: #f5f6fa;">
         <br>
         <button type="submit" class="btn btn-primary"
-                style="padding: 10px 20px; border-radius: 10px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
+                style="padding: 10px 20px; border-radius: 5px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
             Create NPC
         </button>
         </form>
@@ -100,7 +106,15 @@
         </main>
     </div>
 </div>
-
+{% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
 <!-- <div id="floating-chat">
     <div id="chat-messages"></div>
     <form id="chat-form">
@@ -120,7 +134,7 @@ async function updateEarnButton() {
   try {
     const res = await fetch('/earn_status');
     const data = await res.json();
-
+    
     if (earnTimerInterval) {
       clearInterval(earnTimerInterval);
       earnTimerInterval = null;
@@ -151,7 +165,41 @@ async function updateEarnButton() {
     console.error("Error updating earn button:", err);
   }
 }
+async function loadFlashMessages() {
+  const res = await fetch('/get_flashes');
+  const data = await res.json();
+  const container = document.getElementById('flash-container');
 
+  if (container && data.messages.length > 0) {
+    container.innerHTML = '';
+    data.messages.forEach(([category, message]) => {
+      const div = document.createElement('div');
+      div.className = `alert alert-${category} flash-message`;
+      div.textContent = message;
+      container.appendChild(div);
+
+      setTimeout(() => {
+        div.remove();
+      }, 3000); // Optional auto-remove
+    });
+  }
+}
+function showFloatingEffect(elementId) {
+  const el = document.getElementById(elementId);
+  el.style.opacity = '1';
+  el.style.top = '0px';
+
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.5s ease-out, top 0.5s ease-out';
+    el.style.opacity = '0';
+    el.style.top = '-20px';
+  }, 10);
+
+  setTimeout(() => {
+    el.style.transition = '';
+    el.style.top = '0px';
+  }, 1000);
+}
 async function earn() {
   try {
     const res = await fetch('/earn');
@@ -164,9 +212,28 @@ async function earn() {
       document.getElementById('xp').textContent = stats.xp;
       document.getElementById('level').textContent = stats.level;
 
+      // Animate $ and XP gain
+      showFloatingEffect('money-effect');
+      showFloatingEffect('xp-effect');
+      // Show animated dollar effect
+      const moneyEffect = document.getElementById('money-effect');
+      moneyEffect.style.opacity = '1';
+      moneyEffect.style.top = '0px';
+
+      setTimeout(() => {
+        moneyEffect.style.transition = 'opacity 0.5s ease-out, top 0.5s ease-out';
+        moneyEffect.style.opacity = '0';
+        moneyEffect.style.top = '-20px';
+      }, 10);
+
+      setTimeout(() => {
+        moneyEffect.style.transition = '';
+        moneyEffect.style.top = '0px';
+      }, 1000);
+
       if (data.message) alert(data.message);
     } else if (data.message) {
-      alert(data.message);
+      await loadFlashMessages();
     }
 
     updateEarnButton();

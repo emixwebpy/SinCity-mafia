@@ -19,8 +19,9 @@ import sqlite3
 import os
 
 
-
-
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 
@@ -75,10 +76,6 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Models -------------------------------
-class MasterAccount(db.Model):
-    __tablename__ = 'master_account'
-    id = db.Column(db.Integer, primary_key=True)
-
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
@@ -86,16 +83,13 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
-    xp = db.Column(db.Integer, default=0)
-    level = db.Column(db.Integer, default=1)
-    money = db.Column(db.Integer, default=0)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     premium = db.Column(db.Boolean, default=False)
     premium_until = db.Column(db.DateTime, nullable=True)
     last_known_ip = db.Column(db.String(45))
-    health = db.Column(db.Integer, default=100)
+
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
     character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
@@ -122,7 +116,43 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+class Character(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
     
+    # The actual owner of the character
+    master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    name = db.Column(db.String(80), nullable=False)
+    health = db.Column(db.Integer, default=100)
+    money = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    xp = db.Column(db.Integer, default=0)
+    earn_streak = db.Column(db.Integer, default=0)
+    last_earned = db.Column(db.DateTime, nullable=True)
+    is_alive = db.Column(db.Boolean, default=True)
+
+    # Optional user_id, for linking in crews or alt usage
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
+    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
+    profile_image = db.Column(db.String(120), nullable=True)
+    
+
+    # Linked user (e.g., for crew systems)
+    linked_user = db.relationship('User', foreign_keys=[user_id])
+
+    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
+
+  
+
+class UserEditForm(SecureForm):
+    username = StringField('Username')
+    password = PasswordField('Password')
+    crew_id = StringField('Crew ID')
+    is_admin = BooleanField('Is Admin')
+    premium = BooleanField('Premium User')
+    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
+
 class CrewMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
@@ -134,18 +164,8 @@ class CrewMember(db.Model):
     
     user = db.relationship('User', backref='crew_roles')
 
-class UserEditForm(SecureForm):
-    username = StringField('Username')
-    password = PasswordField('Password')
-    crew_id = StringField('Crew ID')
-    is_admin = BooleanField('Is Admin')
-    premium = BooleanField('Premium User')
-    xp = IntegerField('XP')
-    level = IntegerField('Level')
-    money = IntegerField('Money', default=0, render_kw={"readonly": False})
-    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
-    health = IntegerField('Health', default=100, render_kw={"readonly": False})
-    gun_id = IntegerField('Equipped Gun ID', default=None, render_kw={"readonly": False})
+
+
     
 class ShopItemModelView(ModelView):
     can_create = True
@@ -156,7 +176,7 @@ class ShopItemModelView(ModelView):
     form_columns = ('name', 'description', 'price', 'stock', 'is_gun', 'damage')
     column_searchable_list = ('name', 'description')
     is_gun = BooleanField('Is Gun', default=False)
-    damage = IntegerField('Damage', default=0) 
+    damage = IntegerField('Damage', default=0)
 
 class ShopItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -167,6 +187,7 @@ class ShopItem(db.Model):
     is_gun = db.Column(db.Boolean, default=False)
     damage = db.Column(db.Integer, default=0)
 
+
 class UserInventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -176,37 +197,13 @@ class UserInventory(db.Model):
     user = db.relationship('User', backref='inventory')
     item = db.relationship('ShopItem')
 
-class Character(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-
-    # The actual owner of the character
-    master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    name = db.Column(db.String(80), nullable=False)
-    health = db.Column(db.Integer, default=100)
-    money = db.Column(db.Integer, default=0)
-    level = db.Column(db.Integer, default=1)
-    xp = db.Column(db.Integer, default=0)
-    is_alive = db.Column(db.Boolean, default=True)
-
-    # Optional user_id, for linking in crews or alt usage
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
-    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
-    profile_image = db.Column(db.String(120), nullable=True)
-    earn_streak = db.Column(db.Integer, default=0)
-    last_earned = db.Column(db.DateTime, nullable=True)
-
-    # Linked user (e.g., for crew systems)
-    linked_user = db.relationship('User', foreign_keys=[user_id])
-
-    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
 
 class Gun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32))
     damage = db.Column(db.Integer)
+    
 
 class CharacterModelView(ModelView):
     column_list = ('id', 'name', 'master_id', 'health', 'money', 'level', 'is_alive')
@@ -625,6 +622,21 @@ def dashboard():
         npcs=npcs
     )
 
+@app.route('/refresh_shop')
+def refresh_shop():
+    # Clear current shop if you want it to reset
+    ShopItem.query.delete()
+
+    # Choose random guns
+    guns = Gun.query.all()
+    random_guns = random.sample(guns, k=min(5, len(guns)))  # 5 random guns or fewer
+
+    for gun in random_guns:
+        item = ShopItem(gun=gun)
+        db.session.add(item)
+
+    db.session.commit()
+    return {'success': True, 'message': f'{len(random_guns)} guns added to the shop.'}
 
 @app.route('/invite_to_crew', methods=['GET', 'POST'])
 @login_required
@@ -781,7 +793,7 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    cooldown = timedelta(minutes=2, seconds=10)
+    cooldown = timedelta(minutes=0, seconds=5)
     now = datetime.utcnow()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
@@ -799,10 +811,11 @@ def earn():
     # Earnings and streak handling (unchanged)
     earned_money = random.randint(200, 2000)
     earned_xp = random.randint(20, 120)
+    
     character.money += earned_money
     character.xp += earned_xp
     character.last_earned = now
-
+    
     # Level-up
     while character.xp >= character.level * 250:
         character.xp -= character.level * 250
@@ -811,7 +824,7 @@ def earn():
     # Streak and item reward
     character.earn_streak = (character.earn_streak or 0) + 1
     reward_msg = ""
-
+    
     # 🎲 Chance to find a random item (20% chance)
     if random.random() < 0.2:
         possible_items = ShopItem.query.filter(ShopItem.stock > 0).all()
@@ -846,7 +859,9 @@ def earn():
             character.earn_streak = 0
             
     db.session.commit()
-    return jsonify({'success': True, 'message': f"You earned ${earned_money} and {earned_xp} XP {reward_msg}" })
+    flash(f"You earned ${earned_money} and {earned_xp} XP" + reward_msg, "success")
+
+    return jsonify({'success': True})
 
 @app.route('/user_stats')
 @login_required
@@ -1025,10 +1040,6 @@ def get_online_users():
     return real_online, npcs
 
 if __name__ == '__main__':
-    if not os.path.exists('users.db'):
-        with app.app_context():
-            db.create_all()
-        print("Registered endpoints:")
-        for rule in app.url_map.iter_rules():
-            print(f"Endpoint: {rule.endpoint} -> URL: {rule}")
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
