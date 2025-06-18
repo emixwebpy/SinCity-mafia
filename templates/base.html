@@ -343,11 +343,12 @@
     box-sizing: border-box;
   }
   .topbar {
+    
     height: 55px;
     background: rgba(25, 25, 40, 0.98);
     display: flex;
     align-items: center;
-    padding: 0 18px;
+    padding: 0 36px;
     box-shadow: 0 2px 8px #8be9fd22;
     z-index: 10;
     position: sticky;
@@ -358,21 +359,28 @@
   }
   .topbar .topbar-title {
     height: 55px;
-    align-items: center ;
-    text-align: center;
     color: #8be9fd;
-    font-size: 18px;
+    font-size: 28px;
     font-weight: 900;
-    letter-spacing: 1px;
-    margin-right: 12px;
+    letter-spacing: 2px;
+    padding-bottom: 5px;
     font-family: 'Oswald', 'Cinzel', serif;
     text-shadow: 0 2px 8px #23243a;
   }
-  .topbar .topbar-actions {
+  .topbar-title  {
+    padding-right: auto;
+    height: 55px;
+    color: #8be9fd;
+    text-decoration: none;
+    display: flex;
+    align-items: center ;
+    text-align: center;
+    margin: auto;
+  }
+  /* .topbar .topbar-actions {
     margin-left: auto;
     display: flex;
-    gap: 8px;
-  }
+  } */
   .topbar .topbar-actions .btn {
     border-radius: 10px;
     font-weight: 600;
@@ -390,8 +398,8 @@
     color: #8be9fd;
   }
   .content-area {
-    flex: 1;
-    padding: 16px 8px 12px 8px;
+    flex: 1 1 auto;
+    padding: 16px 110px 12px 8px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -486,6 +494,30 @@
     color: #23243a;
     border-color: #23243a;
   }
+  .npc-create-container{
+  max-width: 600px;
+  margin: 32px auto;
+  padding: 24px;
+  background: rgba(25,25,40,0.98);
+  border: 1.5px solid #8be9fd44;
+  border-radius: 22px;
+  box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  color: #f5f6fa;
+}
+.npc-create-container{
+  max-width: 600px;
+  margin: 32px auto;
+  padding: 24px;
+  background: rgba(25,25,40,0.98);
+  border: 1.5px solid #8be9fd44;
+  border-radius: 22px;
+  box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  color: #f5f6fa;
+}
   .dashboard-premium {
     text-align: center;
     margin-bottom: 12px;
@@ -694,6 +726,7 @@
   }
 }
   .flashes {
+    text-align: center;
     list-style: none;
     padding: 0;
     margin: 0 0 12px 0;
@@ -723,9 +756,11 @@
       {% if current_user.is_authenticated %}
       <div class="sidebar-user">
         <i class="fas fa-user-circle"></i>
-          <a href="{{ url_for('profile', username=current_user.username) }}" style="color:inherit;text-decoration:underline;">
-          {{ current_character.name }}
+          <a href="{{ url_for('profile', username=current_user.username) }}" style="color:inherit; text-decoration: underline;">
+                      
+          <strong>{{ current_character.name }}</strong>
           </a>
+          
       </div>
       {% endif %}
 

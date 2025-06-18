@@ -299,7 +299,10 @@ def update_crew_role(crew_member_id):
     new_role = request.form.get('new_role')
 
     # 🚫 Prevent non-leaders from assigning the leader role
-    if new_role == 'leader, right_hand, left_hand' and my_role_entry.role != 'leader, right_hand, left_hand':
+    if new_role == 'leader' and my_role_entry.role != 'leader':
+        flash("Only leaders can assign the leader role.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+    if new_role == 'leader' and my_role_entry.role != 'right_hand':
         flash("Only leaders can assign the leader role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
@@ -308,9 +311,6 @@ def update_crew_role(crew_member_id):
         flash("You cannot change your own role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
     
-    if current_user.id == target_user_id:
-        flash("You cannot change your own role.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     # Apply update
     crew_member.role = new_role

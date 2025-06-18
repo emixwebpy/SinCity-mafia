@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
-<link rel="shortcut icon" href="{{ url_for('static', filename='gang.png') }}">
+
 {% block content %}
 
 
@@ -45,17 +45,7 @@
                       Earn <span id="earn-timer"></span>
                     </button>
                           {% if current_user.gun %}
-                            <div class="npc-create-container" style="
-                          width: 600px;
-                          margin: 32px auto;
-                          padding: 24px;
-                          background: rgba(25,25,40,0.98);
-                          border: 1.5px solid #8be9fd44;
-                          border-radius: 22px;
-                          box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
-                          text-align: center;
-                          font-family: 'Inter', sans-serif;
-                          color: #f5f6fa;">
+                            <div class="npc-create-container">
                               <h2 class="shop-title">Equipped Weapon</h2>
                               <div class="shop-item">
                                 <div class="shop-item-header">
@@ -66,17 +56,7 @@
                               </div>
                             </div>
                           {% endif %}
-                          <div class="npc-create-container" style="
-                          max-width: 600px;
-                          margin: 32px auto;
-                          padding: 24px;
-                          background: rgba(25,25,40,0.98);
-                          border: 1.5px solid #8be9fd44;
-                          border-radius: 22px;
-                          box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
-                          text-align: center;
-                          font-family: 'Inter', sans-serif;
-                          color: #f5f6fa;">
+                          <div class="npc-create-container">
     
     <h3 style="color: #8be9fd; font-family: 'Oswald', sans-serif;">Create a Fake Profile</h3>
     <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
