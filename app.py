@@ -46,6 +46,10 @@ DATABASE = 'users.db'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
+
 @app.before_request
 def update_last_seen():
     if current_user.is_authenticated:
@@ -94,9 +98,17 @@ class User(db.Model, UserMixin):
     health = db.Column(db.Integer, default=100)
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
-    character = db.relationship('Character', backref='user', uselist=False)
+    character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
     kills = db.Column(db.Integer, default=0)
-    
+    # Characters owned by this user
+    characters = db.relationship('Character', backref='owner', lazy=True,
+                                 foreign_keys='Character.master_id')
+
+    # Optional: characters linked for crew, etc.
+    linked_characters = db.relationship('Character', foreign_keys='Character.user_id')
+
+    def __repr__(self):
+        return f'<User {self.username}>'
 
     def add_xp(self, amount):
         self.xp += amount
@@ -166,20 +178,29 @@ class UserInventory(db.Model):
 
 class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    master_id = db.Column(db.Integer, nullable=False)
-    name = db.Column(db.String(32), nullable=False)
+
+    # The actual owner of the character
+    master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    name = db.Column(db.String(80), nullable=False)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     xp = db.Column(db.Integer, default=0)
     is_alive = db.Column(db.Boolean, default=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
-    gun = db.relationship('Gun', backref='characters', uselist=False)
-    profile_image = db.Column(db.String(256), nullable=True)
+
+    # Optional user_id, for linking in crews or alt usage
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
+    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
+    profile_image = db.Column(db.String(120), nullable=True)
     earn_streak = db.Column(db.Integer, default=0)
     last_earned = db.Column(db.DateTime, nullable=True)
 
+    # Linked user (e.g., for crew systems)
+    linked_user = db.relationship('User', foreign_keys=[user_id])
+
+    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
 
 class Gun(db.Model):
@@ -290,29 +311,29 @@ def update_crew_role(crew_member_id):
     target_user_id = crew_member.user_id
     target_crew_id = crew_member.crew_id
 
-    # Get current user's role in the crew
-    my_role_entry = CrewMember.query.filter_by(user_id=current_user.id, crew_id=target_crew_id).first()
-    if not my_role_entry or my_role_entry.role not in ['leader', 'right_hand', 'left_hand']:
+    # Get current user's own crew role
+    my_role = CrewMember.query.filter_by(user_id=current_user.id, crew_id=target_crew_id).first()
+    if not my_role or my_role.role not in ['leader', 'right_hand', 'left_hand']:
         flash("You don't have permission to change roles.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     new_role = request.form.get('new_role')
 
-    # 🚫 Prevent non-leaders from assigning the leader role
-    if new_role == 'leader' and my_role_entry.role != 'leader':
-        flash("Only leaders can assign the leader role.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
-    if new_role == 'leader' and my_role_entry.role != 'right_hand':
-        flash("Only leaders can assign the leader role.", "danger")
+    # Prevent self-demotion or role change
+    if target_user_id == current_user.id:
+        flash("You can't change your own role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
-    # 🚫 Prevent users from changing their own role
-    if current_user.id == target_user_id:
-        flash("You cannot change your own role.", "danger")
+    # Prevent anyone but the Leader from changing the Leader's role
+    if crew_member.role == 'leader' and my_role.role != 'leader':
+        flash("Only the leader can change the leader's role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
-    
 
-    # Apply update
+    # Prevent Right/Left Hands from assigning the leader role
+    if my_role.role != 'leader' and new_role == 'leader':
+        flash("Only the leader can assign the leader role.", "danger")
+        return redirect(url_for('crew_page', crew_id=target_crew_id))
+
     crew_member.role = new_role
     db.session.commit()
     flash("Role updated.", "success")
@@ -389,7 +410,7 @@ def shop():
         else:
             message = "Not enough money or item not found."
     return render_template('shop.html', items=items, message=message, character=character)
-# ...existing code...
+
 
 @app.route('/inventory', methods=['GET', 'POST'])
 @login_required

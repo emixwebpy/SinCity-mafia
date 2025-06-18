@@ -137,7 +137,11 @@
     {% endif %}
   </div>
 {% endfor %}
+</ul>
 
+  
+
+  {% if current_user_role == 'leader' %}
   {% if current_user.crew_id == crew.id %}
     <div class="back">
       <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
@@ -145,63 +149,6 @@
   {% endif %}
 </div>
 
-<!-- <div id="floating-chat">
-  <div id="chat-messages"></div>
-  <form id="chat-form">
-    <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
-    <button type="submit" id="chat-submit">Send</button>
-  </form>
-</div> -->
 
-<!-- <script>
-// ---------------- Floating Chat ----------------
-document.addEventListener('DOMContentLoaded', () => {
-  const chatForm = document.getElementById('chat-form');
-  const chatInput = document.getElementById('chat-input');
-  const chatMessages = document.getElementById('chat-messages');
-
-  async function fetchMessages() {
-    try {
-      const res = await fetch('/crew_messages');
-      const data = await res.json();
-      chatMessages.innerHTML = '';
-      data.forEach(msg => {
-        const div = document.createElement('div');
-        div.textContent = `${msg.username}: ${msg.message}`;
-        chatMessages.appendChild(div);
-      });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    } catch (err) {
-      console.error('Failed to fetch messages:', err);
-    }
-  }
-
-  chatForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const message = chatInput.value.trim();
-    if (!message) return;
-
-    try {
-      const res = await fetch('/send_crew_message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ message })
-      });
-
-      if (res.ok) {
-        chatInput.value = '';
-        fetchMessages();
-      } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to send message.');
-      }
-    } catch (err) {
-      console.error('Send failed:', err);
-    }
-  });
-
-  fetchMessages();
-  setInterval(fetchMessages, 3000);
-});
-</script> -->
+{% endif %}
 {% endblock %}

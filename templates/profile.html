@@ -13,7 +13,7 @@
     padding: 28px;
     border: 1.5px solid #8be9fd44;
     color: #f5f6fa;
-    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -24,7 +24,7 @@
     max-width: 240px;
     height: auto;
     aspect-ratio: 2 / 3;
-    border-radius: 12%;
+    border-radius: 5%;
     background: linear-gradient(135deg, #8be9fd 60%, #23243a 100%);
     display: flex;
     align-items: left;
@@ -41,7 +41,7 @@
     font-size: 1.7em;
     font-weight: 900;
     margin-bottom: 6px;
-    font-family: 'Oswald', 'Cinzel', serif;
+    
     letter-spacing: 1px;
 }
 
@@ -196,14 +196,14 @@
     </div>
     {% endif %}
     {% if character.profile_image %}
-    <img src="{{ url_for('static', filename=character.profile_image) }}" class="profile-img" style="max-width:240px;max-height:340px;border-radius:12%;">
+    <img src="{{ url_for('static', filename=character.profile_image) }}" class="profile-img" >
     {% endif %}
     {% if crew %}
-    <div style="padding-bottom: 20px;" class="profile-crew">
-        <i class="fas fa-users"></i>
-        Crew:
+    <div style="padding-bottom: 20px; " class="profile-crew" >
+        <i class="fas fa-users"></i><br>
+        Crew
         <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color:#8be9fd; font-weight:700;">
-            {{ crew.name }}
+            <br>{{ crew.name }}
         </a>
     </div>
     {% endif %}
