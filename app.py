@@ -2,6 +2,7 @@
 from ast import And
 from calendar import c
 from doctest import master
+from email import message
 from sys import maxsize
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
@@ -673,7 +674,9 @@ def get_messages():
     messages = CrewMessage.query.filter_by(crew_id=current_user.crew.id)\
                                 .order_by(CrewMessage.timestamp.desc())\
                                 .limit(50).all()
-
+    messages = ChatMessage.query.filter_by(crew_id=current_user.crew.id)\
+                                .order_by(CrewMessage.timestamp.desc())\
+                                .limit(50).all()
     return jsonify(messages=[{
         'username': msg.user.username,
         'message': msg.message,
@@ -968,10 +971,10 @@ def earn():
     # ✅ Make sure cooldown check works
     if character.last_earned and (now - character.last_earned) < cooldown:
         remaining = cooldown - (now - character.last_earned)
-        minutes, seconds = divmod(int(remaining.total_seconds()), 60)
+        seconds = divmod(int(remaining.total_seconds()), 60)
         return flash({
             'success': False,
-            'message': f"Wait {minutes}m {seconds}s before earning again."
+            'message': f"Wait {seconds}s before earning again."
         })
 
     # Earnings and streak handling (unchanged)
@@ -1195,7 +1198,7 @@ def create_fake_profile():
 @app.route('/public_messages')
 def public_messages():
     messages = ChatMessage.query.filter_by(channel='public').order_by(ChatMessage.timestamp.asc()).limit(50).all()
-    return jsonify([{"username": msg.username, "message": msg.message} for msg in messages])
+    return jsonify([{"username" : msg.username, "message": msg.message} for msg in messages])
 
 @app.route('/send_public_message', methods=['POST'])
 @login_required

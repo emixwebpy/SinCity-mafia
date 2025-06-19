@@ -710,10 +710,10 @@
     }
     .sidebar .sidebar-nav a.active,
   .sidebar .sidebar-nav a:hover {
-    background: linear-gradient(180deg, #8be9fd 0%, #23243a 100%);
+    background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
     color: #23243a;
     font-weight: 700;
-    
+    padding-left: 24px;
     box-shadow: 0 2px 8px #8be9fd33;
     
   }
@@ -833,7 +833,8 @@
       border-radius: 5px;
       font-size: 1.15em;
       z-index: 9999;
-        }
+      
+  }
 
   #chat-input {
     flex: 1;
@@ -842,6 +843,7 @@
     border: none;
     border-radius: 3px;
     outline: none;
+    position: static;
   }
 
   #chat-submit {
@@ -854,6 +856,7 @@
     border-radius: 3px;
     cursor: pointer;
     overflow: auto;
+    position: static;
   }
 
   #chat-messages {
@@ -924,7 +927,10 @@
   .d-none {
   display: none !important;
   }
-
+  #fas-fa{
+    
+    height: auto;
+  }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -972,7 +978,7 @@
       </div>
       <div class="sidebar-footer">
         {% if current_user.is_authenticated %}
-        <a href="{{ url_for('logout') }}" class="btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="{{ url_for('logout') }}" class="btn"><i id="fas-fa" class="fas fa-sign-out-alt"></i> Logout</a>
         {% endif %}
       </div>
     </nav>
@@ -1095,6 +1101,8 @@ let currentTab = 'crew';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+  let currentTab = 'crew'; // or 'public', depending on default
+
   async function fetchMessages() {
     try {
       const res = await fetch(`/${currentTab}_messages`);
@@ -1103,7 +1111,7 @@ let currentTab = 'crew';
       messageBox.innerHTML = '';
       data.forEach(msg => {
         const div = document.createElement('div');
-        div.textContent = `${msg.username}: ${msg.message}`;
+        div.textContent = `${msg.username} : ${msg.message}`;
         messageBox.appendChild(div);
       });
       messageBox.scrollTop = messageBox.scrollHeight;
@@ -1136,11 +1144,11 @@ let currentTab = 'crew';
       console.error('Send failed:', err);
     }
   }
-
+  fetchMessages();
   document.getElementById('crew-form').addEventListener('submit', (e) => sendMessage(e, 'crew'));
   document.getElementById('public-form').addEventListener('submit', (e) => sendMessage(e, 'public'));
 
-  switchTab('crew'); // Set default tab
+  switchTab('public'); // Set default tab
   setInterval(fetchMessages, 100);
 });
 
