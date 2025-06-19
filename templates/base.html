@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------- Floating Chat ----------------
 document.getElementById('tab-public').addEventListener('click', () => switchTab('public'));
 document.getElementById('tab-crew').addEventListener('click', () => switchTab('crew'));
-let currentTab = 'crew';
+let currentTab = 'public';
 
   function switchTab(tab) {
     currentTab = tab;
@@ -1129,7 +1129,6 @@ let currentTab = 'crew';
     try {
       const res = await fetch(`/send_${tab}_message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ message })
       });
 
