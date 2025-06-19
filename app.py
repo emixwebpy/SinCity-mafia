@@ -1,8 +1,7 @@
-from email.mime import base
+
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
-from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
@@ -14,12 +13,11 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import true
 from operator import is_
-import random
-import sqlite3
+from email.mime import base
+import sqlite3, string, logging, random
 import os
 
 
-import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
@@ -54,12 +52,10 @@ def inject_user():
 @app.before_request
 def update_last_seen():
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        # Premium status auto-expiry
-        if current_user.premium and current_user.premium_until and current_user.premium_until < datetime.utcnow():
-            current_user.premium = False
+        now = datetime.utcnow()
+        if not current_user.last_seen or (now - current_user.last_seen).seconds > 1:
+            current_user.last_seen = now
             db.session.commit()
-        db.session.commit()
 
 @app.before_request
 def enable_sqlite_fk():
@@ -89,7 +85,8 @@ class User(db.Model, UserMixin):
     premium = db.Column(db.Boolean, default=False)
     premium_until = db.Column(db.DateTime, nullable=True)
     last_known_ip = db.Column(db.String(45))
-
+    organized_crime_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
+    last_crime_time = db.Column(db.DateTime, nullable=True)
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
     character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
@@ -135,7 +132,7 @@ class Character(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
-    profile_image = db.Column(db.String(120), nullable=True)
+    profile_image = db.Column(db.String(255), nullable=True)
     
 
     # Linked user (e.g., for crew systems)
@@ -164,8 +161,59 @@ class CrewMember(db.Model):
     
     user = db.relationship('User', backref='crew_roles')
 
+class OrganizedCrime(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    invite_code = db.Column(db.String(8), unique=True, nullable=False)
+    leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    leader = db.relationship('User', foreign_keys=[leader_id], backref='led_crime_family')
+    members = db.relationship('User', backref='crime_group', lazy=True, foreign_keys='User.organized_crime_id')
 
 
+    def is_full(self):
+        return len(self.members) >= 4
+
+@app.route('/organized_crime/attempt', methods=['POST'])
+@login_required
+def attempt_organized_crime():
+    crime = current_user.crime_group
+    if not crime:
+        flash("You are not in a crime group.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if current_user.id != crime.leader_id:
+        flash("Only the group leader can start the crime.", "danger")
+        return redirect(url_for('dashboard'))
+
+    members = crime.members
+    if len(members) < 2:
+        flash("You need at least 2 members to attempt the crime.", "warning")
+        return redirect(url_for('dashboard'))
+
+    # Crime logic (random success)
+    import random
+    success = random.choice([True, False])
+    reward_money = random.randint(500, 1500) if success else 0
+    reward_xp = random.randint(10, 30) if success else 0
+
+    for member in members:
+        if member.character:
+            if success:
+                member.character.money += reward_money
+                member.character.xp += reward_xp
+            member.last_crime_time = datetime.utcnow()
+            member.organized_crime_id = None  # Disband
+
+    db.session.delete(crime)
+    db.session.commit()
+
+    if success:
+        flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
+    else:
+        flash("Crime failed! The crew has disbanded.", "danger")
+
+    return redirect(url_for('dashboard'))
     
 class ShopItemModelView(ModelView):
     can_create = True
@@ -208,7 +256,7 @@ class Gun(db.Model):
 class CharacterModelView(ModelView):
     column_list = ('id', 'name', 'master_id', 'health', 'money', 'level', 'is_alive')
     form_columns = ('name', 'master_id', 'health', 'money', 'level', 'is_alive')
-# Admin -------------------------------
+
 
 class UserModelView(ModelView):
     column_searchable_list = ('username',)
@@ -241,7 +289,6 @@ class UserModelView(ModelView):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('login'))
 
-
 class Crew(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True, nullable=False)
@@ -265,14 +312,19 @@ class CrewInvitation(db.Model):
     invitee = db.relationship('User', foreign_keys=[invitee_id])
     crew = db.relationship('Crew')
 
+def generate_invite_code(length=6):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-# customize admin homepage
+def is_on_crime_cooldown(user, cooldown_hours=6):
+    if user.last_crime_time:
+        return datetime.utcnow() < user.last_crime_time + timedelta(hours=cooldown_hours)
+    return False
+
+# Admin Interface -------------------------------
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
     
-
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
@@ -451,12 +503,21 @@ def inventory():
     return render_template('inventory.html', inventory_items=inventory_items, character=character)
 
 
-@app.route('/users_online')
-@login_required
+@app.route("/users_online")
 def users_online():
-    online_threshold = datetime.utcnow() - timedelta(minutes=5)
-    online_users = User.query.filter(User.last_seen >= online_threshold).all()
-    return jsonify([u.username for u in online_users])
+    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    users = User.query.filter(User.last_seen >= cutoff).all()
+
+    # For each user, find their *first alive character* (you can tweak this logic as needed)
+    user_character_map = {}
+    for user in users:
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        if character:
+            user_character_map[user.id] = character.name
+        else:
+            user_character_map[user.id] = user.username  # fallback
+
+    return render_template("users_online.html", users=users, char_map=user_character_map)
 
 @app.route('/player_search', methods=['GET', 'POST'])
 @login_required
@@ -468,8 +529,8 @@ def player_search():
         if query:
             # Exclude self from results
             results = Character.query.filter(
-                Character.username.ilike(f"%{query}%"),
-                Character.user_id != current_user.id
+                Character.name.ilike(f"%{query}%"),
+                Character.name != current_user.id
             ).all()
     return render_template('player_search.html', results=results, query=query)
 
@@ -600,13 +661,13 @@ def leave_crew():
 def dashboard():
     # Update last seen time
     current_user.last_seen = datetime.utcnow()
-    online_threshold = datetime.utcnow() - timedelta(minutes=5)
-    online_users = User.query.filter(User.last_seen >= online_threshold).all()
+    online_threshold = datetime.utcnow() - timedelta(seconds=1)
+    online_users = current_user.query.filter(User.last_seen >= online_threshold).all()
     crew = current_user.crew if hasattr(current_user, 'crew') else None
     
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
-    online_users = User.query.all()  # however you get this list
+    online_users = current_user.query.all()  # however you get this list
     
     
     user_ids = [user.id for user in online_users]
@@ -673,6 +734,67 @@ def invite_to_crew():
 
     return render_template('invite_to_crew.html', crew=current_user.crew)
 
+@app.route('/create_crime', methods=['GET', 'POST'])
+@login_required
+def create_crime():
+    if current_user.crime_group:
+        return redirect(url_for('crime_group'))
+    
+    if current_user.crime_group:
+        flash("You're already in a crime group!", 'warning')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        invite_code = generate_invite_code()
+        crime = OrganizedCrime(leader_id=current_user.id, invite_code=invite_code)
+        current_user.crime_group = crime  # add creator to group
+        db.session.add(crime)
+        db.session.commit()
+        flash(f"Crime group created! Invite code: {invite_code}", 'success')
+        return redirect(url_for('crime_group'))
+    if is_on_crime_cooldown(current_user):
+        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
+        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
+        return redirect(url_for('dashboard'))
+    
+    return render_template('create_crime.html')
+
+@app.route('/join_crime', methods=['GET', 'POST'])
+@login_required
+def join_crime():
+    if current_user.crime_group:
+        flash("You're already in a crime group!", 'warning')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        code = request.form.get('invite_code').strip().upper()
+        crime = OrganizedCrime.query.filter_by(invite_code=code).first()
+        if not crime:
+            flash("Invalid invite code.", 'danger')
+        elif crime.is_full():
+            flash("That crime group is full!", 'warning')
+        else:
+            current_user.crime_group = crime
+            db.session.commit()
+            flash("You joined the crime group!", 'success')
+            return redirect(url_for('crime_group'))
+    if is_on_crime_cooldown(current_user):
+        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
+        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
+        return redirect(url_for('dashboard'))
+    return render_template('join_crime.html')
+
+@app.route('/crime_group')
+@login_required
+def crime_group():
+    crime = current_user.crime_group
+    if not crime:
+        flash("You're not part of any crime group yet.", 'info')
+        return redirect(url_for('dashboard'))
+    
+    members = User.query.filter_by(organized_crime_id=crime.id).all()
+    return render_template('crime_group.html', crime=crime, members=members)
+
 @app.route('/upload_profile_image', methods=['GET', 'POST'])
 @login_required
 def upload_profile_image():
@@ -718,7 +840,7 @@ def crew_messages():
 @app.route('/crew_invitations')
 @login_required
 def crew_invitations():
-    invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
+    invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id.name).all()
     return render_template('crew_invitations.html', invitations=invitations)
 
 @app.route('/accept_invite/<int:invite_id>')
@@ -941,6 +1063,51 @@ def profile(username):
     # Not found
     return render_template('404.html'), 404
 
+@app.route('/create_fake_profile', methods=['GET', 'POST'])
+@login_required
+def create_fake_profile():
+    npc_price = 150000
+    npc_level = 10  # Cost to create a fake NPC profile
+
+    if request.method == 'POST':
+        npc_name = request.form.get('npc_name', '').strip()
+
+        if not npc_name:
+            flash("NPC name is required.", "danger")
+            return redirect(url_for('create_fake_profile'))
+
+        # Check if the player has a character
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if not character:
+            flash("You must have a character to create a fake profile.", "danger")
+            return redirect(url_for('create_fake_profile'))
+
+        # Check if they have enough money and level
+        if character.money and character.level < npc_price and npc_level:
+            flash("Not enough money to create a fake profile.", "danger")
+            return redirect(url_for('dashboard'))
+
+        # Deduct the cost and create the fake profile
+        character.money -= npc_price
+        npc = Character(
+            profile_image='uploads/default_npc.png',  # Default image for NPCs
+            master_id=0,  # 0 = NPC
+            name=npc_name,
+            money=500,  # Starting money for NPC
+            xp=0,
+            level=1,
+            is_alive=True,
+            health=100
+        )
+        db.session.add(npc)
+        db.session.commit()
+
+        flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
+        return redirect(url_for('dashboard'))
+
+    # For GET requests, show the creation form
+    return render_template('create_npc.html', npc_price=npc_price)
+
 @app.context_processor
 def inject_current_character():
     from flask_login import current_user
@@ -950,14 +1117,7 @@ def inject_current_character():
     return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
 
-admin = Admin(
-    app,
-    name='Admin Panel',
-    template_mode='bootstrap3',
-    base_template='admin/dood_base.html'
-)
-
-
+admin = Admin(app, name='Admin Panel', template_mode='bootstrap3', base_template='admin/dood_base.html')
 admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
 admin.add_view(ModelView(CrewMember, db.session))
@@ -988,56 +1148,22 @@ def create_admin():
         print("Admin user updated.")
 
 
-@app.route('/create_fake_profile', methods=['GET', 'POST'])
-@login_required
-def create_fake_profile():
-    npc_price = 150000  # Cost to create a fake NPC profile
 
-    if request.method == 'POST':
-        npc_name = request.form.get('npc_name', '').strip()
 
-        if not npc_name:
-            flash("NPC name is required.", "danger")
-            return redirect(url_for('create_fake_profile'))
-
-        # Check if the player has a character
-        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-        if not character:
-            flash("You must have a character to create a fake profile.", "danger")
-            return redirect(url_for('create_fake_profile'))
-
-        # Check if they have enough money
-        if character.money < npc_price:
-            flash("Not enough money to create a fake profile.", "danger")
-            return redirect(url_for('create_fake_profile'))
-
-        # Deduct the cost and create the fake profile
-        character.money -= npc_price
-        npc = Character(
-            master_id=0,  # 0 = NPC
-            name=npc_name,
-            money=500,  # Starting money for NPC
-            xp=0,
-            level=1,
-            is_alive=True,
-            health=100
-        )
-        db.session.add(npc)
-        db.session.commit()
-
-        flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
-        return redirect(url_for('dashboard'))
-
-    # For GET requests, show the creation form
-    return render_template('create_npc.html', npc_price=npc_price)
 def get_online_users():
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    cutoff = datetime.utcnow() - timedelta(seconds=1)
     # Real users online
-    real_online = User.query.filter(User.last_seen >= cutoff).all()
+    real_online = current_user.name.query.filter(current_user.last_seen >= cutoff).all()
     # NPCs: Characters with master_id=0 (or whatever you use)
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     # Optionally, create a fake User object for each NPC if your template expects User
     return real_online, npcs
+
+@app.cli.command("init-db")
+def init_db():
+    db.create_all()
+    print("Database tables created.")
+
 
 if __name__ == '__main__':
     with app.app_context():

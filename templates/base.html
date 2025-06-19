@@ -45,10 +45,14 @@
       transform: scale(0.95);
       animation: fadeIn 0.1s ease-out forwards;
     }
-    .dashboard-card:nth-child(1) { animation-delay: 0.1s; }
-    .dashboard-card:nth-child(2) { animation-delay: 0.2s; }
-    .dashboard-card:nth-child(3) { animation-delay: 0.3s; }
-    .dashboard-card:nth-child(4) { animation-delay: 0.4s; }
+    .dashboard-card:nth-child(1) { 
+      animation-delay: 0.1s; }
+    .dashboard-card:nth-child(2) { 
+      animation-delay: 0.2s; }
+    .dashboard-card:nth-child(3) { 
+      animation-delay: 0.3s; }
+    .dashboard-card:nth-child(4) { 
+      animation-delay: 0.4s; }
 
     /* Animated shop items */
     .shop-item {
@@ -56,10 +60,14 @@
       transform: translateY(10px);
       animation: fadeIn 0.1s ease-out forwards;
     }
-    .shop-item:nth-child(1) { animation-delay: 0.1s; }
-    .shop-item:nth-child(2) { animation-delay: 0.2s; }
-    .shop-item:nth-child(3) { animation-delay: 0.3s; }
-    .shop-item:nth-child(4) { animation-delay: 0.4s; }
+    .shop-item:nth-child(1) { 
+      animation-delay: 0.1s; }
+    .shop-item:nth-child(2) { 
+      animation-delay: 0.2s; }
+    .shop-item:nth-child(3) { 
+      animation-delay: 0.3s; }
+    .shop-item:nth-child(4) { 
+      animation-delay: 0.4s; }
   .shop-container {
     width: 50%;
     max-width: 100%;
@@ -154,6 +162,7 @@
     border-radius: 5px;
     padding: 2px 10px;
     display: inline-block;
+    margin: 0px 0 0 0 !important;
 }
 .shop-item-desc {
     color: #ffffff;
@@ -574,7 +583,8 @@
     border: 1px solid #8be9fd44;
     width: 100%;
     box-sizing: border-box;
-    font-size: 0.98em;
+    font-size: 1.25em;
+    text-align: center;
   }
   .dashboard-users-online h2 {
     color: #8be9fd;
@@ -676,9 +686,16 @@
     .sidebar .sidebar-header { font-size: 0.95em; padding: 8px 0 6px 0; }
     .sidebar .sidebar-nav a span { 
       display: none; 
-
+      
     }
-    
+    .sidebar .sidebar-nav a {
+      font-size: 0.85em;
+      padding: 6px 8px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
     .sidebar .sidebar-nav a.active,
   .sidebar .sidebar-nav a:hover {
     background: linear-gradient(180deg, #8be9fd 0%, #23243a 100%);
@@ -701,12 +718,13 @@
       padding: 0;
       box-shadow: 0 2px 8px #8be9fd22;
       position: static;
-      min-width: 0;
+      min-width: 10px;
       min-height: 0;
       height: auto;
     }
+    
     .sidebar .sidebar-header { font-size: 0.8em; margin-bottom: 0; margin-right: 0; padding: 0 10px; }
-    .sidebar .sidebar-nav {align-items: center;  flex-direction: row; gap: 20px;padding: 0 10px; }
+    .sidebar .sidebar-nav {align-items: center; width: 10px; flex-direction: row; gap: 20px;padding: 0 50px; }
     .sidebar .sidebar-nav a { font-size: 0.85em; padding: 4px 4px; border-radius: 5px; }
     .sidebar .sidebar-nav a span { display: none !important; }
     .sidebar .sidebar-footer { padding: 2px; border-top: none; margin-left: auto; }
@@ -772,6 +790,13 @@
   .d-none {
   display: none !important;
   }
+  .invite-code {
+    font-size: 28px;
+    color: #8be9fd;
+    font-weight: 600;
+    margin-top: 12px;
+    text-align: center;
+  }
   
   </style>
   {% block extra_head %}{% endblock %}
@@ -799,6 +824,9 @@
       <div class="sidebar-nav">
         <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
           <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
+          <i class="fas fa-mask"></i> <span>Organized Crime</span>
         </a>
         <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
           <i class="fas fa-store"></i> <span>Shop</span>

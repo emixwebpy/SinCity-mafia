@@ -226,29 +226,31 @@
             {{ money_class(character.money)|safe }}
         </div>
     </div>
-    <div class="profile-stat">
-        <span class="profile-label">Health: &nbsp</span>
-        <span class="profile-value">{{ character.health }}</span>
-        
-    </div>
-    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+    <div class="profile-stats">
         <div class="profile-stat">
-            <span class="profile-label">XP:&nbsp </span>
-            {{ character.xp }}
+            <span class="profile-label">Health: &nbsp</span>
+            <span class="profile-value">{{ character.health }}</span>
+            
+        </div>
+        {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+            <div class="profile-stat">
+                <span class="profile-label">XP:&nbsp </span>
+                {{ character.xp }}
+            </div>
+            {% endif %}
+        {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
+        <div class="profile-stat">
+            <span class="profile-label">Kills: &nbsp</span>
+            <span class="profile-value">{{ current_user.kills }}</span>
         </div>
         {% endif %}
-    {% if current_user.is_authenticated and character and character.master_id == current_user.id %}
-    <div class="profile-stat">
-        <span class="profile-label">Kills: &nbsp</span>
-        <span class="profile-value">{{ current_user.kills }}</span>
+        {% if user.gun %}
+        <div class="profile-stat">
+            <span class="profile-label">Gun</span>
+            <span class="profile-value">{{ user.gun.name }} ({{ user.gun.damage }} dmg)</span>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-    {% if character.gun %}
-    <div class="profile-stat">
-        <span class="profile-label">Gun</span>
-        <span class="profile-value">{{ character.gun.name }} ({{ character.gun.damage }} dmg)</span>
-    </div>
-    {% endif %}
     {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
     <form class="profile-stat" action="{{ url_for('kill', username=character.name) }}" method="post" style="margin-top:18px;">
         <button type="submit" class="btn btn-danger">Shoot</button>

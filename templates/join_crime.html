@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}default{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <h2>Join Organized Crime Group</h2>
+    <form method="POST">
+      <input name="invite_code" placeholder="Enter Invite Code" required>
+      <button type="submit">Join</button>
+    </form>
+{% endblock %}

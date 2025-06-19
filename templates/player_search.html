@@ -2,21 +2,45 @@
 {% block title %}Player Search{% endblock %}
 
 {% block content %}
-<div class="search-container" style="
-    max-width: 720px;
-    margin: 48px auto;
-    background: rgba(25, 25, 40, 0.98);
-    border-radius: 24px;
-    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
-    padding: 32px;
-    border: 1.5px solid #8be9fd44;
-    color: #f5f6fa;
-    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-">
-    <h2 style="color: #8be9fd; font-family: 'Oswald', sans-serif; font-weight: 800; margin-bottom: 18px;">
+<style>
+    .search-container {
+        max-width: 380px;
+        margin: 150px 37% 0 auto;
+        background: rgba(25, 25, 40, 0.98);
+        border-radius: 28px;
+        box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+        padding: 38px 28px 32px 28px;
+        border: 1.5px solid #8be9fd44;
+        color: #f5f6fa;
+        font-family: "geo", sans-serif;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .player-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+    }
+    .player-item {
+        background: #2a2b3d;
+        padding: 14px 20px;
+        margin-bottom: 12px;
+        border-radius: 14px;
+        box-shadow: 0 1px 8px #8be9fd22;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.05em;
+    }
+    .player-level {
+        color: #b8b8ff;
+        font-size: 0.95em;
+    }
+</style>
+<div class="search-container">
+    <h2>
         <i class="fas fa-search"></i> Search for Players
     </h2>
 
@@ -31,23 +55,14 @@
     </form>
 
     {% if results %}
-        <ul class="player-list" style="list-style: none; padding: 0; margin-top: 20px;">
+        <ul class="player-list">
             {% for user in results %}
-            <li class="player-item" style="
-                background: #2a2b3d;
-                padding: 14px 20px;
-                margin-bottom: 12px;
-                border-radius: 14px;
-                box-shadow: 0 1px 8px #8be9fd22;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 1.05em;">
+            <li class="player-item">
                 <div style="text-align: left;">
                     <a href="{{ url_for('profile', username=user.username) }}" style="color:#8be9fd; font-weight: 700;">
-                        {{ user.username }}
+                        {{ user.master_id.name }}
                     </a>
-                    <div style="color:#b8b8ff; font-size: 0.95em;">
+                    <div class="player-level">
                         Level {{ user.level }}, Health: {{ user.health }}
                     </div>
                 </div>

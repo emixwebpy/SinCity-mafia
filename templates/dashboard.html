@@ -85,16 +85,17 @@
                         {% for user in online_users %}
                             <li>
                                 <a href="{{ url_for('profile', username=user.username) }}">
-                                    {{ char_map[user.id].name if user.id in char_map else user.username }}
-                                </a>
+                                    {{ char_map.get(user.id, user.username) }}
+                                </a>  &nbsp; |
                             {% if user.is_premium %}
                                 <span class="badge badge-premium">Premium</span>
                             {% endif %}
                             </li>
                         {% endfor %}
+                        <br>
                         {% for npc in npcs %}
                             <li>
-                                <a href="{{ url_for('profile', username=npc.name) }}">{{ npc.name }} (NPC)</a>
+                                <a href="{{ url_for('profile', username=npc.name) }}">{{ npc.name }} (NPC)</a> &nbsp; |
                             </li>
                         {% endfor %}
                     </ul>

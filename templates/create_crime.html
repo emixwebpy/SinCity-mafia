@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}OC Create{% endblock %}</h1>
+  
+{% endblock %}
+
+{% block content %}
+<style>
+  .login-form {
+    max-width: 380px;
+    margin: 150px 37% 0 auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 28px;
+    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+    padding: 38px 28px 32px 28px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: "geo", sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.login-form button[type="submit"] {
+    width: 100%;
+    padding: 12px 0;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
+    color: #23243a;
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-top: 18px;
+    box-shadow: 0 1px 8px #8be9fd22;
+    transition: background 0.18s, color 0.18s;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+.login-form button[type="submit"]:hover {
+    background: #23243a;
+    color: #8be9fd;
+    box-shadow: 0 1px 8px #8be9fd22;
+}
+</style>
+  <div class="login-form">
+      <h2 >Create Organized Crime Group</h2>
+      <form method="POST">
+        <button type="submit">Create Group</button>
+      </form>
+      <form method="POST">
+        <button type="submit">Join Group</button>
+      </form>
+  </div>
+  
+{% endblock %}
