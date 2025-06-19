@@ -273,8 +273,18 @@ class CrewMessage(db.Model):
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
-
+    
     user = db.relationship('User', backref='messages')
+
+class ChatMessage(db.Model):
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    channel = db.Column(db.String(10), default='public')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='chat_messages')
 
 class CrewInvitation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -949,7 +959,7 @@ def create_crew():
 @app.route('/earn')
 @login_required
 def earn():
-    cooldown = timedelta(minutes=0, seconds=5)
+    cooldown = timedelta(seconds=5)
     now = datetime.utcnow()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
@@ -959,7 +969,7 @@ def earn():
     if character.last_earned and (now - character.last_earned) < cooldown:
         remaining = cooldown - (now - character.last_earned)
         minutes, seconds = divmod(int(remaining.total_seconds()), 60)
-        return jsonify({
+        return flash({
             'success': False,
             'message': f"Wait {minutes}m {seconds}s before earning again."
         })
@@ -1181,6 +1191,22 @@ def create_fake_profile():
 
     # # For GET requests, show the creation form
     # return render_template('create_npc.html', npc_price=npc_price, npc_level=npc_level)
+
+@app.route('/public_messages')
+def public_messages():
+    messages = ChatMessage.query.filter_by(channel='public').order_by(ChatMessage.timestamp.asc()).limit(50).all()
+    return jsonify([{"username": msg.username, "message": msg.message} for msg in messages])
+
+@app.route('/send_public_message', methods=['POST'])
+@login_required
+def send_public_message():
+    message = request.form.get('message', '').strip()
+    if not message:
+        return jsonify({"error": "Empty message"}), 400
+    chat_msg = ChatMessage(username=current_user.username, message=message, channel='public')
+    db.session.add(chat_msg)
+    db.session.commit()
+    return jsonify(success=True)
 
 @app.context_processor
 def inject_current_character():
