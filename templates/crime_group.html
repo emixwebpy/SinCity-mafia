@@ -5,12 +5,100 @@
 {% endblock %}
 
 {% block content %}
-  <h2 > {{ current_user.character.name }} Crime Group</h2>
+<style>
+  .crime-container {
+    max-width: 480px;
+    margin: 48px auto 0 auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 28px;
+    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+    padding: 38px 28px 32px 28px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: "geo", sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .crime-container h2 {
+    color: #8be9fd;
+    font-size: 2em;
+    font-weight: 900;
+    margin-bottom: 18px;
+    
+    letter-spacing: 1px;
+    text-shadow: 0 2px 12px #23243a;
+  }
+  
+  .invite-code {
+    color: #b8b8ff;
+    font-size: 1.2em;
+    margin-bottom: 12px;
+    margin-top: 24px;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  
+  .crime-member-list {
+    text-align: center;
+    list-style: none;
+    padding: 0;
+    
+    margin-right: 40px;
+    margin-top: -10px; /* Adjusted to reduce space */
+    margin-bottom: -10px; /* Adjusted to reduce space */
+    color: #fff; /* Ensuring text is visible */
+    font-size: 1.08em; /* Consistent with other lists */
+    font-weight: normal; /* Normal weight for member names */
+  }
+  .crime-member-list li {
+    background: rgba(139,233,253,0.08);
+    border-radius: 16px;
+    padding: 14px 18px 10px 18px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 8px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centering the member names */
+    text-align: center; /* Centering the text */
+    transition: box-shadow 0.18s, transform 0.18s;
+  } 
+  .crime-member-list li:last-child {
+    margin-bottom: 0;
+  }
+  .crime-member-list li strong {
+    color: #8be9fd;
+    font-size: 1.08em;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .login-form {
+    max-width: 380px;
+    margin: 150px 37% 0 auto;
+    background: rgba(25, 25, 40, 0.98);
+    border-radius: 28px;
+    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+    padding: 38px 28px 32px 28px;
+    border: 1.5px solid #8be9fd44;
+    color: #f5f6fa;
+    font-family: "geo", sans-serif;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+</style>
+<div class="crime-container">
+  <h2 > {{ current_character.name }} Crime Group</h2>
   
     <p class="invite-code">Invite Code <br><strong>{{ crime.invite_code }}</strong></p>
     <ul>
       {% for member in members %}
-        <li class="crime-member-list">{{ current_user.character.name }}</li>
+        <li class="crime-member-list">{{ current_character.name }}</li>
       {% endfor %}
     </ul>
     {% if current_user.id == crime.leader_id and crime.members|length >= 2 %}
@@ -18,4 +106,5 @@
         <button type="submit" class="btn btn-danger mt-3">Start Group Crime</button>
       </form>
     {% endif %}
+  </div>
 {% endblock %}

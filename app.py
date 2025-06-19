@@ -1,4 +1,7 @@
 
+from ast import And
+from calendar import c
+from sys import maxsize
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
@@ -76,7 +79,7 @@ def check_character_alive():
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(12), unique=True, nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
@@ -113,13 +116,14 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
 class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # The actual owner of the character
     master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    name = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(12), nullable=False)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
@@ -129,7 +133,7 @@ class Character(db.Model):
     is_alive = db.Column(db.Boolean, default=True)
 
     # Optional user_id, for linking in crews or alt usage
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     profile_image = db.Column(db.String(255), nullable=True)
@@ -140,7 +144,14 @@ class Character(db.Model):
 
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
-  
+class CharacterEditForm(SecureForm):
+    name = StringField('Name')
+    health = IntegerField('Health')
+    money = IntegerField('Money')
+    level = IntegerField('Level')
+    xp = IntegerField('XP')
+    is_alive = BooleanField('Is Alive', default=True)
+    profile_image = StringField('Profile Image URL')
 
 class UserEditForm(SecureForm):
     username = StringField('Username')
@@ -173,47 +184,6 @@ class OrganizedCrime(db.Model):
 
     def is_full(self):
         return len(self.members) >= 4
-
-@app.route('/organized_crime/attempt', methods=['POST'])
-@login_required
-def attempt_organized_crime():
-    crime = current_user.crime_group
-    if not crime:
-        flash("You are not in a crime group.", "danger")
-        return redirect(url_for('dashboard'))
-
-    if current_user.id != crime.leader_id:
-        flash("Only the group leader can start the crime.", "danger")
-        return redirect(url_for('dashboard'))
-
-    members = crime.members
-    if len(members) < 2:
-        flash("You need at least 2 members to attempt the crime.", "warning")
-        return redirect(url_for('dashboard'))
-
-    # Crime logic (random success)
-    import random
-    success = random.choice([True, False])
-    reward_money = random.randint(500, 1500) if success else 0
-    reward_xp = random.randint(10, 30) if success else 0
-
-    for member in members:
-        if member.character:
-            if success:
-                member.character.money += reward_money
-                member.character.xp += reward_xp
-            member.last_crime_time = datetime.utcnow()
-            member.organized_crime_id = None  # Disband
-
-    db.session.delete(crime)
-    db.session.commit()
-
-    if success:
-        flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
-    else:
-        flash("Crime failed! The crew has disbanded.", "danger")
-
-    return redirect(url_for('dashboard'))
     
 class ShopItemModelView(ModelView):
     can_create = True
@@ -267,8 +237,8 @@ class UserModelView(ModelView):
     form = UserEditForm
 
     form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    form_columns = ['username', 'password', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money', 'health', 'gun_id']  # <-- Add 'level'
-    column_list = ('id', 'username', 'crew_id', 'xp', 'level', 'money', 'last_seen', 'is_admin','premium', 'premium_until', 'last_known_ip', 'health', 'gun_id')
+    form_columns = ['username', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money', 'health', 'gun_id']  # <-- Add 'level'
+    column_list = ('id', 'username', 'crew_id', 'last_seen', 'is_admin','premium', 'premium_until', 'last_known_ip')
 
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
@@ -290,6 +260,7 @@ class UserModelView(ModelView):
         return redirect(url_for('login'))
 
 class Crew(db.Model):
+    __tablename__ = 'crew'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True, nullable=False)
     members = db.relationship('User', backref='crew', lazy=True)
@@ -343,6 +314,47 @@ def fix_crew_members():
 
     db.session.commit()
     return f"Removed {len(broken)} broken crew member entries."
+
+@app.route('/organized_crime/attempt', methods=['POST'])
+@login_required
+def attempt_organized_crime():
+    crime = current_user.crime_group
+    if not crime:
+        flash("You are not in a crime group.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if current_user.id != crime.leader_id:
+        flash("Only the group leader can start the crime.", "danger")
+        return redirect(url_for('dashboard'))
+
+    members = crime.members
+    if len(members) < 2:
+        flash("You need at least 2 members to attempt the crime.", "warning")
+        return redirect(url_for('dashboard'))
+
+    # Crime logic (random success)
+    import random
+    success = random.choice([True, False])
+    reward_money = random.randint(500, 1500) if success else 0
+    reward_xp = random.randint(10, 30) if success else 0
+
+    for member in members:
+        if member.character:
+            if success:
+                member.character.money += reward_money
+                member.character.xp += reward_xp
+            member.last_crime_time = datetime.utcnow()
+            member.organized_crime_id = None  # Disband
+
+    db.session.delete(crime)
+    db.session.commit()
+
+    if success:
+        flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
+    else:
+        flash("Crime failed! The crew has disbanded.", "danger")
+
+    return redirect(url_for('dashboard'))
 
 @app.route('/crew/<int:crew_id>')
 @login_required
@@ -502,8 +514,8 @@ def inventory():
 
     return render_template('inventory.html', inventory_items=inventory_items, character=character)
 
-
 @app.route("/users_online")
+@login_required
 def users_online():
     cutoff = datetime.utcnow() - timedelta(minutes=5)
     users = User.query.filter(User.last_seen >= cutoff).all()
@@ -820,7 +832,6 @@ def upload_profile_image():
             flash('Invalid file type.', 'danger')
     return render_template('upload_profile_image.html')
 
-
 @app.route('/crew_messages')
 @login_required
 def crew_messages():
@@ -835,7 +846,6 @@ def crew_messages():
         'message': msg.message,
         'timestamp': msg.timestamp.strftime('%H:%M')
     } for msg in reversed(messages)])  # return oldest first
-
 
 @app.route('/crew_invitations')
 @login_required
@@ -1083,21 +1093,32 @@ def create_fake_profile():
             return redirect(url_for('create_fake_profile'))
 
         # Check if they have enough money and level
-        if character.money and character.level < npc_price and npc_level:
-            flash("Not enough money to create a fake profile.", "danger")
+        if character.money < npc_price:
+            flash(f"Not enough money to create a fake profile.", "danger")
             return redirect(url_for('dashboard'))
+        
+        if character.level < npc_level:
+            flash(f"You must be at least level {npc_level} to create a fake profile.", "danger")
+            return redirect(url_for('dashboard'))
+        
+        # Check if an NPC with this name already exists
+        existing_npc = Character.query.filter_by(name=npc_name, master_id=0).first()
+        if existing_npc:
+            flash(f"A fake profile with the name '{npc_name}' already exists.", "danger")
+            return redirect(url_for('dashboard'))   
 
         # Deduct the cost and create the fake profile
         character.money -= npc_price
         npc = Character(
             profile_image='uploads/default_npc.png',  # Default image for NPCs
             master_id=0,  # 0 = NPC
-            name=npc_name,
-            money=500,  # Starting money for NPC
+            name= random.choice(['John Doe', 'Jane Smith', 'Alex Johnson', 'Chris Lee', 'Taylor Brown']),  # Random NPC name
+            money= random.randint(200, 2000),  # Starting money for NPC
             xp=0,
             level=1,
             is_alive=True,
-            health=100
+            health=100,
+            user_id=None
         )
         db.session.add(npc)
         db.session.commit()
@@ -1117,7 +1138,7 @@ def inject_current_character():
     return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
 
-admin = Admin(app, name='Admin Panel', template_mode='bootstrap3', base_template='admin/dood_base.html')
+admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
 admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
 admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
 admin.add_view(ModelView(CrewMember, db.session))

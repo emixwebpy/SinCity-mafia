@@ -18,7 +18,7 @@
                         </div>
                     </div>
                     <div class="dashboard-card">
-                        <h5><i class="fas fa-star"></i> XP</h5>
+                        <h5><i class="fa fa-star"></i> XP</h5>
                         <div class="display-4" id="xp">
                           <span id="xp"></span>{{ current_character.xp }}
                         </div>
@@ -66,7 +66,7 @@
     
     <h3 style="color: #8be9fd; font-family: 'Oswald', sans-serif;">Create a Fake Profile</h3>
     <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
-    
+    <p style="color: #b8b8ff;">Level: <strong style="color: #ffd700;">15</strong></p>
     <form method="POST" action="{{ url_for('create_fake_profile') }}">
         <input type="text" name="npc_name" placeholder="Enter NPC Name" required
                style="padding: 10px; border-radius: 5px; border: none; width: 80%; margin-bottom: 12px; background: #1b1c2d; color: #f5f6fa;">
@@ -107,22 +107,7 @@
         </main>
     </div>
 </div>
-{% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <ul class="flashes">
-              {% for category, message in messages %}
-              <li class="{{ category }}">{{ message }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
-<!-- <div id="floating-chat">
-    <div id="chat-messages"></div>
-    <form id="chat-form">
-        <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
-        <button type="submit" id="chat-submit">Send</button>
-    </form>
-</div> -->
+
 
 <script>
 // ---------------- Earn Button Timer ----------------
