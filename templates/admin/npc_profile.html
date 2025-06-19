@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="npc-profile">
+  <h2>{{ character.name }} (NPC)</h2>
+  <img src="{{ url_for('static', filename=character.profile_image or 'uploads/default_npc.png') }}" alt="NPC Image" class="profile-image">
+  <ul>
+    <li>Health: {{ character.health }}</li>
+    <li>Level: {{ character.level }}</li>
+    <li>Money: ${{ character.money }}</li>
+    <li>Status: {% if character.is_alive %}Alive{% else %}Dead{% endif %}</li>
+  </ul>
+  <form method="POST" action="{{ url_for('kill', username=character.name) }}">
+    <button type="submit" class="btn btn-danger" {% if not character.is_alive %}disabled{% endif %}>Attempt to Kill</button>
+  </form>
+</div>
+{% endblock %}

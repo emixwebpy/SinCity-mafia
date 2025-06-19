@@ -5,7 +5,7 @@
 <style>
     .search-container {
         max-width: 380px;
-        margin: 150px 37% 0 auto;
+        margin: auto;
         background: rgba(25, 25, 40, 0.98);
         border-radius: 28px;
         box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
@@ -56,27 +56,22 @@
 
     {% if results %}
         <ul class="player-list">
-            {% for user in results %}
+            {% for character in results %}
             <li class="player-item">
                 <div style="text-align: left;">
-                    <a href="{{ url_for('profile', username=user.username) }}" style="color:#8be9fd; font-weight: 700;">
-                        {{ user.master_id.name }}
-                    </a>
+                    {% if user.character %}
+                        <p>{{ character.name }}</p>
+                    {% endif %}
                     <div class="player-level">
-                        Level {{ user.level }}, Health: {{ user.health }}
+                        Level {{ character.level }}, Health: {{ character.health }}
                     </div>
                 </div>
 
                 <div>
-                    {% if current_user.gun_id and user.health > 0 %}
-                        <form action="{{ url_for('kill', username=user.username) }}" method="post" style="margin:0;">
-                            <button type="submit" class="btn btn-danger btn-sm"
-                                    style="padding: 6px 14px; border-radius: 8px; font-weight: 600;">Shoot</button>
+                    {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
+                        <form action="{{ url_for('kill', username=character.name) }}" method="POST">
+                            <button type="submit">Shoot</button>
                         </form>
-                    {% elif user.health <= 0 %}
-                        <span style="color:#ff5e5e; font-weight: 600;">Dead</span>
-                    {% else %}
-                        <span style="color:#888; font-weight: 600;">No gun</span>
                     {% endif %}
                 </div>
             </li>

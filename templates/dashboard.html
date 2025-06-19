@@ -31,7 +31,15 @@
                 </div>
                 <div class="dashboard-actions">
                     {% if current_user.crew %}
-                    <a href="{{ url_for('crew_page', crew_id=crew.id) }}" class="btn"><i class="fas fa-users"></i> Crew</a>
+                    {% if crew %}
+                      <a href="{{ url_for('crew_page', crew_id=crew.id) }}" class="btn">
+                        <i class="fas fa-users"></i> Crew
+                      </a>
+                    {% else %}
+                      <p><i class="fas fa-users"></i> Not in a crew</p>
+                    {% endif %}
+                    {% endif %}
+                    {% if current_user.crew and crew %} 
                     <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
                     </form>
@@ -68,9 +76,7 @@
     <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
     <p style="color: #b8b8ff;">Level: <strong style="color: #ffd700;">15</strong></p>
     <form method="POST" action="{{ url_for('create_fake_profile') }}">
-        <input type="text" name="npc_name" placeholder="Enter NPC Name" required
-               style="padding: 10px; border-radius: 5px; border: none; width: 80%; margin-bottom: 12px; background: #1b1c2d; color: #f5f6fa;">
-        <br>
+        
         <button type="submit" class="btn btn-primary"
                 style="padding: 10px 20px; border-radius: 5px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
             Create NPC

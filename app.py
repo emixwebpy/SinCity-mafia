@@ -1,6 +1,7 @@
 
 from ast import And
 from calendar import c
+from doctest import master
 from sys import maxsize
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
@@ -82,6 +83,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(12), unique=True, nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
+    
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
@@ -122,7 +124,10 @@ class Character(db.Model):
     
     # The actual owner of the character
     master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
+    
+    # Optional user_id for linking in crews or alt usage
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    # Character attributes
     name = db.Column(db.String(12), nullable=False)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=0)
@@ -131,14 +136,11 @@ class Character(db.Model):
     earn_streak = db.Column(db.Integer, default=0)
     last_earned = db.Column(db.DateTime, nullable=True)
     is_alive = db.Column(db.Boolean, default=True)
-
-    # Optional user_id, for linking in crews or alt usage
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     profile_image = db.Column(db.String(255), nullable=True)
-    
-
+    crew = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
+    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
     # Linked user (e.g., for crew systems)
     linked_user = db.relationship('User', foreign_keys=[user_id])
 
@@ -401,36 +403,58 @@ def update_crew_role(crew_member_id):
     return redirect(url_for('crew_page', crew_id=target_crew_id))
 
 
+
 @app.route('/kill/<username>', methods=['POST'])
 @login_required
 def kill(username):
-    # Find target: real user or NPC
+    # Ensure the current user has a living character
+    if not current_user.character or not current_user.character.is_alive:
+        flash("You need a living character to attack!", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Look up target user or NPC by username
     user = User.query.filter_by(username=username).first()
     if user:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
     else:
-        character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
+        # It's an NPC, get by name and NPC master ID
+        npc_master = User.query.filter_by(username="NPC").first()
+        character = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
+
     if not character:
-        flash("Target not found.", "danger")
+        flash("Target not found or already dead.", "danger")
         return redirect(url_for('dashboard'))
 
-    # Use current_user.gun (from ShopItem)
-    if not current_user.gun or not character.is_alive:
-        flash("You can't shoot!", "danger")
+    # Prevent killing your own character
+    if character.master_id == current_user.id:
+        flash("You can't kill your own character!", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Ensure player has a gun equipped
+    if not current_user.gun:
+        flash("You don't have a gun equipped!", "danger")
         return redirect(url_for('profile', username=username))
 
+    # Apply damage
     character.health -= current_user.gun.damage
     killed = False
+
     if character.health <= 0:
         character.is_alive = False
         killed = True
         flash(f"You killed {character.name}!", "success")
     else:
-            flash(f"You shot {character.name}!", "success")
-            db.session.commit()
+        flash(f"You shot {character.name}!", "success")
+
+    # Commit changes
+    db.session.commit()
+
+    # Update kill count if target was killed
     if killed:
+        
         current_user.kills = (current_user.kills or 0) + 1
         db.session.commit()
+
     return redirect(url_for('profile', username=username))
 
 # ...existing code...
@@ -517,7 +541,7 @@ def inventory():
 @app.route("/users_online")
 @login_required
 def users_online():
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    cutoff = datetime.utcnow() - timedelta(minutes=1)
     users = User.query.filter(User.last_seen >= cutoff).all()
 
     # For each user, find their *first alive character* (you can tweak this logic as needed)
@@ -525,7 +549,7 @@ def users_online():
     for user in users:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
         if character:
-            user_character_map[user.id] = character.name
+            user_character_map[character.id] = character.name
         else:
             user_character_map[user.id] = user.username  # fallback
 
@@ -1064,70 +1088,99 @@ def profile(username):
     user = User.query.filter_by(username=username).first()
     if user:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-        crew = db.session.get(Crew, user.crew_id) if user.crew_id else None
-        return render_template('profile.html', user=user, crew=crew, character=character)
+        if not character:
+            # If user exists but has no living character, show their dashboard
+            return render_template('dashboard.html', user=user, character=None, crew=None)
+        
+    else:
+        character = Character.query.filter_by(name=username, master_id=0).first()
+        return render_template('dashboard.html', user=user, character=character, crew=character.crew if character else None)
+
     # If not found, try to find an NPC by name
-    character = Character.query.filter_by(name=username, master_id=0).first()
-    if character:
-        return render_template('profile.html', user=None, crew=None, character=character)
+    if not user and not character:
+        npc_master = User.query.filter_by(username="NPC").first()
+        if npc_master:
+            character = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
+    
+    if not character:
+        return render_template('404.html')
     # Not found
-    return render_template('404.html'), 404
+    return render_template('profile.html', user=user, character=character)
 
 @app.route('/create_fake_profile', methods=['GET', 'POST'])
 @login_required
 def create_fake_profile():
     npc_price = 150000
     npc_level = 10  # Cost to create a fake NPC profile
+    npc_user = User.query.filter_by(username="NPC").first()
 
-    if request.method == 'POST':
-        npc_name = request.form.get('npc_name', '').strip()
-
-        if not npc_name:
-            flash("NPC name is required.", "danger")
-            return redirect(url_for('create_fake_profile'))
-
-        # Check if the player has a character
-        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-        if not character:
-            flash("You must have a character to create a fake profile.", "danger")
-            return redirect(url_for('create_fake_profile'))
-
-        # Check if they have enough money and level
-        if character.money < npc_price:
-            flash(f"Not enough money to create a fake profile.", "danger")
-            return redirect(url_for('dashboard'))
-        
-        if character.level < npc_level:
-            flash(f"You must be at least level {npc_level} to create a fake profile.", "danger")
-            return redirect(url_for('dashboard'))
-        
-        # Check if an NPC with this name already exists
-        existing_npc = Character.query.filter_by(name=npc_name, master_id=0).first()
-        if existing_npc:
-            flash(f"A fake profile with the name '{npc_name}' already exists.", "danger")
-            return redirect(url_for('dashboard'))   
-
-        # Deduct the cost and create the fake profile
-        character.money -= npc_price
-        npc = Character(
-            profile_image='uploads/default_npc.png',  # Default image for NPCs
-            master_id=0,  # 0 = NPC
-            name= random.choice(['John Doe', 'Jane Smith', 'Alex Johnson', 'Chris Lee', 'Taylor Brown']),  # Random NPC name
-            money= random.randint(200, 2000),  # Starting money for NPC
-            xp=0,
-            level=1,
-            is_alive=True,
-            health=100,
-            user_id=None
+    if not npc_user:
+        npc_user = User(
+            username="NPC",
+            is_admin=False,
+            premium=False,
+            password_hash="npc",  # Set something, but they won’t log in anyway
         )
-        db.session.add(npc)
+        db.session.add(npc_user)
         db.session.commit()
+        print("NPC user created.")
 
-        flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
+    # Step 2: Assign all orphan NPC characters to the dummy NPC user
+    orphan_npcs = Character.query.filter_by(master_id=0).all()
+    for npc in orphan_npcs:
+        npc.master_id = npc_user.id
+        npc.user_id = npc_user.id
+
+    db.session.commit()
+    print(f"Updated {len(orphan_npcs)} NPC(s) to link to user_id {npc_user.id}.")
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("You must have a character to create a fake profile.", "danger")
         return redirect(url_for('dashboard'))
 
-    # For GET requests, show the creation form
-    return render_template('create_npc.html', npc_price=npc_price)
+    if character.money < npc_price:
+        flash("Not enough money to create a fake profile.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if character.level < npc_level:
+        flash(f"You must be at least level {npc_level} to create a fake profile.", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Generate a unique name for the NPC
+    npc_names = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Chris Lee', 'Taylor Brown', 'Morgan Black', 'Riley Stone']
+    attempts = 0
+    max_attempts = 10
+    while attempts < max_attempts:
+        npc_name = random.choice(npc_names) + f" #{random.randint(100, 999)}"
+        if not Character.query.filter_by(name=npc_name, master_id=0).first():
+            break
+        attempts += 1
+    else:
+        flash("Could not generate a unique NPC name. Try again later.", "danger")
+        return redirect(url_for('dashboard'))
+
+    character.money -= npc_price
+    npc = Character(
+        profile_image='uploads/default_npc.png',
+        master_id=npc_user.id,  # NPCs have master_id=0
+        name=npc_name,
+        money=random.randint(200, 1000000000000),
+        xp=random.randint(1, 500000),
+        level=random.randint(1, 25),
+        is_alive=True,
+        health=100,
+        user_id=npc_user.id,  # Link to the dummy NPC user
+    )
+
+    
+    db.session.add(npc)
+    db.session.commit()
+
+    flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
+    return redirect(url_for('dashboard'))
+
+    # # For GET requests, show the creation form
+    # return render_template('create_npc.html', npc_price=npc_price, npc_level=npc_level)
 
 @app.context_processor
 def inject_current_character():
