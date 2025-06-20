@@ -581,6 +581,11 @@ def player_search():
             ).all()
     return render_template('player_search.html', results=results, query=query)
 
+@app.route('/npc/<int:id>')
+def npc_profile(id):
+    npc = Character.query.filter_by(id=id, master_id=0).first_or_404()
+    return render_template('npc_profile.html', npc=npc)
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -606,7 +611,13 @@ def send_crew_message():
     message = request.form.get('message', '').strip()
     if not message:
         return jsonify({"error": "Empty message"}), 400
-    chat_msg = ChatMessage(username=current_user.username, message=message, channel='public')
+
+    chat_msg = ChatMessage(
+        username=current_user.username,
+        message=message,
+        channel='crew',
+        user_id=current_user.id
+    )
     db.session.add(chat_msg)
     db.session.commit()
     return jsonify(success=True)
@@ -654,11 +665,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/crew_chat')
-@login_required
-def crew_chat():
-    return render_template('crew_chat.html')
-
 @app.route('/get_messages')
 @login_required
 def get_messages():
@@ -668,9 +674,7 @@ def get_messages():
     messages = CrewMessage.query.filter_by(crew_id=current_user.crew.id)\
                                 .order_by(CrewMessage.timestamp.desc())\
                                 .limit(50).all()
-    messages = ChatMessage.query.filter_by(crew_id=current_user.crew.id)\
-                                .order_by(CrewMessage.timestamp.desc())\
-                                .limit(50).all()
+    
     return jsonify(messages=[{
         'username': msg.user.username,
         'message': msg.message,
@@ -702,29 +706,20 @@ def leave_crew():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Update last seen time
-    current_user.last_seen = datetime.utcnow()
-    online_threshold = datetime.utcnow() - timedelta(seconds=1)
-    online_users = current_user.query.filter(User.last_seen >= online_threshold).all()
-    crew = current_user.crew if hasattr(current_user, 'crew') else None
-    
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+
+    # Build user id → character name
+    char_map = {}
+    for user in online_users:
+        char = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        char_map[user.id] = char.name if char else user.username
+
+    # Get NPCs
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
-    online_users = current_user.query.all()  # however you get this list
-    
-    
-    user_ids = [user.id for user in online_users]
-    characters = Character.query.filter(Character.master_id.in_(user_ids), Character.is_alive == True).all()
-    char_map = {char.master_id: char for char in characters}
-    return render_template(
-        "dashboard.html",
-        current_character=character,
-        online_users=online_users,
-        char_map=char_map,
-        user=current_user,
-        crew=crew,
-        npcs=npcs
-    )
+
+    return render_template('dashboard.html', online_users=online_users, char_map=char_map, npcs=npcs)
 
 @app.route('/refresh_shop')
 def refresh_shop():
@@ -869,14 +864,14 @@ def crew_messages():
     if not current_user.crew:
         return jsonify([])
 
-    messages = CrewMessage.query.filter_by(crew_id=current_user.crew.id)\
-        .order_by(CrewMessage.timestamp.desc()).limit(50).all()
+    messages = ChatMessage.query.filter_by(channel='crew')\
+        .order_by(ChatMessage.timestamp.desc())\
+        .limit(50).all()
 
-    return jsonify([{
-        'username': msg.user.username,
-        'message': msg.message,
-        'timestamp': msg.timestamp.strftime('%H:%M')
-    } for msg in reversed(messages)])  # return oldest first
+    return jsonify([
+        {'username': m.username, 'message': m.message}
+        for m in reversed(messages)
+    ])
 
 @app.route('/crew_invitations')
 @login_required
@@ -1189,21 +1184,36 @@ def create_fake_profile():
     # # For GET requests, show the creation form
     # return render_template('create_npc.html', npc_price=npc_price, npc_level=npc_level)
 
-@app.route('/public_messages')
-def public_messages():
-    messages = ChatMessage.query.filter_by(channel='public').order_by(ChatMessage.timestamp.asc()).limit(50).all()
-    return jsonify([{"username" : msg.username, "message": msg.message} for msg in messages])
-
 @app.route('/send_public_message', methods=['POST'])
 @login_required
 def send_public_message():
     message = request.form.get('message', '').strip()
     if not message:
         return jsonify({"error": "Empty message"}), 400
-    chat_msg = ChatMessage(username=current_user.username, message=message, channel='public')
+
+    chat_msg = ChatMessage(
+        username=current_user.username,
+        message=message,
+        channel='public',
+        user_id=current_user.id
+    )
     db.session.add(chat_msg)
     db.session.commit()
     return jsonify(success=True)
+
+@app.route('/public_messages')
+@login_required
+def public_messages():
+    messages = ChatMessage.query.filter_by(channel='public')\
+        .order_by(ChatMessage.timestamp.desc())\
+        .limit(50).all()
+
+    return jsonify([
+        {'username': m.username, 'message': m.message}
+        for m in reversed(messages)
+    ])
+
+
 
 @app.context_processor
 def inject_current_character():

@@ -606,35 +606,9 @@
     font-weight: 500;
     letter-spacing: 0.2px;
   }
-  #floating-chat {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 260px;
-  height: 240px;
-  border: 1px solid #8be9fd88;
-  background: rgba(25, 25, 40, 0.98);
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0 12px #8be9fd55;
-  z-index: 9999;
-  border-radius: 5px;
-  backdrop-filter: blur(8px);
-  resize: both;
-  overflow: auto;
-  min-width: 160px;
-  min-height: 100px;
-  max-width: 98vw;
-  max-height: 90vh;
-  touch-action: none;
-  transition: box-shadow 0.18s;
-  font-size: 0.95em;
-}
+  
 
-#floating-chat:focus-within,
-#floating-chat:hover {
-  box-shadow: 0 0 18px #8be9fd99;
-}
+
   #chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -709,15 +683,17 @@
       gap: 6px;
     }
     .sidebar .sidebar-nav a.active,
-  .sidebar .sidebar-nav a:hover {
-    background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
-    color: #23243a;
-    font-weight: 700;
-    padding-left: 24px;
-    box-shadow: 0 2px 8px #8be9fd33;
-    
-  }
-
+    .sidebar .sidebar-nav a:hover {
+      background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
+      color: #23243a;
+      font-weight: 700;
+      padding-left: 36px;
+      box-shadow: 0 2px 8px #8be9fd33;
+      
+    }
+    #char-name a i { 
+      display: none
+    }
     .dashboard-cards { gap: 6px; }
     .dashboard-card { min-width: 0; max-width: 100vw; width: 100%; padding: 4px 2px; margin-top: 40pxx; font-size: 0.85em; }
   }
@@ -758,6 +734,7 @@
     .sidebar .sidebar-nav a span { 
       display: none
     }
+    
     .sidebar .sidebar-footer { 
       padding: 2px; 
       border-top: none; 
@@ -817,23 +794,28 @@
   }
 
   #floating-chat {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 267px;
-      height: 222px;
-      min-width: 267px;
-      min-height: 222px;
-      max-height: 140px;
-      max-height: 222px;
-      display: flex;
-      flex-direction: column;
-      background-color: #23243a;
-      border: 1px solid #444;
-      border-radius: 5px;
-      font-size: 1.15em;
-      z-index: 9999;
-      
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 264px;
+    height: 220px;
+    border: 1px solid #8be8fd00;
+    background: rgba(25, 25, 40, 0.98);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 12px #8be8fd00;
+    z-index: 9999;
+    border-radius: 5px;
+    backdrop-filter: blur(8px);
+    resize: none;
+    overflow: auto;
+    min-width: 50px;
+    min-height: 25px;
+    max-width: 50vw;
+    max-height: 50vh;
+    touch-action: none;
+    transition: box-shadow 0.18s;
+    font-size: 0.95em;
   }
 
   #chat-input {
@@ -889,7 +871,7 @@
   }
   .toggle-chat{
     position: fixed;
-    bottom: 90px;
+    bottom: 325px;
     right: 20px;
     z-index: 10000;
     background: #8be9fd;
@@ -899,6 +881,7 @@
     border: none;
     font-weight: 700;
   }
+  
   .chat-messages {
     max-height: 150px;
     overflow: auto;
@@ -945,9 +928,8 @@
       </div>
       {% if current_user.is_authenticated %}
       <div class="sidebar-user">
-        
+          <i id="char-name" class="fas fa-user-circle"></i>
           <a href="{{ url_for('profile', username=current_user.username) }}" style="color:inherit; text-decoration: underline;">
-          <i class="fas fa-user-circle"></i>
           <strong>{{ current_character.name }}</strong>
           </a>
           
@@ -1026,31 +1008,21 @@
       <div style="display: flex;">
         <button type="button" id="tab-crew" class="chat-tab " onclick="switchTab('crew')">Crew</button>
         <button type="button" id="tab-public" class="chat-tab active-tab" onclick="switchTab('public')">Public</button>
+        
       </div>
-
+        
       <!-- Crew Chat -->
-      <div id="chat-crew" class="chat-tab-content" style="display: block;">
-        <div id="crew-messages" class="chat-messages"></div>
-        <form id="crew-form">
-          <input type="text" id="crew-input" placeholder="Type a crew message..." />
-          <button type="submit">Send</button>
+      <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form">
+          <input type="text" id="chat-input" placeholder="Type a message..." />
+          <button type="submit" id="chat-submit">Send</button>
         </form>
-      </div>
 
-      <!-- Public Chat -->
-      <div id="chat-public" class="chat-tab-content" style="display: none;">
-        <div id="public-messages" class="chat-messages"></div>
-        <form id="public-form">
-          <input type="text" id="public-input" placeholder="Type a public message..." />
-          <button type="submit">Send</button>
-        </form>
-      </div>
-    </div>
+      
     {% endif %}
     
-  </div>
-  <button class="toggle-chat" onclick="toggleChat()"
-    ">-</button>
+    </div>
+  <button type="button" class="toggle-chat" onclick="toggleChat()"">-</button>
 </div>
 </div>
   {% block extra_body %}{% endblock %}
@@ -1073,7 +1045,7 @@
 }
 
 // On page load: apply saved state
-document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
   const chat = document.getElementById('floating-chat');
   const visible = localStorage.getItem('chatVisible');
 
@@ -1084,9 +1056,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
   // ---------------- Floating Chat ----------------
-document.getElementById('tab-public').addEventListener('click', () => switchTab('public'));
-document.getElementById('tab-crew').addEventListener('click', () => switchTab('crew'));
-let currentTab = 'public';
+  document.getElementById('tab-public').addEventListener('click', () => switchTab('public'));
+  document.getElementById('tab-crew').addEventListener('click', () => switchTab('crew'));
+  let currentTab = 'public';
 
   function switchTab(tab) {
     currentTab = tab;
@@ -1102,57 +1074,70 @@ let currentTab = 'public';
   }
   
   document.addEventListener('DOMContentLoaded', () => {
-  let currentTab = 'crew'; // or 'public', depending on default
+  let currentTab = 'crew';
+  const chatMessages = document.getElementById('chat-messages');
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+
+  window.switchTab = function (tab) {
+    currentTab = tab;
+
+    document.querySelectorAll('.chat-tab').forEach(btn => btn.classList.remove('active-tab'));
+    document.getElementById(`tab-${tab}`).classList.add('active-tab');
+
+    fetchMessages();
+  };
 
   async function fetchMessages() {
     try {
       const res = await fetch(`/${currentTab}_messages`);
       const data = await res.json();
-      const messageBox = document.getElementById(`${currentTab}-messages`);
+      const messageBox = document.getElementById('chat-messages');
+
+      // Detect if user is near bottom (within 50px)
+      const isNearBottom = messageBox.scrollHeight - messageBox.scrollTop <= messageBox.clientHeight + 50;
+
       messageBox.innerHTML = '';
       data.forEach(msg => {
         const div = document.createElement('div');
-        div.textContent = `${msg.username} : ${msg.message}`;
+        div.textContent = `${msg.username}: ${msg.message}`;
         messageBox.appendChild(div);
       });
-      messageBox.scrollTop = messageBox.scrollHeight;
+
+      // Only scroll to bottom if user was already near the bottom
+      if (isNearBottom) {
+        messageBox.scrollTop = messageBox.scrollHeight;
+      }
     } catch (err) {
-      console.error('Failed to fetch messages:', err);
+      console.error(`Failed to fetch ${currentTab} messages:`, err);
     }
-    
   }
-  
-  setInterval(fetchMessages, 3000);
-  async function sendMessage(event, tab) {
-    event.preventDefault();
-    const input = document.getElementById(`${tab}-input`);
-    const message = input.value.trim();
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = chatInput.value.trim();
     if (!message) return;
 
+    const url = `/send_${currentTab}_message`;
     try {
-      const res = await fetch(`/send_${tab}_message`, {
+      const res = await fetch(url, {
         method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams({ message })
       });
 
       if (res.ok) {
-        input.value = '';
+        chatInput.value = '';
         fetchMessages();
-      } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to send message.');
       }
     } catch (err) {
-      console.error('Send failed:', err);
+      console.error("Send error:", err);
     }
-  }
-  switchTab('public'); // Set default tab
-  fetchMessages();
-  document.getElementById('crew-form').addEventListener('submit', (e) => sendMessage(e, 'crew'));
-  document.getElementById('public-form').addEventListener('submit', (e) => sendMessage(e, 'public'));
+  });
 
-  
-  
+  // Initial load
+  switchTab('public');
+  setInterval(fetchMessages, 1000);
 });
 
 </script>
