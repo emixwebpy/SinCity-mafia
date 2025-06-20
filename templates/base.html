@@ -1024,8 +1024,8 @@
     {% if current_user.is_authenticated %}
     <div id="floating-chat">
       <div style="display: flex;">
-        <button type="button" id="tab-crew" class="chat-tab active-tab" onclick="switchTab('crew')">Crew</button>
-        <button type="button" id="tab-public" class="chat-tab" onclick="switchTab('public')">Public</button>
+        <button type="button" id="tab-crew" class="chat-tab " onclick="switchTab('crew')">Crew</button>
+        <button type="button" id="tab-public" class="chat-tab active-tab" onclick="switchTab('public')">Public</button>
       </div>
 
       <!-- Crew Chat -->
@@ -1098,8 +1098,9 @@ let currentTab = 'public';
     document.querySelector(`#chat-${tab}`).style.display = 'block';
 
     fetchMessages(); // Optional: Refresh messages on tab switch
+    
   }
-
+  
   document.addEventListener('DOMContentLoaded', () => {
   let currentTab = 'crew'; // or 'public', depending on default
 
@@ -1118,8 +1119,10 @@ let currentTab = 'public';
     } catch (err) {
       console.error('Failed to fetch messages:', err);
     }
+    
   }
-
+  
+  setInterval(fetchMessages, 3000);
   async function sendMessage(event, tab) {
     event.preventDefault();
     const input = document.getElementById(`${tab}-input`);
@@ -1143,12 +1146,13 @@ let currentTab = 'public';
       console.error('Send failed:', err);
     }
   }
+  switchTab('public'); // Set default tab
   fetchMessages();
   document.getElementById('crew-form').addEventListener('submit', (e) => sendMessage(e, 'crew'));
   document.getElementById('public-form').addEventListener('submit', (e) => sendMessage(e, 'public'));
 
-  switchTab('public'); // Set default tab
-  setInterval(fetchMessages, 100);
+  
+  
 });
 
 </script>

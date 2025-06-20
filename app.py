@@ -284,7 +284,7 @@ class ChatMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     channel = db.Column(db.String(10), default='public')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='chat_messages')
 
 class CrewInvitation(db.Model):
@@ -605,17 +605,11 @@ def send_crew_message():
 
     message = request.form.get('message', '').strip()
     if not message:
-        return jsonify({'error': 'Empty message'}), 400
-
-    crew_msg = CrewMessage(
-        crew_id=current_user.crew.id,
-        user_id=current_user.id,
-        message=message
-    )
-    db.session.add(crew_msg)
+        return jsonify({"error": "Empty message"}), 400
+    chat_msg = ChatMessage(username=current_user.username, message=message, channel='public')
+    db.session.add(chat_msg)
     db.session.commit()
-
-    return jsonify({'success': True})
+    return jsonify(success=True)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
