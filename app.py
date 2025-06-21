@@ -443,14 +443,27 @@ def kill(username):
         flash("You need a living character to attack!", "danger")
         return redirect(url_for('dashboard'))
 
-    # Look up target user or NPC by username
+    # Try to find a real user first
     user = User.query.filter_by(username=username).first()
     if user:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
     else:
-        # It's an NPC, get by name and NPC master ID
+        # Try to find an NPC master user (username="NPC"), create if missing
         npc_master = User.query.filter_by(username="NPC").first()
+        if not npc_master:
+            npc_master = User(
+                username="NPC",
+                is_admin=False,
+                premium=False,
+                password_hash="npc"
+            )
+            db.session.add(npc_master)
+            db.session.commit()
+        # Find the NPC character by name and master_id
         character = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
+        # For legacy NPCs (master_id=0), also check that
+        if not character:
+            character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
 
     if not character:
         flash("Target not found or already dead.", "danger")
@@ -461,7 +474,7 @@ def kill(username):
         flash("You can't kill your own character!", "danger")
         return redirect(url_for('dashboard'))
 
-    # Ensure player has a gun equipped
+    # Ensure the player has a gun equipped
     if not current_user.gun:
         flash("You don't have a gun equipped!", "danger")
         return redirect(url_for('profile', username=username))
@@ -477,12 +490,10 @@ def kill(username):
     else:
         flash(f"You shot {character.name}!", "success")
 
-    # Commit changes
     db.session.commit()
 
-    # Update kill count if target was killed
+    # Update kill count if the target was killed
     if killed:
-        
         current_user.kills = (current_user.kills or 0) + 1
         db.session.commit()
 
@@ -1042,7 +1053,14 @@ def crew_messages():
     messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id)\
                                 .order_by(ChatMessage.timestamp.asc())\
                                 .limit(50).all()
-    return jsonify([{'username': m.username, 'message': m.message} for m in messages])
+
+    return jsonify([
+        {
+            'character_name': Character.query.filter_by(master_id=m.user_id).first().name if Character.query.filter_by(master_id=m.user_id).first() else m.username,
+            'message': m.message
+        }
+        for m in messages
+    ])
 
 @app.route('/crew_invitations')
 @login_required
@@ -1357,12 +1375,16 @@ def create_fake_profile():
 @app.route('/send_public_message', methods=['POST'])
 @login_required
 def send_public_message():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        return jsonify({"error": "No active character found."}), 400
+
     message = request.form.get('message', '').strip()
     if not message:
         return jsonify({"error": "Empty message"}), 400
 
     chat_msg = ChatMessage(
-        username=current_user.username,
+        username=character.name,  # Use character name here
         message=message,
         channel='public',
         user_id=current_user.id
@@ -1379,7 +1401,10 @@ def public_messages():
         .limit(50).all()
 
     return jsonify([
-        {'username': m.username, 'message': m.message}
+        {
+            'character_name': Character.query.filter_by(master_id=m.user_id).first().name if Character.query.filter_by(master_id=m.user_id).first() else m.username,
+            'message': m.message
+        }
         for m in reversed(messages)
     ])
 
