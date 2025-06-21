@@ -1,65 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Invite to Crew</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #222;
-            color: #fff;
-            padding: 20px;
-        }
-        .container {
-            max-width: 500px;
-            background: #333;
-            padding: 20px;
-            border-radius: 10px;
-            margin: auto;
-        }
-        h1 {
-            text-align: center;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        input[type="text"] {
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #ffae00;
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            }
+{% extends "base.html" %}
+{% block title %}Invite to Crew{% endblock %}
 
-            button:hover {
-            background-color: #ff7300;
-            }
-        .back {
-            margin-top: 15px;
-            text-align: center;
-        }
-        .back a {
-            color: #ccc;
-            text-decoration: none;
-        }
-        .back a:hover {
-            color: #fff;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
+{% block content %}
+<style>
+    .invite-container {
+        max-width: 380px;
+        width: 380px;
+        margin: 50px auto;
+        background: rgba(25, 25, 40, 0.98);
+        border-radius: 5px;
+        box-shadow: 0 1px 5px #8be9fd22;
+        padding: 38px 28px 32px 28px;
+        border: 1.5px solid #8be9fd44;
+        color: #f5f6fa;
+        font-family: "geo", sans-serif;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .invite-container h2 {
+        margin-bottom: 36px;
+    }
+    .invite-container input[type="text"] {
+        margin-bottom: 25px;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        outline: none;
+        width: 100%;
+        background: #1c1d2f;
+        color: #f5f6fa;
+        font-size: 1.1em;
+    }
+    .invite-container button[type="submit"] {
+        padding: 10px 20px;
+        background: #8be9fd;
+        color: #23243a;
+        border: none;
+        font-weight: 700;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+        box-shadow: 0 1px 5px #8be9fd22;
+        cursor: pointer;
+    }
+    .invite-container button[type="submit"]:hover {
+        background: #23243a;
+        color: #8be9fd;
+        box-shadow: 0 2px 10px #8be9fd44;
+    }
+    .back {
+        margin-top: 18px;
+        text-align: center;
+    }
+    .back a {
+        color: #ccc;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .back a:hover {
+        color: #8be9fd;
+    }
+    .flashes {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 18px;
+    }
+    .flashes li {
+        background: #2a2b3d;
+        color: #ffd700;
+        padding: 10px 0;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+</style>
+<div class="invite-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <ul class="flashes">
           {% for category, message in messages %}
@@ -68,16 +85,13 @@
         </ul>
       {% endif %}
     {% endwith %}
-        <h2>Invite to {{ crew.name }}</h2>
-
-        <form method="POST">
+    <h2>
+        <i class="fas fa-user-plus"></i> Invite to {{ crew.name }}
+    </h2>
+    <form method="POST">
         <input type="text" name="username" placeholder="Enter character name" required>
         <button type="submit">Send Invite</button>
-        </form>
-
-        <div class="back">
-            <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
-        </div>
-    </div>
-</body>
-</html>
+    </form>
+    
+</div>
+{% endblock %}

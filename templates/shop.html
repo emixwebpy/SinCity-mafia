@@ -1,34 +1,176 @@
 {% extends "base.html" %}
 {% block title %}Shop{% endblock %}
 {% block content %}
+<style>
+  .shop-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 30px;
+    background: linear-gradient(160deg, #1e1f2b 70%, #2a2b3d 100%);
+    border-radius: 5px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px #8be9fd33;
+    color: #f5f6fa;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+  }
+
+  .shop-title {
+    font-size: 2em;
+    font-weight: 900;
+    color: #8be9fd;
+    margin-bottom: 25px;
+    text-shadow: 0 4px 12px #23243a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .shop-money {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #ffd700;
+    margin-bottom: 25px;
+    display: block;
+  }
+
+  .shop-message {
+    background: rgba(139, 233, 253, 0.1);
+    color: #8be9fd;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px #8be9fd22;
+  }
+
+  .shop-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+  }
+
+  .shop-item {
+    background: rgba(139, 233, 253, 0.05);
+    border-radius: 5px;
+    padding: 25px;
+    box-shadow: 0 4px 16px #8be9fd22;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .shop-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 6px 20px #8be9fd44;
+  }
+
+  .shop-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #8be9fd;
+    margin-bottom: 15px;
+  }
+
+  .shop-item-desc {
+    font-size: 1.1em;
+    color: #b8b8ff;
+    margin-bottom: 15px;
+  }
+
+  .shop-item-stock {
+    font-size: 1em;
+    color: #ffd700;
+    margin-bottom: 15px;
+  }
+
+  .shop-item-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .shop-buy-btn {
+    background: linear-gradient(90deg, #8be9fd 0%, #2a2b3d 100%);
+    color: #23243a;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 12px #8be9fd33;
+  }
+
+  .shop-buy-btn:hover {
+    background: #ffd700;
+    color: #23243a;
+    box-shadow: 0 6px 16px #ffd70055;
+  }
+
+  .shop-out {
+    font-size: 1.1em;
+    color: #ff5555;
+    font-weight: 700;
+  }
+
+  @media (max-width: 600px) {
+    .shop-container {
+      padding: 20px;
+    }
+
+    .shop-title {
+      font-size: 2em;
+    }
+
+    .shop-item {
+      padding: 20px;
+    }
+
+    .shop-item-header {
+      font-size: 1.2em;
+    }
+
+    .shop-buy-btn {
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+  }
+</style>
 
 <div class="shop-container">
-    <div class="shop-title"><i class="fas fa-store"></i> Shop</div>
-    <span class="shop-money">Your money: ${{ character.money }}</span>
-    {% if message %}
-      <div class="shop-message">{{ message }}</div>
-    {% endif %}
-    <ul class="shop-list">
-      {% for item in items %}
-      <li class="shop-item">
-        <div class="shop-item-header">
-          <span class="shop-item-name">{{ item.name }}</span>
-          <span class="shop-item-price">${{ item.price }}</span>
-        </div>
-        <div class="shop-item-desc">{{ item.description }}</div>
-        <div class="shop-item-stock">Stock: {{ item.stock }}</div>
-        <div class="shop-item-actions">
-          {% if item.stock > 0 %}
-          <form method="post">
-            <input type="hidden" name="item_id" value="{{ item.id }}">
-            <button type="submit" class="shop-buy-btn">Buy</button>
-          </form>
-          {% else %}
-          <span class="shop-out">Out of stock</span>
-          {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
+  <div class="shop-title"><i class="fas fa-store"></i> Shop</div>
+  <span class="shop-money">Your money: ${{ character.money }}</span>
+  {% if message %}
+    <div class="shop-message">{{ message }}</div>
+  {% endif %}
+  <ul class="shop-list">
+    {% for item in items %}
+    <li class="shop-item">
+      <div class="shop-item-header">
+        <span class="shop-item-name">{{ item.name }}</span>
+        <span class="shop-item-price">${{ item.price }}</span>
+      </div>
+      <div class="shop-item-desc">{{ item.description }}</div>
+      <div class="shop-item-stock">Stock: {{ item.stock }}</div>
+      <div class="shop-item-actions">
+        {% if item.stock > 0 %}
+        <form method="post">
+          <input type="hidden" name="item_id" value="{{ item.id }}">
+          <button type="submit" class="shop-buy-btn">Buy</button>
+        </form>
+        {% else %}
+        <span class="shop-out">Out of stock</span>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
 </div>
 {% endblock %}

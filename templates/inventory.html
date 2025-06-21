@@ -1,34 +1,171 @@
 {% extends "base.html" %}
 {% block title %}Inventory{% endblock %}
 {% block content %}
+<style>
+  .inventory-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 30px;
+    background: linear-gradient(160deg, #1e1f2b 70%, #2a2b3d 100%);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px #8be9fd33;
+    color: #f5f6fa;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+  }
 
-<div class="shop-container">
-  <h1 class="shop-title"><i class="fa-solid fa-boxes-stacked"></i> Your Inventory</h1>
+  .inventory-title {
+    font-size: 2em;
+    font-weight: 900;
+    color: #8be9fd;
+    margin-bottom: 25px;
+    text-shadow: 0 4px 12px #23243a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
 
-    <span class="shop-money">Your money: ${{ character.money }}</span>
-    {% if message %}
-        <div class="shop-message">{{ message }}</div>
-    {% endif %}
-    
-    {% if not inventory_items %}
-        <p class="shop-message">You have no items in your inventory.</p>
-    {% endif %}
+  .inventory-money {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #ffd700;
+    margin-bottom: 25px;
+    display: block;
+  }
 
-  {% for entry in inventory_items %}
-    <div class="shop-item">
-      <div class="shop-item-header">
-        <div class="shop-item-name">{{ entry.item.name }}</div>
-        <div class="shop-item-price">x{{ entry.quantity }}</div>
-      </div>
-      <div class="shop-item-desc">Original Price: ${{ entry.item.price }}</div>
-      <div class="shop-item-actions">
-        <form method="POST" action="{{ url_for('inventory') }}">
-          <input type="hidden" name="item_id" value="{{ entry.item.id }}">
-          <button type="submit" class="shop-buy-btn">Sell for ${{ entry.item.price // 2 }}</button>
-        </form>
-      </div>
-    </div>
-  {% endfor %}
+  .inventory-message {
+    background: rgba(139, 233, 253, 0.1);
+    color: #8be9fd;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px #8be9fd22;
+  }
+
+  .inventory-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+  }
+
+  .inventory-item {
+    background: rgba(139, 233, 253, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 16px #8be9fd22;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .inventory-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 6px 20px #8be9fd44;
+  }
+
+  .inventory-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #8be9fd;
+    margin-bottom: 15px;
+  }
+
+  .inventory-item-desc {
+    font-size: 1.1em;
+    color: #b8b8ff;
+    margin-bottom: 15px;
+  }
+
+  .inventory-item-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .inventory-sell-btn {
+    background: linear-gradient(90deg, #8be9fd 0%, #2a2b3d 100%);
+    color: #23243a;
+    border: none;
+    border-radius: 15px;
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 12px #8be9fd33;
+  }
+
+  .inventory-sell-btn:hover {
+    background: #ffd700;
+    color: #23243a;
+    box-shadow: 0 6px 16px #ffd70055;
+  }
+
+  .inventory-empty {
+    font-size: 1.2em;
+    color: #b8b8ff;
+    font-weight: 600;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .inventory-container {
+      padding: 20px;
+    }
+
+    .inventory-title {
+      font-size: 2em;
+    }
+
+    .inventory-item {
+      padding: 20px;
+    }
+
+    .inventory-item-header {
+      font-size: 1.2em;
+    }
+
+    .inventory-sell-btn {
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+  }
+</style>
+
+<div class="inventory-container">
+  <h1 class="inventory-title"><i class="fas fa-boxes"></i> Inventory</h1>
+  <span class="inventory-money">Your money: ${{ character.money }}</span>
+  {% if message %}
+    <div class="inventory-message">{{ message }}</div>
+  {% endif %}
+
+  {% if not inventory_items %}
+    <p class="inventory-empty">You have no items in your inventory.</p>
+  {% else %}
+    <ul class="inventory-list">
+      {% for entry in inventory_items %}
+      <li class="inventory-item">
+        <div class="inventory-item-header">
+          <span class="inventory-item-name">{{ entry.item.name }}</span>
+          <span class="inventory-item-quantity">x{{ entry.quantity }}</span>
+        </div>
+        <div class="inventory-item-desc">Original Price: ${{ entry.item.price }}</div>
+        <div class="inventory-item-actions">
+          <form method="POST" action="{{ url_for('inventory') }}">
+            <input type="hidden" name="item_id" value="{{ entry.item.id }}">
+            <button type="submit" class="inventory-sell-btn">Sell for ${{ entry.item.price // 2 }}</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 </div>
-
 {% endblock %}

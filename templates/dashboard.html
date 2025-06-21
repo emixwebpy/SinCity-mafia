@@ -3,114 +3,394 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<style>
+.dashboard-root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  
+  padding: 40px 0;
+}
+.main-area {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.dashboard-center-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.dashboard-main-content {
+  background: rgba(25, 25, 40, 0.98);
+  border-radius: 5px;
+  
+  padding: 38px 36px 32px 36px;
+  margin: 0 auto;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dashboard-cards {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  margin-bottom: 24px;
+  width: 100%;
+  
+}
+.dashboard-card {
+  background: rgba(25, 25, 40, 0.98);
+  border-radius: 5px;
+  box-shadow: 0 1px 5px #8be9fd22;
+  padding: 32px 36px;
+  min-width: 180px;
+  text-align: center;
+  color: #f5f6fa;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  flex: 1 1 0;
+  margin: 0 8px;
+  
+  
+}
+.dashboard-card h5 {
+  font-size: 1.2em;
+  color: #8be9fd;
+  margin-bottom: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  
+}
+.display-4 {
+  font-size: 2.2em;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+.npc-create-container {
+    background: rgba(25, 25, 40, 0.92);
+    border-radius: 5px;
+    box-shadow: 0 1px 5px #8be9fd22;
+    transition: box-shadow 0.2s, transform 0.2s;
+    padding: 18px 18px 12px 18px;
+    margin: 18px auto 0 auto;
+    max-width: 340px;
+    text-align: center;
+  }
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 18px;
+  width: 100%;
+}
+.dashboard-actions .btn {
+  border-radius: 5px;
+  font-weight: 600;
+  padding: 5px 22px;
+  background: #23243a;
+  color: #8be9fd;
+  border: 1.5px solid #8be9fd44;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 5px #8be9fd22;
+}
+.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
+  background: #8be9fd;
+  color: #23243a;
+  box-shadow: 0 2px 10px #8be9fd44;
+}
+.dashboard-actions .btn-danger {
+  background: #ff5555;
+  color: #fff;
+  border: none;
+}
+.dashboard-actions .btn-danger:hover {
+  background: #ff2222;
+  color: #fff;
+}
+.dashboard-actions .btn-info {
+  background: #50fa7b;
+  color: #23243a;
+  border: none;
+}
+.dashboard-actions .btn-info:hover {
+  background: #2ecc71;
+  color: #fff;
+}
+.current-city {
+  text-align: center;
+  font-size: 1.1em;
+  color: #b8b8ff;
+  margin-bottom: 18px;
+}
+.text-center {
+  text-align: center;
+}
 
+.shop-title {
+  color: #8be9fd;
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.shop-item {
+  background: rgba(139,233,253,0.08);
+  border-radius: 5px;
+  padding: 12px 18px;
+  color: #fff;
+  font-size: 1.08em;
+  font-weight: 500;
+  box-shadow: 0 1px 8px #8be9fd22;
+  border: 1px solid #8be9fd22;
+  margin-bottom: 8px;
+}
+.shop-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.shop-item-name {
+  font-weight: 700;
+  color: #8be9fd;
+}
+.shop-item-price {
+  color: #ffd700;
+  font-weight: 700;
+}
+.shop-item-desc {
+  font-size: 0.95em;
+  color: #b8b8ff;
+  margin-top: 4px;
+}
+@media (max-width: 900px) {
+  .dashboard-cards {
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+  }
+  .main-area {
+    padding: 0 8px;
+  }
+  .dashboard-main-content {
+    padding: 18px 6px 12px 6px;
+    max-width: 98vw;
+  }
+}
+.dashboard-users-online ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 12px;
+  justify-content: center;
+}
+.dashboard-users-online li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: none;
+  font-size: 1.08em;
+  background: rgba(139,233,253,0.05);
+  border-radius: 5px;
+  min-width: 110px;
+  max-width: 140px;
+  box-shadow: 0 1px 6px #8be9fd22;
+  transition: box-shadow 0.15s, background 0.15s;
+}
+.dashboard-users-online li:hover {
+  background: rgba(139,233,253,0.12);
+  box-shadow: 0 2px 12px #ffd70033;
+}
+.dashboard-users-online li:last-child {
+  border-bottom: none;
+}
+.dashboard-users-online a {
+  color: #8be9fd;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.08em;
+  justify-content: center;
+}
+.dashboard-users-online a:hover {
+  color: #ffd700;
+  text-decoration: underline;
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #23243a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25em;
+  margin-bottom: 4px;
+  border: 2.5px solid #8be9fd55;
+  object-fit: cover;
+  box-shadow: 0 2px 8px #8be9fd22;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.dashboard-users-online li:hover .user-avatar {
+  border: 2.5px solid #ffd700;
+  box-shadow: 0 2px 12px #ffd70055;
+}
+.badge-premium, .npc-badge {
+  margin-left: 0;
+  margin-top: 2px;
+}
+@media (max-width: 600px) {
+  .dashboard-users-online ul {
+    gap: 10px 4px;
+  }
+  .dashboard-users-online li {
+    min-width: 80px;
+    max-width: 110px;
+    font-size: 0.95em;
+    padding: 8px 2px;
+  }
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 1em;
+  }
+}
+</style>
 
 <div class="dashboard-root">
-    <div class="main-area">
-        <main class="dashboard-content-area">
-            <div class="dashboard-center-container">
-                <div class="dashboard-cards">
-                    <div class="dashboard-card">
-                        <h5><i class="fas fa-money-bill-wave"></i> Money</h5>
-                        <div class="display-4" id="money-container">
-                          $<span id="money">{{ current_character.money }}</span>
-                          <span id="money-effect" style="position: absolute; left: 100%; top: 0; color: #00ff99; font-weight: bold; opacity: 0;">+$</span>
-                        </div>
-                    </div>
-                    <div class="dashboard-card">
-                        <h5><i class="fa fa-star"></i> XP</h5>
-                        <div class="display-4" id="xp">
-                          <span id="xp"></span>{{ current_character.xp }}
-                        </div>
-                        <span id="xp-effect" style="position: absolute; left: 100%; top: 0; color: #00ccff; font-weight: bold; opacity: 0;">+XP</span>
-                    </div>
-                    <div class="dashboard-card">
-                        <h5><i class="fas fa-layer-group"></i> Level</h5>
-                        <div class="display-4" id="level">{{ current_character.level }}</div>
-                    </div>
-                </div>
-                <div class="dashboard-actions">
-                    {% if character and character.crew_id %}
-                      <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn">
-                        <i class="fas fa-users"></i> Crew
-                      </a>
-                      <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
-                          <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
-                      </form>
-                      <form action="{{ url_for('invite_to_crew') }}" method="POST" >
-                          <button type="submit" class="btn btn-info">
-                              <span class="btn-text">Send Invite</span>
-                              <span class="btn-icon">📨</span>
-                          </button>
-                      </form>
-                    {% else %}
-                      <a href="{{ url_for('create_crew') }}" class="btn"><i class="fas fa-plus"></i> Create Crew</a>
-                      <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
-                    {% endif %}
-                </div>
-                <p>Current city: <strong>{{ character.city }}</strong></p>
-                <div class="text-center my-4">
-                    <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()">
-                      Earn <span id="earn-timer"></span>
-                    </button>
-                          {% if current_user.gun %}
-                            <div class="npc-create-container">
-                              <h2 class="shop-title">Equipped Weapon</h2>
-                              <div class="shop-item">
-                                <div class="shop-item-header">
-                                  <div class="shop-item-name">{{ current_user.gun.name }}</div>
-                                  <div class="shop-item-price">{{ current_user.gun.damage }} dmg</div>
-                                </div>
-                                <div class="shop-item-desc">This weapon is currently equipped.</div>
-                              </div>
-                            </div>
-                          {% endif %}
-                          <div class="npc-create-container">
-    
-    <h3 style="color: #8be9fd; font-family: 'Oswald', sans-serif;">Create a Fake Profile</h3>
-    <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
-    <p style="color: #b8b8ff;">Level: <strong style="color: #ffd700;">15</strong></p>
-    <form method="POST" action="{{ url_for('create_fake_profile') }}">
-        
-        <button type="submit" class="btn btn-primary"
-                style="padding: 10px 20px; border-radius: 5px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
-            Create NPC
-        </button>
-        </form>
-    </div>
-                </div>  
-                <div class="dashboard-users-online">
-  <h2>Users Online</h2>
-  {% if online_users or npcs %}
-    <ul>
-      {% for user in online_users %}
-        <li>
-          <a href="{{ url_for('profile', username=user.username) }}">
-            {{ char_map.get(user.id, user.username) }}
-          </a>
-          {% if user.is_premium %}
-            <span class="badge badge-premium">Premium</span>
-          {% endif %}
-        </li>
-      {% endfor %}
-      {% for npc in npcs %}
-        <li>
-          <a href="{{ url_for('npc_profile', name=npc.name) }}">
-            {{ npc.name }} (NPC)
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No users online right now.</p>
-  {% endif %}
-</div>
+  <div class="main-area">
+    <main class="dashboard-content-area">
+      <div class="dashboard-center-container">
+        <div class="dashboard-main-content">
+          <div class="dashboard-cards">
+            <div class="dashboard-card">
+              <h5><i class="fas fa-money-bill-wave"></i> Money</h5>
+              <div class="display-4" id="money-container">
+                $<span id="money">{{ current_character.money }}</span>
+                <span id="money-effect" style="position: absolute; left: 100%; top: 0; color: #00ff99; font-weight: bold; opacity: 0;">+$</span>
+              </div>
             </div>
-        </main>
-    </div>
+            <div class="dashboard-card">
+              <h5><i class="fa fa-star"></i> XP</h5>
+              <div class="display-4" id="xp">
+                <span id="xp"></span>{{ current_character.xp }}
+              </div>
+              <span id="xp-effect" style="position: absolute; left: 100%; top: 0; color: #00ccff; font-weight: bold; opacity: 0;">+XP</span>
+            </div>
+            <div class="dashboard-card">
+              <h5><i class="fas fa-layer-group"></i> Level</h5>
+              <div class="display-4" id="level">{{ current_character.level }}</div>
+            </div>
+          </div>
+          <div class="dashboard-actions">
+            {% if character and character.crew_id %}
+              <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn">
+                <i class="fas fa-users"></i> Crew
+              </a>
+              <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
+              </form>
+              <form action="{{ url_for('invite_to_crew') }}" method="POST" >
+                  <button type="submit" class="btn btn-info">
+                      <span class="btn-text">Send Invite</span>
+                      <span class="btn-icon">📨</span>
+                  </button>
+              </form>
+            {% else %}
+              <a href="{{ url_for('create_crew') }}" class="btn"><i class="fas fa-plus"></i> Create Crew</a>
+              <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
+            {% endif %}
+          </div>
+          <div class="current-city">
+            <i class="fas fa-map-marker-alt"></i>
+            Current city: <strong>{{ character.city }}</strong>
+          </div>
+          <div class="text-center my-4">
+            <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()">
+              Earn <span id="earn-timer"></span>
+            </button>
+            {% if current_user.gun %}
+              <div class="npc-create-container">
+                <h2 class="shop-title">Equipped Weapon</h2>
+                <div class="shop-item">
+                  <div class="shop-item-header">
+                    <div class="shop-item-name">{{ current_user.gun.name }}</div>
+                    <div class="shop-item-price">{{ current_user.gun.damage }} dmg</div>
+                  </div>
+                  <div class="shop-item-desc">This weapon is currently equipped.</div>
+                </div>
+              </div>
+            {% endif %}
+            <div class="npc-create-container">
+              <h3 style="color: #8be9fd; font-family: 'Oswald', sans-serif;">Create a Fake Profile</h3>
+              <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
+              <p style="color: #b8b8ff;">Level: <strong style="color: #ffd700;">15</strong></p>
+              <form method="POST" action="{{ url_for('create_fake_profile') }}">
+                  <button type="submit" class="btn btn-primary"
+                          style="padding: 10px 20px; border-radius: 5px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
+                      Create NPC
+                  </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-users-online">
+          <h2 class="text-center"><i class="fas fa-users"></i> Online Users</h2>
+          {% if current_user.is_authenticated %}
+            <p class="text-center" style="color: #b8b8ff;">Welcome back, <strong>{{ current_user.username }}</strong>!</p>
+          {% endif %}
+          {% if flashes %}
+            <div id="flash-container">
+              {% for category, message in flashes %}
+                <div class="alert alert-{{ category }} flash-message">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          {% if online_users or npcs %}
+            <ul>
+              {% for user in online_users %}
+                <li>
+                  {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" class="user-avatar" alt="avatar">
+                  {% else %}
+                    <span class="user-avatar"><i class="fas fa-user"></i></span>
+                  {% endif %}
+                  <a href="{{ url_for('profile', username=user.username) }}">
+                    {{ char_map.get(user.id, user.username) }}
+                  </a>
+                  {% if user.is_premium %}
+                    <span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+              {% for npc in npcs %}
+                <li>
+                  <span class="user-avatar"><i class="fas fa-robot"></i></span>
+                  <a href="{{ url_for('npc_profile', name=npc.name) }}">
+                    {{ npc.name }}
+                  </a>
+                  <span class="npc-badge">NPC</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p style="text-align:center; color:#b8b8ff;">No users online right now.</p>
+          {% endif %}
+        </div>
+      </div>
+    </main>
+  </div>
 </div>
-
-
 <script>
 // ---------------- Earn Button Timer ----------------
 let earnTimerInterval = null;

@@ -131,7 +131,8 @@ class Character(db.Model):
     money = db.Column(db.Integer, default=250)
     level = db.Column(db.Integer, default=1)
     xp = db.Column(db.Integer, default=0)
-
+    
+    last_crime_time = db.Column(db.DateTime, nullable=True)
     last_travel_time = db.Column(db.DateTime, nullable=True)
     city = db.Column(db.String(64), default="New York")
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
@@ -316,9 +317,9 @@ class CrewInvitation(db.Model):
 def generate_invite_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-def is_on_crime_cooldown(user, cooldown_hours=6):
-    if user.last_crime_time:
-        return datetime.utcnow() < user.last_crime_time + timedelta(hours=cooldown_hours)
+def is_on_crime_cooldown(character, cooldown_minutes=360):
+    if character.last_crime_time:
+        return datetime.utcnow() < character.last_crime_time + timedelta(minutes=cooldown_minutes)
     return False
 
 # Admin Interface -------------------------------
@@ -348,7 +349,6 @@ def fix_crew_members():
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
 def attempt_organized_crime():
-    # Get current user's active character
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crime_group:
         flash("You are not in a crime group.", "danger")
@@ -357,7 +357,7 @@ def attempt_organized_crime():
     crime = character.crime_group
 
     # Only allow the group leader to start the crime
-    if current_user.id != crime.leader_id:
+    if crime.leader_id != character.id:
         flash("Only the group leader can start the crime.", "danger")
         return redirect(url_for('dashboard'))
 
@@ -366,23 +366,19 @@ def attempt_organized_crime():
         flash("You need at least 2 members to attempt the crime.", "warning")
         return redirect(url_for('dashboard'))
 
-    # Crime logic (for example, random success)
     import random
     success = random.random() < 0.35
     reward_money = random.randint(500, 1500) if success else 25
     reward_xp = random.randint(10, 30) if success else 25
 
     for member in members:
-        # Ensure each member's character exists
-        member_character = Character.query.filter_by(master_id=member.id, is_alive=True).first()
-        if member_character:
+        if member:
             if success:
-                member_character.money += reward_money
-                member_character.xp += reward_xp
+                member.money += reward_money
+                member.xp += reward_xp
             member.last_crime_time = datetime.utcnow()
-            member.organized_crime_id = None  # Disband the crime group
+            member.crime_group_id = None  # Disband the crime group
 
-    # Remove the crime group after attempt
     db.session.delete(crime)
     db.session.commit()
 
@@ -913,11 +909,11 @@ def create_crime():
         return redirect(url_for('dashboard'))
 
     if character.crime_group:
-        
         return redirect(url_for('crime_group'))
 
-    if is_on_crime_cooldown(current_user):
-        wait_time = (character.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
+    cooldown_minutes = 360  # 6 hours for leaders
+    if is_on_crime_cooldown(character, cooldown_minutes):
+        wait_time = (character.last_crime_time + timedelta(minutes=cooldown_minutes)) - datetime.utcnow()
         flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
         return redirect(url_for('dashboard'))
 
@@ -932,6 +928,7 @@ def create_crime():
         db.session.commit()
 
         character.crime_group_id = crime.id
+        character.last_crime_time = datetime.utcnow()
         db.session.commit()
 
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
@@ -942,7 +939,6 @@ def create_crime():
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
 def join_crime():
-    # Get the active character for the logged-in user
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         flash("No active character found. Please create one first.", "danger")
@@ -952,10 +948,10 @@ def join_crime():
         flash("You're already in a crime group!", 'warning')
         return redirect(url_for('dashboard'))
 
-    # Optionally check for cooldown on crime
-    if is_on_crime_cooldown(current_user):
-        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
-        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
+    cooldown_minutes = 20  # 20 minutes for members
+    if is_on_crime_cooldown(character, cooldown_minutes):
+        wait_time = (character.last_crime_time + timedelta(minutes=cooldown_minutes)) - datetime.utcnow()
+        flash(f"You must wait {wait_time.seconds // 60}m before joining a new crime group.", "warning")
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
@@ -967,6 +963,7 @@ def join_crime():
             flash("That crime group is full!", 'warning')
         else:
             character.crime_group_id = crime.id
+            character.last_crime_time = datetime.utcnow()
             db.session.commit()
             flash("You joined the crime group!", 'success')
             return redirect(url_for('crime_group'))
@@ -991,23 +988,19 @@ def crime_group():
 @app.route('/disband_crime', methods=['POST'])
 @login_required
 def disband_crime():
-    # Retrieve the active character for the logged-in user
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crime_group:
         flash("You're not in any crime group.", "warning")
         return redirect(url_for('dashboard'))
         
     crime = character.crime_group
-    # Only the leader can disband the group
     if crime.leader_id != character.id:
         flash("Only the group leader can disband the crime group.", "danger")
         return redirect(url_for('crime_group'))
     
-    # Remove the group from all members by setting their crime_group_id to None
     for member in crime.members:
         member.crime_group_id = None
 
-    # Delete the crime group record
     db.session.delete(crime)
     db.session.commit()
     
