@@ -845,8 +845,8 @@
         messageBox.innerHTML = '';
         data.forEach(msg => {
           const div = document.createElement('div');
-          div.className = 'chat-message' + (msg.username === "{{ current_user.username }}" ? ' me' : '');
-          div.innerHTML = `<span class="chat-username">${msg.username}</span>: ${msg.message}`;
+          div.className = 'chat-message' + (msg.character_name === "{{ current_character.name }}" ? ' me' : '');
+          div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
           messageBox.appendChild(div);
         });
         if (isNearBottom) {
