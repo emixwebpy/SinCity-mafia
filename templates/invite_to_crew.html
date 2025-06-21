@@ -68,13 +68,12 @@
         </ul>
       {% endif %}
     {% endwith %}
-        <h2>Invite someone to {{ crew.name }}</h2>
+        <h2>Invite to {{ crew.name }}</h2>
 
-<form method="POST">
-  <label for="username">Username to invite:</label>
-  <input type="text" name="username" id="username" required>
-  <button type="submit">Send Invite</button>
-</form>
+        <form method="POST">
+        <input type="text" name="username" placeholder="Enter character name" required>
+        <button type="submit">Send Invite</button>
+        </form>
 
         <div class="back">
             <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>

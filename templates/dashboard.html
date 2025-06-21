@@ -30,30 +30,25 @@
                     </div>
                 </div>
                 <div class="dashboard-actions">
-                    {% if current_user.crew %}
-                    {% if crew %}
-                      <a href="{{ url_for('crew_page', crew_id=crew.id) }}" class="btn">
+                    {% if character and character.crew_id %}
+                      <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn">
                         <i class="fas fa-users"></i> Crew
                       </a>
+                      <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
+                          <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
+                      </form>
+                      <form action="{{ url_for('invite_to_crew') }}" method="POST" >
+                          <button type="submit" class="btn btn-info">
+                              <span class="btn-text">Send Invite</span>
+                              <span class="btn-icon">📨</span>
+                          </button>
+                      </form>
                     {% else %}
-                      <p><i class="fas fa-users"></i> Not in a crew</p>
-                    {% endif %}
-                    {% endif %}
-                    {% if current_user.crew and crew %} 
-                    <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
-                    </form>
-                    {% else %}
-                    <a href="{{ url_for('create_crew') }}" class="btn"><i class="fas fa-plus"></i> Create Crew</a>
-                    <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
+                      <a href="{{ url_for('create_crew') }}" class="btn"><i class="fas fa-plus"></i> Create Crew</a>
+                      <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
                     {% endif %}
                 </div>
-                <form action="{{ url_for('invite_to_crew') }}" method="POST" class="invite-form text-center mb-3">
-                    <button type="submit" class="btn btn-info">
-                        <span class="btn-text">Send Invite</span>
-                        <span class="btn-icon">📨</span>
-                    </button>
-                </form>
+                
                 <div class="text-center my-4">
                     <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()">
                       Earn <span id="earn-timer"></span>

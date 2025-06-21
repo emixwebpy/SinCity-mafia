@@ -16,7 +16,7 @@ from wtforms.fields import DateTimeField
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from sqlalchemy import true
+from sqlalchemy import Null, true
 from operator import is_
 from email.mime import base
 import sqlite3, string, logging, random
@@ -98,9 +98,8 @@ class User(db.Model, UserMixin):
     character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
     kills = db.Column(db.Integer, default=0)
     # Characters owned by this user
-    characters = db.relationship('Character', backref='owner', lazy=True,
-                                 foreign_keys='Character.master_id')
-
+    characters = db.relationship('Character', backref='owner', lazy=True,    foreign_keys='Character.master_id')
+    
     # Optional: characters linked for crew, etc.
     linked_characters = db.relationship('Character', foreign_keys='Character.user_id')
 
@@ -144,7 +143,7 @@ class Character(db.Model):
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
     # Linked user (e.g., for crew systems)
     linked_user = db.relationship('User', foreign_keys=[user_id])
-
+    crew = db.relationship('Crew', backref='characters')
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
 class CharacterEditForm(SecureForm):
@@ -605,7 +604,8 @@ def register():
 @app.route('/send_crew_message', methods=['POST'])
 @login_required
 def send_crew_message():
-    if not current_user.crew:
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character.crew_id:
         return jsonify({'error': 'Not in a crew'}), 403
 
     message = request.form.get('message', '').strip()
@@ -613,10 +613,9 @@ def send_crew_message():
         return jsonify({"error": "Empty message"}), 400
 
     chat_msg = ChatMessage(
-        username=current_user.username,
+        username=character.name,
         message=message,
-        channel='crew',
-        user_id=current_user.id
+        channel='crew'
     )
     db.session.add(chat_msg)
     db.session.commit()
@@ -698,28 +697,49 @@ def join_crew():
 @app.route('/leave_crew', methods=['POST', 'GET'])
 @login_required
 def leave_crew():
-    current_user.crew_id = None
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    if not character or not character.crew_id:
+        flash("You are not in a crew.", "warning")
+        return redirect(url_for('dashboard'))
+
+    crew = Crew.query.get(character.crew_id)
+
+    # # Prevent leader from leaving without assigning a new one
+    # if crew.leader_id == character.id:
+    #     flash("You must assign a new leader before leaving the crew.", "danger")
+    #     return redirect(url_for('dashboard'))
+
+    # Remove the character from the crew
+    character.crew_id = None
     db.session.commit()
-    flash("You left the crew!")
+
+    flash("You left the crew.", "success")
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
-
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    char_map = {u.id: Character.query.filter_by(master_id=u.id, is_alive=True).first() for u in online_users}
 
     # Build user id → character name
-    char_map = {}
+    
     for user in online_users:
         char = Character.query.filter_by(master_id=user.id, is_alive=True).first()
         char_map[user.id] = char.name if char else user.username
 
     # Get NPCs
-    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
+    
 
-    return render_template('dashboard.html', online_users=online_users, char_map=char_map, npcs=npcs)
+    return render_template('dashboard.html',
+                           online_users=online_users,
+                           char_map=char_map,
+                           npcs=npcs,
+                           character=character)
 
 @app.route('/refresh_shop')
 def refresh_shop():
@@ -740,9 +760,13 @@ def refresh_shop():
 @app.route('/invite_to_crew', methods=['GET', 'POST'])
 @login_required
 def invite_to_crew():
-    if not current_user.crew:
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    if not character or not character.crew_id:
         flash("You must be in a crew to invite others.")
         return redirect(url_for('dashboard'))
+
+    crew = Crew.query.get(character.crew_id)
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -750,27 +774,32 @@ def invite_to_crew():
             flash("Username is required.")
             return redirect(url_for('invite_to_crew'))
 
-        invitee = User.query.filter_by(username=username).first()
+        invitee = Character.query.filter_by(name=username, is_alive=True).first()
         if not invitee:
-            flash("User not found.")
+            flash("Character not found.")
             return redirect(url_for('invite_to_crew'))
 
-        if invitee.crew:
-            flash("User is already in a crew.")
+        if invitee.crew_id:
+            flash("This character is already in a crew.")
             return redirect(url_for('invite_to_crew'))
 
-        existing_invite = CrewInvitation.query.filter_by(invitee_id=invitee.id, crew_id=current_user.crew.id).first()
+        existing_invite = CrewInvitation.query.filter_by(invitee_id=invitee.id, crew_id=crew.id).first()
         if existing_invite:
-            flash("Invite already sent.")
+            flash("An invite has already been sent to this character.")
             return redirect(url_for('invite_to_crew'))
 
-        invite = CrewInvitation(inviter_id=current_user.id, invitee_id=invitee.id, crew_id=current_user.crew.id)
-        db.session.add(invite)
+        new_invite = CrewInvitation(
+            inviter_id=character.id,
+            invitee_id=invitee.id,
+            crew_id=crew.id
+        )
+        db.session.add(new_invite)
         db.session.commit()
-        flash("Invite sent!")
+
+        flash(f"Invite sent to {invitee.name}!", "success")
         return redirect(url_for('dashboard'))
 
-    return render_template('invite_to_crew.html', crew=current_user.crew)
+    return render_template('invite_to_crew.html', crew=crew)
 
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
@@ -940,7 +969,7 @@ def create_crew():
         # Insert creator as leader
         crew_member = CrewMember(crew_id=new_crew.id, user_id=current_user.id, role='leader')
         db.session.add(crew_member)
-        current_user.crew_id = new_crew.id
+        character.crew_id = new_crew.id
         db.session.commit()
 
         flash(f"Crew created and joined! You spent ${CREW_COST}.", "success")
@@ -1088,26 +1117,21 @@ def upgrade():
 def profile(username):
     # Try to find a real user first
     user = User.query.filter_by(username=username).first()
+    
+    # Try to find the character by master_id (real user) or by name (NPC)
     if user:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-        if not character:
-            # If user exists but has no living character, show their dashboard
-            return render_template('dashboard.html', user=user, character=None, crew=None)
-        
     else:
-        character = Character.query.filter_by(name=username, master_id=0).first()
-        return render_template('dashboard.html', user=user, character=character, crew=character.crew if character else None)
+        character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
 
-    # If not found, try to find an NPC by name
-    if not user and not character:
-        npc_master = User.query.filter_by(username="NPC").first()
-        if npc_master:
-            character = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
-    
     if not character:
-        return render_template('404.html')
-    # Not found
-    return render_template('profile.html', user=user, character=character)
+        return render_template("404.html"), 404
+
+    # Get the crew if the character is part of one
+    crew = Crew.query.get(character.crew_id) if character.crew_id else None
+
+    return render_template('profile.html', user=user, character=character, crew=crew)
+    
 
 @app.route('/create_fake_profile', methods=['GET', 'POST'])
 @login_required
