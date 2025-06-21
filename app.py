@@ -21,7 +21,7 @@ from operator import is_
 from email.mime import base
 import sqlite3, string, logging, random
 import os
-
+CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -120,31 +120,42 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
     
 class Character(db.Model):
+    __tablename__ = 'character'
+
     id = db.Column(db.Integer, primary_key=True)
-    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
+    name = db.Column(db.String(12), nullable=False)
+
+    health = db.Column(db.Integer, default=100)
+    money = db.Column(db.Integer, default=250)
+    level = db.Column(db.Integer, default=1)
+    xp = db.Column(db.Integer, default=0)
+
+    last_travel_time = db.Column(db.DateTime, nullable=True)
+    city = db.Column(db.String(64), default="New York")
+    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
+    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
+
+
+    crime_group_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
+    crime_group = db.relationship("OrganizedCrime", back_populates="members", foreign_keys=[crime_group_id])
     # The actual owner of the character
     master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
-    # Optional user_id for linking in crews or alt usage
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    # Character attributes
-    name = db.Column(db.String(12), nullable=False)
-    health = db.Column(db.Integer, default=100)
-    money = db.Column(db.Integer, default=0)
-    level = db.Column(db.Integer, default=1)
-    xp = db.Column(db.Integer, default=0)
+    
     earn_streak = db.Column(db.Integer, default=0)
     last_earned = db.Column(db.DateTime, nullable=True)
     is_alive = db.Column(db.Boolean, default=True)
-    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
-    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
+    
+    
     profile_image = db.Column(db.String(255), nullable=True)
     crew = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
-    # Linked user (e.g., for crew systems)
+    
     linked_user = db.relationship('User', foreign_keys=[user_id])
     crew = db.relationship('Crew', backref='characters')
-    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
+    
 
 class CharacterEditForm(SecureForm):
     name = StringField('Name')
@@ -175,13 +186,19 @@ class CrewMember(db.Model):
     user = db.relationship('User', backref='crew_roles')
 
 class OrganizedCrime(db.Model):
+    
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(100), nullable=True)
     invite_code = db.Column(db.String(8), unique=True, nullable=False)
-    leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    leader = db.relationship('User', foreign_keys=[leader_id], backref='led_crime_family')
-    members = db.relationship('User', backref='crime_group', lazy=True, foreign_keys='User.organized_crime_id')
+    leader_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
+    leader = db.relationship("Character", backref="led_crime_groups", foreign_keys=[leader_id])
+    
+    members = db.relationship(
+        "Character",
+        back_populates="crime_group",
+        foreign_keys="Character.crime_group_id"
+    )
 
 
     def is_full(self):
@@ -285,6 +302,7 @@ class ChatMessage(db.Model):
     channel = db.Column(db.String(10), default='public')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='chat_messages')
+    crew_id = db.Column(db.Integer, nullable=True)
 
 class CrewInvitation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -330,11 +348,15 @@ def fix_crew_members():
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
 def attempt_organized_crime():
-    crime = current_user.crime_group
-    if not crime:
+    # Get current user's active character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crime_group:
         flash("You are not in a crime group.", "danger")
         return redirect(url_for('dashboard'))
 
+    crime = character.crime_group
+
+    # Only allow the group leader to start the crime
     if current_user.id != crime.leader_id:
         flash("Only the group leader can start the crime.", "danger")
         return redirect(url_for('dashboard'))
@@ -344,20 +366,23 @@ def attempt_organized_crime():
         flash("You need at least 2 members to attempt the crime.", "warning")
         return redirect(url_for('dashboard'))
 
-    # Crime logic (random success)
+    # Crime logic (for example, random success)
     import random
-    success = random.choice([True, False])
-    reward_money = random.randint(500, 1500) if success else 0
-    reward_xp = random.randint(10, 30) if success else 0
+    success = random.random() < 0.35
+    reward_money = random.randint(500, 1500) if success else 25
+    reward_xp = random.randint(10, 30) if success else 25
 
     for member in members:
-        if member.character:
+        # Ensure each member's character exists
+        member_character = Character.query.filter_by(master_id=member.id, is_alive=True).first()
+        if member_character:
             if success:
-                member.character.money += reward_money
-                member.character.xp += reward_xp
+                member_character.money += reward_money
+                member_character.xp += reward_xp
             member.last_crime_time = datetime.utcnow()
-            member.organized_crime_id = None  # Disband
+            member.organized_crime_id = None  # Disband the crime group
 
+    # Remove the crime group after attempt
     db.session.delete(crime)
     db.session.commit()
 
@@ -506,6 +531,41 @@ def shop():
             message = "Not enough money or item not found."
     return render_template('shop.html', items=items, message=message, character=character)
 
+@app.route('/travel', methods=['GET', 'POST'])
+@login_required
+def travel():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    cooldown = timedelta(hours=8)  # 6-hour cooldown for travel
+    now = datetime.utcnow()
+    can_travel = (
+        not character.last_travel_time or
+        (now - character.last_travel_time) >= cooldown
+    )
+    time_left = None
+    if character.last_travel_time and not can_travel:
+        time_left = cooldown - (now - character.last_travel_time)
+
+    if request.method == 'POST':
+        new_city = request.form.get('city')
+        if not can_travel:
+            mins, secs = divmod(int(time_left.total_seconds()), 60)
+            hours, mins = divmod(mins, 60)
+            flash(f"You must wait {hours}h {mins}m before traveling again.", "warning")
+        elif new_city not in CITIES:
+            flash("Invalid city selected.", "danger")
+        elif new_city == character.city:
+            flash("You are already in this city.", "info")
+        else:
+            character.city = new_city
+            character.last_travel_time = now
+            db.session.commit()
+            flash(f"You traveled to {new_city}!", "success")
+            return redirect(url_for('dashboard'))
+    return render_template('travel.html', character=character, cities=CITIES, time_left=time_left)
 
 @app.route('/inventory', methods=['GET', 'POST'])
 @login_required
@@ -605,7 +665,7 @@ def register():
 @login_required
 def send_crew_message():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character.crew_id:
+    if not character or not character.crew_id:
         return jsonify({'error': 'Not in a crew'}), 403
 
     message = request.form.get('message', '').strip()
@@ -615,7 +675,9 @@ def send_crew_message():
     chat_msg = ChatMessage(
         username=character.name,
         message=message,
-        channel='crew'
+        channel='crew',
+        user_id=character.id,
+        crew_id=character.crew_id  # <-- Save crew ID
     )
     db.session.add(chat_msg)
     db.session.commit()
@@ -664,6 +726,28 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/leave_crime', methods=['POST', 'GET'])
+@login_required
+def leave_crime():
+    # Get the active character for the logged-in user
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crime_group:
+        flash("You're not in any crime group.", "warning")
+        return redirect(url_for('dashboard'))
+    
+    crime = character.crime_group
+    # If the character is the leader, prevent leaving and advise disbanding
+    if crime.leader_id == character.id:
+        flash("You are the leader of this crime group. To leave, you must disband the group.", "danger")
+        return redirect(url_for('crime_group'))
+    
+    # Remove the character from the crime group
+    character.crime_group_id = None
+    db.session.commit()
+    
+    flash("You have left the crime group.", "success")
+    return redirect(url_for('dashboard'))
+
 @app.route('/get_messages')
 @login_required
 def get_messages():
@@ -684,10 +768,29 @@ def get_messages():
 @login_required
 def join_crew():
     if request.method == 'POST':
-        crew_id = int(request.form['crew_id'])
+        try:
+            crew_id = int(request.form['crew_id'])
+        except (ValueError, KeyError):
+            flash("Invalid crew selected.", "danger")
+            return redirect(url_for('join_crew'))
+            
+        # Optionally check if user is already in a crew
+        if current_user.crew_id:
+            flash("You're already in a crew.", "warning")
+            return redirect(url_for('dashboard'))
+            
+        # Check if the crew exists
+        crew = Crew.query.get(crew_id)
+        if not crew:
+            flash("Crew not found.", "danger")
+            return redirect(url_for('join_crew'))
+
+        # Update the user's crew
         current_user.crew_id = crew_id
+        # If using CrewMember, create that record too
+        db.session.add(CrewMember(crew_id=crew_id, user_id=current_user.id, role='member'))
         db.session.commit()
-        flash("You joined the crew!")
+        flash("You joined the crew!", "success")
         return redirect(url_for('dashboard'))
 
     crews = Crew.query.all()
@@ -705,7 +808,7 @@ def leave_crew():
 
     crew = Crew.query.get(character.crew_id)
 
-    # # Prevent leader from leaving without assigning a new one
+    # Prevent leader from leaving without assigning a new one
     # if crew.leader_id == character.id:
     #     flash("You must assign a new leader before leaving the crew.", "danger")
     #     return redirect(url_for('dashboard'))
@@ -804,63 +907,112 @@ def invite_to_crew():
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
 def create_crime():
-    if current_user.crime_group:
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("You must have an active character to create a crime group.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if character.crime_group:
+        
         return redirect(url_for('crime_group'))
-    
-    if current_user.crime_group:
-        flash("You're already in a crime group!", 'warning')
+
+    if is_on_crime_cooldown(current_user):
+        wait_time = (character.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
+        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        crime_name = request.form.get('crime_name', '').strip()
+        if not crime_name:
+            crime_name = f"{character.name}'s Crew"
+
         invite_code = generate_invite_code()
-        crime = OrganizedCrime(leader_id=current_user.id, invite_code=invite_code)
-        current_user.crime_group = crime  # add creator to group
+        crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
-        flash(f"Crime group created! Invite code: {invite_code}", 'success')
+
+        character.crime_group_id = crime.id
+        db.session.commit()
+
+        flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
-    if is_on_crime_cooldown(current_user):
-        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
-        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
-        return redirect(url_for('dashboard'))
-    
+
     return render_template('create_crime.html')
 
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
 def join_crime():
-    if current_user.crime_group:
+    # Get the active character for the logged-in user
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No active character found. Please create one first.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if character.crime_group:
         flash("You're already in a crime group!", 'warning')
         return redirect(url_for('dashboard'))
 
+    # Optionally check for cooldown on crime
+    if is_on_crime_cooldown(current_user):
+        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
+        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
-        code = request.form.get('invite_code').strip().upper()
+        code = request.form.get('invite_code', '').strip().upper()
         crime = OrganizedCrime.query.filter_by(invite_code=code).first()
         if not crime:
             flash("Invalid invite code.", 'danger')
         elif crime.is_full():
             flash("That crime group is full!", 'warning')
         else:
-            current_user.crime_group = crime
+            character.crime_group_id = crime.id
             db.session.commit()
             flash("You joined the crime group!", 'success')
             return redirect(url_for('crime_group'))
-    if is_on_crime_cooldown(current_user):
-        wait_time = (current_user.last_crime_time + timedelta(hours=6)) - datetime.utcnow()
-        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
-        return redirect(url_for('dashboard'))
     return render_template('join_crime.html')
 
 @app.route('/crime_group')
 @login_required
 def crime_group():
-    crime = current_user.crime_group
-    if not crime:
+    # Get the current user's active character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crime_group:
         flash("You're not part of any crime group yet.", 'info')
         return redirect(url_for('dashboard'))
     
-    members = User.query.filter_by(organized_crime_id=crime.id).all()
+    # Using the character's crime_group relationship
+    crime = character.crime_group
+    # Query all members in the group from the Character table using the foreign key
+    members = Character.query.filter_by(crime_group_id=crime.id).all()
+    
     return render_template('crime_group.html', crime=crime, members=members)
+
+@app.route('/disband_crime', methods=['POST'])
+@login_required
+def disband_crime():
+    # Retrieve the active character for the logged-in user
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crime_group:
+        flash("You're not in any crime group.", "warning")
+        return redirect(url_for('dashboard'))
+        
+    crime = character.crime_group
+    # Only the leader can disband the group
+    if crime.leader_id != character.id:
+        flash("Only the group leader can disband the crime group.", "danger")
+        return redirect(url_for('crime_group'))
+    
+    # Remove the group from all members by setting their crime_group_id to None
+    for member in crime.members:
+        member.crime_group_id = None
+
+    # Delete the crime group record
+    db.session.delete(crime)
+    db.session.commit()
+    
+    flash("Crime group has been disbanded.", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/upload_profile_image', methods=['GET', 'POST'])
 @login_required
@@ -890,22 +1042,19 @@ def upload_profile_image():
 @app.route('/crew_messages')
 @login_required
 def crew_messages():
-    if not current_user.crew:
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
         return jsonify([])
 
-    messages = ChatMessage.query.filter_by(channel='crew')\
-        .order_by(ChatMessage.timestamp.desc())\
-        .limit(50).all()
-
-    return jsonify([
-        {'username': m.username, 'message': m.message}
-        for m in reversed(messages)
-    ])
+    messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id)\
+                                .order_by(ChatMessage.timestamp.asc())\
+                                .limit(50).all()
+    return jsonify([{'username': m.username, 'message': m.message} for m in messages])
 
 @app.route('/crew_invitations')
 @login_required
 def crew_invitations():
-    invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id.name).all()
+    invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
     return render_template('crew_invitations.html', invitations=invitations)
 
 @app.route('/accept_invite/<int:invite_id>')
@@ -916,6 +1065,10 @@ def accept_invite(invite_id):
         current_user.crew_id = invitation.crew_id
         CrewMember.query.filter_by(user_id=current_user.id).delete()
         db.session.add(CrewMember(crew_id=invitation.crew_id, user_id=current_user.id, role='member'))
+        # --- FIX: update character's crew_id ---
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if character:
+            character.crew_id = invitation.crew_id
         db.session.delete(invitation)
         db.session.commit()
         flash("You’ve joined the crew!")
@@ -1237,6 +1390,18 @@ def public_messages():
         for m in reversed(messages)
     ])
 
+admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
+admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
+admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
+admin.add_view(ModelView(CrewMember, db.session))
+admin.add_view(ModelView(UserInventory, db.session))
+admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
+admin.add_view(ModelView(Crew, db.session))
+
+admin.add_view(ModelView(ChatMessage, db.session))
+admin.add_view(ModelView(CrewInvitation, db.session))
+
+
 
 
 @app.context_processor
@@ -1248,15 +1413,7 @@ def inject_current_character():
     return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
 
-admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
-admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
-admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
-admin.add_view(ModelView(CrewMember, db.session))
-admin.add_view(ModelView(UserInventory, db.session))
-admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
-admin.add_view(ModelView(Crew, db.session))
-admin.add_view(ModelView(CrewMessage, db.session))
-admin.add_view(ModelView(CrewInvitation, db.session))
+
 
 @app.cli.command("init-db")
 def init_db():

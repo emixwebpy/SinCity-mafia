@@ -5,10 +5,13 @@
 <style>
     .search-container {
         max-width: 380px;
-        margin: auto;
+        max-height: 276.4px;
+        width: 380px;
+        height: 276.4px;
+        margin: 50px auto;
         background: rgba(25, 25, 40, 0.98);
-        border-radius: 28px;
-        box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
+        border-radius: 5px;
+        box-shadow: 0 1px 5px #8be9fd22;
         padding: 38px 28px 32px 28px;
         border: 1.5px solid #8be9fd44;
         color: #f5f6fa;
@@ -17,7 +20,12 @@
         position: relative;
         overflow: hidden;
     }
-    
+    .search-container h2{
+        margin-bottom: 50px;
+    }
+    .search-container input{
+        margin-bottom: 25px;
+    }
     .player-list {
         list-style: none;
         padding: 0;
@@ -27,8 +35,8 @@
         background: #2a2b3d;
         padding: 14px 20px;
         margin-bottom: 12px;
-        border-radius: 14px;
-        box-shadow: 0 1px 8px #8be9fd22;
+        border-radius: 5px;
+        box-shadow: 0 1px 5px #8be9fd22;
         display: flex;
         justify-content: space-between;
         align-items: center;

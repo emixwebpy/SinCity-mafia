@@ -20,7 +20,7 @@
   <ul>
     {% for invite in invitations %}
       <li>
-        Invited to <strong>{{ invite.crew.name }}</strong> by {{ invite.inviter_id }}
+        Invited to <strong>{{ invite.crew.name }}</strong> by {{ invite.inviter.username }}
         <a href="{{ url_for('accept_invite', invite_id=invite.id) }}">Accept</a> |
         <a href="{{ url_for('decline_invite', invite_id=invite.id) }}">Decline</a>
       </li>

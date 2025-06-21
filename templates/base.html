@@ -74,7 +74,7 @@
     margin: 36px auto 0 auto;
     background: rgba(25, 25, 40, 0.98);
     border-radius: 5px;
-    box-shadow: 0 4px 24px #8be9fd33, 0 1.5px 0 #8be9fd22 inset;
+    box-shadow: 0 1px 5px #8be9fd22;
     padding: 32px 32px 24px 32px;
     border: 1.5px solid #8be9fd44;
     color: #f5f6fa;
@@ -996,6 +996,9 @@
         </a>
         <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
           <i class="fas fa-box"></i> <span>Inventory</span>
+        </a>
+        <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
+          <i class="fas fa-plane"></i> <span>Travel</span>
         </a>
         <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
             <i class="fas fa-crosshairs"></i> <span>Player Search</span>

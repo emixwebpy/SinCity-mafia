@@ -48,7 +48,7 @@
                       <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
                     {% endif %}
                 </div>
-                
+                <p>Current city: <strong>{{ character.city }}</strong></p>
                 <div class="text-center my-4">
                     <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()">
                       Earn <span id="earn-timer"></span>
