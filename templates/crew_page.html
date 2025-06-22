@@ -2,10 +2,10 @@
 {% block content %}
 <style>
 .crew-container {
-    max-width: 480px;
+    max-width: 420px;
     margin: 48px auto 0 auto;
     background: rgba(25, 25, 40, 0.98);
-    border-radius: 28px;
+    border-radius: 16px;
     box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
     padding: 38px 28px 32px 28px;
     border: 1.5px solid #8be9fd44;
@@ -20,20 +20,102 @@
     font-size: 2em;
     font-weight: 900;
     margin-bottom: 18px;
-    
     letter-spacing: 1px;
     text-shadow: 0 2px 12px #23243a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 .crew-container h2 {
-    color: #b8b8ff;
-    font-size: 1.2em;
+    color: #ffd700;
+    font-size: 1.15em;
     font-weight: 700;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     margin-top: 24px;
     letter-spacing: 0.5px;
 }
-
-
+.crew-members-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px 0;
+}
+.crew-member-item {
+    background: #2a2b3d;
+    border-radius: 7px;
+    box-shadow: 0 1px 5px #8be9fd22;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.05em;
+    gap: 8px;
+}
+.crew-member-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.crew-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #34355b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    margin-right: 6px;
+    border: 2px solid #8be9fd55;
+    object-fit: cover;
+}
+.badge-role {
+    font-size: 0.85em;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-left: 6px;
+    margin-right: 2px;
+    letter-spacing: 0.5px;
+}
+.badge-leader {
+    background: #ffd700;
+    color: #23243a;
+}
+.badge-right {
+    background: #8be9fd;
+    color: #23243a;
+}
+.badge-left {
+    background: #50fa7b;
+    color: #23243a;
+}
+.badge-member {
+    background: #44475a;
+    color: #b8b8ff;
+}
+.crew-role-form select, .crew-role-form button {
+    border-radius: 6px;
+    border: none;
+    padding: 4px 10px;
+    margin-left: 4px;
+    font-size: 0.98em;
+    background: #23243a;
+    color: #8be9fd;
+    transition: background 0.18s, color 0.18s;
+}
+.crew-role-form button {
+    background: #8be9fd;
+    color: #23243a;
+    font-weight: 700;
+    margin-left: 6px;
+    cursor: pointer;
+}
+.crew-role-form button:hover {
+    background: #ffd700;
+    color: #23243a;
+}
 .back {
     margin-top: 24px;
 }
@@ -64,7 +146,7 @@
     .crew-container h1 {
         font-size: 1.3em;
     }
-    .crew-members-list li {
+    .crew-member-item {
         padding: 10px 6px 8px 6px;
         font-size: 0.98em;
     }
@@ -73,56 +155,50 @@
 
 <div class="crew-container">
   <h1><i class="fas fa-users"></i> {{ crew.name }}</h1>
-  
   <h2>Members</h2>
-  <ul class="crew-members">
-  {% for member in members %}
-  <div style="margin-bottom: 12px;">
-    
-    {% if member.user %}
-      <strong>{{ member.user.username }}</strong>
-
-      {% if member.role == 'leader' %}
-        <span class="badge-role badge-leader">Leader</span>
-      {% elif member.role == 'right_hand' %}
-        <span class="badge-role badge-right">Right-Hand</span>
-      {% elif member.role == 'left_hand' %}
-        <span class="badge-role badge-left">Left-Hand</span>
-      {% else %}
-        <span class="badge-role badge-member">Member</span>
+  <ul class="crew-members-list">
+    {% for member in members %}
+    <li class="crew-member-item">
+      <div class="crew-member-info">
+        {% set character = member.user.character if member.user and member.user.character else None %}
+        {% if character and character.profile_image %}
+          <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar">
+        {% else %}
+          <span class="crew-avatar"><i class="fas fa-user"></i></span>
+        {% endif %}
+        <strong>
+          {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
+        </strong>
+        {% if member.role == 'leader' %}
+          <span class="badge-role badge-leader">Leader</span>
+        {% elif member.role == 'right_hand' %}
+          <span class="badge-role badge-right">Right-Hand</span>
+        {% elif member.role == 'left_hand' %}
+          <span class="badge-role badge-left">Left-Hand</span>
+        {% else %}
+          <span class="badge-role badge-member">Member</span>
+        {% endif %}
+      </div>
+      {% if member.user and current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
+      <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
+        <select name="new_role">
+          <option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option>
+          <option value="left_hand" {% if member.role == 'left_hand' %}selected{% endif %}>Left-Hand</option>
+          <option value="right_hand" {% if member.role == 'right_hand' %}selected{% endif %}>Right-Hand</option>
+          {% if current_user_role == 'leader' %}
+            <option value="leader" {% if member.role == 'leader' %}selected{% endif %}>Leader</option>
+          {% endif %}
+        </select>
+        <button type="submit">Update</button>
+      </form>
       {% endif %}
-
-      {% if current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
-        <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" style="display:inline; margin-left: 8px;">
-          <select name="new_role">
-            <option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option>
-            <option value="left_hand" {% if member.role == 'left_hand' %}selected{% endif %}>Left-Hand</option>
-            <option value="right_hand" {% if member.role == 'right_hand' %}selected{% endif %}>Right-Hand</option>
-            {% if current_user_role == 'leader' %}
-              <option value="leader" {% if member.role == 'leader' %}selected{% endif %}>Leader</option>
-            {% endif %}
-          </select>
-          <button type="submit">Update</button>
-        </form>
-        
-      {% endif %}
-    {% else %}
-      ⚠️ Unknown user (ID {{ member.user_id }})
-    {% endif %}
-  </div>
-{% endfor %}
-</ul>
-
-  
-
-  {% if current_user_role == 'leader' %}
-  {% if current_user.crew_id == crew.id %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% if current_user_role == 'leader' and current_user.crew_id == crew.id %}
     <div class="back">
       <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
     </div>
   {% endif %}
 </div>
-
-
-{% endif %}
 {% endblock %}

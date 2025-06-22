@@ -125,7 +125,7 @@ class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
-    name = db.Column(db.String(12), nullable=False)
+    name = db.Column(db.String(64), unique=True, nullable=False)
 
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=250)
@@ -154,9 +154,15 @@ class Character(db.Model):
     crew = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
     
-    linked_user = db.relationship('User', foreign_keys=[user_id])
+    linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
     crew = db.relationship('Crew', backref='characters')
-    
+
+    @property
+    def immortal(self):
+        # Admin users' characters are immortal
+        if self.master and getattr(self.master, "is_admin", False):
+            return True
+        return False
 
 class CharacterEditForm(SecureForm):
     name = StringField('Name')
@@ -385,7 +391,7 @@ def attempt_organized_crime():
     if success:
         flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
     else:
-        flash("Crime failed! The crew has disbanded.", "danger")
+        flash(f"Crime failed! The crew has disbanded.", "danger")
 
     return redirect(url_for('dashboard'))
 
@@ -408,29 +414,29 @@ def update_crew_role(crew_member_id):
     # Get current user's own crew role
     my_role = CrewMember.query.filter_by(user_id=current_user.id, crew_id=target_crew_id).first()
     if not my_role or my_role.role not in ['leader', 'right_hand', 'left_hand']:
-        flash("You don't have permission to change roles.", "danger")
+        flash(f"You don't have permission to change roles.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     new_role = request.form.get('new_role')
 
     # Prevent self-demotion or role change
     if target_user_id == current_user.id:
-        flash("You can't change your own role.", "danger")
+        flash(f"You can't change your own role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     # Prevent anyone but the Leader from changing the Leader's role
     if crew_member.role == 'leader' and my_role.role != 'leader':
-        flash("Only the leader can change the leader's role.", "danger")
+        flash(f"Only the leader can change the leader's role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     # Prevent Right/Left Hands from assigning the leader role
     if my_role.role != 'leader' and new_role == 'leader':
-        flash("Only the leader can assign the leader role.", "danger")
+        flash(f"Only the leader can assign the leader role.", "danger")
         return redirect(url_for('crew_page', crew_id=target_crew_id))
 
     crew_member.role = new_role
     db.session.commit()
-    flash("Role updated.", "success")
+    flash(f"Role updated.", "success")
     return redirect(url_for('crew_page', crew_id=target_crew_id))
 
 
@@ -440,7 +446,7 @@ def update_crew_role(crew_member_id):
 def kill(username):
     # Ensure the current user has a living character
     if not current_user.character or not current_user.character.is_alive:
-        flash("You need a living character to attack!", "danger")
+        flash(f"You need a living character to attack!", "danger")
         return redirect(url_for('dashboard'))
 
     # Try to find a real user first
@@ -466,17 +472,25 @@ def kill(username):
             character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
 
     if not character:
-        flash("Target not found or already dead.", "danger")
+        flash(f"Target not found or already dead.", "danger")
         return redirect(url_for('dashboard'))
 
     # Prevent killing your own character
     if character.master_id == current_user.id:
-        flash("You can't kill your own character!", "danger")
+        flash(f"You can't kill your own character!", "danger")
         return redirect(url_for('dashboard'))
 
+    # Prevent killing admin characters
+    if hasattr(character, "immortal") and character.immortal:
+        flash(f"You cannot kill an admin!", "danger")
+        return redirect(url_for('dashboard'))
+    # Prevent killing characters that are not alive
+    if not character.is_alive=='false':
+        flash(f"{character.name} is already dead!", "danger")
+        return redirect(url_for('dashboard'))
     # Ensure the player has a gun equipped
     if not current_user.gun:
-        flash("You don't have a gun equipped!", "danger")
+        flash(f"You don't have a gun equipped!", "danger")
         return redirect(url_for('profile', username=username))
 
     # Apply damage
@@ -831,23 +845,19 @@ def leave_crew():
 @login_required
 def dashboard():
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    # Get all users online
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
-    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    char_map = {u.id: Character.query.filter_by(master_id=u.id, is_alive=True).first() for u in online_users}
-
-    # Build user id → character name
-    
+    # For each user, get their alive character
+    online_characters = []
     for user in online_users:
         char = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-        char_map[user.id] = char.name if char else user.username
-
-    # Get NPCs
-    
+        if char:
+            online_characters.append(char)
+    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
 
     return render_template('dashboard.html',
-                           online_users=online_users,
-                           char_map=char_map,
+                           online_users=online_characters,  # now a list of Character objects
                            npcs=npcs,
                            character=character)
 
@@ -1277,22 +1287,14 @@ def upgrade():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/profile/<username>')
-def profile(username):
-    # Try to find a real user first
-    user = User.query.filter_by(username=username).first()
-    
-    # Try to find the character by master_id (real user) or by name (NPC)
-    if user:
-        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-    else:
-        character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
-
+@app.route('/profile/<charname>')
+def profile(charname):
+    character = Character.query.filter_by(name=charname, is_alive=True).first()
     if not character:
         return render_template("404.html"), 404
 
-    # Get the crew if the character is part of one
-    crew = Crew.query.get(character.crew_id) if character.crew_id else None
+    user = User.query.filter_by(id=character.master_id).first()
+    crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
 
     return render_template('profile.html', user=user, character=character, crew=crew)
     
