@@ -322,9 +322,7 @@
             {% else %}
                 <span class="user-avatar"><i class="fas fa-user"></i></span>
             {% endif %}
-            <a href="{{ url_for('profile', charname=char.name) }}">
-                {{ char.name }}
-            </a>
+            <a href="{{ url_for('profile_by_id', char_id=char.id) }}">{{ char.name }}</a>
             {% if char.master and char.master.is_premium %}
                 <span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>
             {% endif %}

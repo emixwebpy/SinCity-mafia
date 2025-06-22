@@ -138,6 +138,8 @@ class Character(db.Model):
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
 
+    in_jail = db.Column(db.Boolean, default=False)
+    jail_until = db.Column(db.DateTime, nullable=True)
 
     crime_group_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
     crime_group = db.relationship("OrganizedCrime", back_populates="members", foreign_keys=[crime_group_id])
@@ -362,6 +364,8 @@ def attempt_organized_crime():
 
     crime = character.crime_group
 
+
+
     # Only allow the group leader to start the crime
     if crime.leader_id != character.id:
         flash("Only the group leader can start the crime.", "danger")
@@ -382,6 +386,12 @@ def attempt_organized_crime():
             if success:
                 member.money += reward_money
                 member.xp += reward_xp
+            else:
+                # 20% chance to go to jail on failed crime
+                if random.random() < 0.2:
+                    jail_minutes = random.randint(5, 15)
+                    member.in_jail = True
+                    member.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
             member.last_crime_time = datetime.utcnow()
             member.crime_group_id = None  # Disband the crime group
 
@@ -556,6 +566,13 @@ def shop():
 @login_required
 def travel():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('dashboard'))
+    
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
@@ -995,10 +1012,19 @@ def join_crime():
 def crime_group():
     # Get the current user's active character
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('dashboard'))
+    
     if not character or not character.crime_group:
         flash("You're not part of any crime group yet.", 'info')
         return redirect(url_for('dashboard'))
+
     
+        
     # Using the character's crime_group relationship
     crime = character.crime_group
     # Query all members in the group from the Character table using the foreign key
@@ -1159,7 +1185,27 @@ def earn():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         return jsonify({'success': False, 'message': "No character found."})
+    
+    if character.in_jail and character.jail_until and character.jail_until > now:
+        remaining = character.jail_until - now
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        return jsonify({'success': False, 'message': f"You are in jail! Wait {mins}m {secs}s."})
 
+    # Jail release
+    if character.in_jail and character.jail_until and character.jail_until <= now:
+        character.in_jail = False
+        character.jail_until = None
+        db.session.commit()
+
+    # ...existing cooldown check...
+
+    # Chance to fail and go to jail (e.g. 10%)
+    if random.random() < 0.75:
+        jail_minutes = random.randint(2, 6)
+        character.in_jail = True
+        character.jail_until = now + timedelta(minutes=jail_minutes)
+        db.session.commit()
+        return jsonify({'success': False, 'message': f"You got caught and are in jail for {jail_minutes} minutes!"})
     # ✅ Make sure cooldown check works
     if character.last_earned and (now - character.last_earned) < cooldown:
         remaining = cooldown - (now - character.last_earned)
@@ -1287,15 +1333,12 @@ def upgrade():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/profile/<charname>')
-def profile(charname):
-    character = Character.query.filter_by(name=charname, is_alive=True).first()
-    if not character:
-        return render_template("404.html"), 404
-
+@app.route('/profile/id/<int:char_id>')
+def profile_by_id(char_id):
+    character = Character.query.get_or_404(char_id)
     user = User.query.filter_by(id=character.master_id).first()
     crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
-
+    print("Serving profile for:", character.name)
     return render_template('profile.html', user=user, character=character, crew=crew)
     
 

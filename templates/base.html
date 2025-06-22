@@ -70,6 +70,7 @@
         padding-bottom: 10px;
         border-bottom: 2px solid #2d2e4a;
         margin-bottom: 8px;
+        margin-top: 15px;
       }
       .sidebar-user i {
         font-size: 2.5em;
@@ -609,9 +610,7 @@
   <div class="layout-root fade-in">
     <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
       <nav class="sidebar">
-        <div class="sidebar-header">
-          <i class="fas fa-crown"></i>
-        </div>
+        
         {% if current_user.is_authenticated %}
           <div class="sidebar-user">
             {% set character = current_character %}
@@ -625,9 +624,13 @@
                 {% else %}
                   <i id="char-name" class="fas fa-user-circle"></i>
                 {% endif %}
-              <a href="{{ url_for('profile', charname=character.name) }}" style="color:inherit; text-decoration: underline;">
-                <strong>{{ character.name if character else current_user.username }}</strong>
-              </a>
+                {% if character %}
+                  <a href="{{ url_for('profile_by_id', char_id=character.id) }}" style="color:inherit; text-decoration: underline;">
+                    <strong>{{ character.name }}</strong>
+                  </a>
+                {% else %}
+                  <span><strong>No character</strong></span>
+                {% endif %}
           </div>
         {% endif %}
         <div class="sidebar-nav">
