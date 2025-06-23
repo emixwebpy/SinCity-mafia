@@ -1,21 +1,94 @@
 {% extends "base.html" %}
 {% block title %}Edit Character{% endblock %}
 {% block content %}
-<div class="dashboard-hero">
-    <h2 style="color:#ffd700;">Edit Character: {{ character.name }}</h2>
-    <form method="POST">
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 2.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto 2rem auto;
+}
+.edit-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 12px;
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+.edit-form input[type="text"],
+.edit-form input[type="number"] {
+    width: 100%;
+    padding: 0.6em 1em;
+    border-radius: 6px;
+    border: 2px solid #ffd700;
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.08em;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border 0.2s;
+}
+.edit-form input[type="checkbox"] {
+    margin-left: 8px;
+    transform: scale(1.2);
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-top: 12px;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.08em;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="forums-header">
+    <h1>Edit Character: {{ character.name }}</h1>
+</div>
+<div class="forums-list">
+    <form method="POST" class="edit-form">
         <label>Name:</label>
-        <input type="text" name="name" value="{{ character.name }}" required><br>
+        <input type="text" name="name" value="{{ character.name }}" required>
         <label>Health:</label>
-        <input type="number" name="health" value="{{ character.health }}" required><br>
+        <input type="number" name="health" value="{{ character.health }}" required>
         <label>Money:</label>
-        <input type="number" name="money" value="{{ character.money }}" required><br>
+        <input type="number" name="money" value="{{ character.money }}" required>
         <label>Level:</label>
-        <input type="number" name="level" value="{{ character.level }}" required><br>
+        <input type="number" name="level" value="{{ character.level }}" required>
         <label>XP:</label>
-        <input type="number" name="xp" value="{{ character.xp }}" required><br>
-        <label>Alive:</label>
-        <input type="checkbox" name="is_alive" value="1" {% if character.is_alive %}checked{% endif %}><br>
+        <input type="number" name="xp" value="{{ character.xp }}" required>
+        <label>Alive:
+            <input type="checkbox" name="is_alive" value="1" {% if character.is_alive %}checked{% endif %}>
+        </label>
         <button type="submit" class="btn btn-primary">Save</button>
     </form>
 </div>

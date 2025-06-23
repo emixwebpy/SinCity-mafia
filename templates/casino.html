@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Casino{% endblock %}
+{% block content %}
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 2.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+}
+.casino-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 2rem;
+}
+.casino-tab {
+    background: #181824;
+    color: #ffd700;
+    border: 2px solid #ffd70055;
+    border-radius: 8px 8px 0 0;
+    padding: 0.7em 2em;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+}
+.casino-tab.active, .casino-tab:hover {
+    background: #ffd700;
+    color: #232526;
+    border-bottom: 2px solid #23243a;
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.forum-table th, .forum-table td {
+    padding: 1.2rem 1rem;
+    text-align: center;
+    vertical-align: middle;
+}
+.forum-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.15rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    letter-spacing: 1px;
+}
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1.08rem;
+    font-weight: 500;
+    text-align: center;
+}
+.forum-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.08em;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+input[type="number"], select {
+    border-radius: 6px;
+    border: 2px solid #ffd700;
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1em;
+    padding: 0.4em 1em;
+    width: 120px;
+    margin-bottom: 0.5em;
+    outline: none;
+    transition: border 0.2s;
+    text-align: center;
+}
+input[type="number"]:focus, select:focus {
+    border: 2px solid #ffb347;
+}
+.casino-cards {
+    display: flex;
+    gap: 0.7em;
+    margin: 1em 0 0.5em 0;
+    justify-content: center;
+}
+.casino-card {
+    background: #fff;
+    color: #23243a;
+    border-radius: 8px;
+    border: 2px solid #ffd700;
+    width: 48px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-family: 'Georgia', serif;
+    box-shadow: 0 2px 8px #ffd70044;
+    position: relative;
+}
+.casino-result {
+    margin-top: 1.5em;
+    text-align: center;
+    color: #ffd700;
+    font-size: 1.3em;
+    font-weight: bold;
+    text-shadow: 0 2px 8px #23243a;
+}
+.casino-hand-label {
+    color: #ffb86c;
+    font-size: 1.1em;
+    margin-top: 1em;
+    margin-bottom: 0.2em;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 1px;
+}
+@media (max-width: 900px) {
+    .forums-list {
+        padding: 1.2rem 0.5rem 2rem 0.5rem;
+    }
+    .forums-header {
+        padding: 1.2rem 0.5rem 0.7rem 0.5rem;
+    }
+    .forum-table th, .forum-table td {
+        padding: 0.7rem 0.3rem;
+        font-size: 1em;
+    }
+    .casino-card {
+        width: 38px;
+        height: 54px;
+        font-size: 1.1em;
+    }
+}
+</style>
+
+<div class="forums-header">
+    <h1>Casino</h1>
+</div>
+<div class="forums-list">
+    <div class="casino-tabs">
+        <a href="{{ url_for('casino', table='blackjack') }}" class="casino-tab{% if table == 'blackjack' %} active{% endif %}">Blackjack</a>
+        <a href="{{ url_for('casino', table='coinflip') }}" class="casino-tab{% if table == 'coinflip' %} active{% endif %}">Coin Flip</a>
+        <a href="{{ url_for('casino', table='roulette') }}" class="casino-tab{% if table == 'roulette' %} active{% endif %}">Roulette</a>
+    </div>
+    <table class="forum-table">
+        <tr>
+            <th style="width:30%;">Your Money</th>
+            <th style="width:40%;">Play</th>
+            <th style="width:30%;">Result</th>
+        </tr>
+        <tr>
+            <td>
+                <div class="forum-desc">
+                    <b>${{ character.money }}</b>
+                </div>
+            </td>
+            <td>
+                {% if table == 'blackjack' %}
+                <form method="post" class="forum-actions">
+                    {{ csrf_token() }}
+                    <input type="hidden" name="table" value="blackjack">
+                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
+                    <button type="submit" class="btn-primary"><i class="fas fa-play"></i> Play Blackjack</button>
+                </form>
+                {% elif table == 'coinflip' %}
+                <form method="post" class="forum-actions">
+                    {{ csrf_token() }}
+                    <input type="hidden" name="table" value="coinflip">
+                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
+                    <select name="coin_choice" required>
+                        <option value="heads" {% if user_choice == 'heads' %}selected{% endif %}>Heads</option>
+                        <option value="tails" {% if user_choice == 'tails' %}selected{% endif %}>Tails</option>
+                    </select>
+                    <button type="submit" class="btn-primary"><i class="fas fa-coins"></i> Flip Coin</button>
+                </form>
+                {% elif table == 'roulette' %}
+                <form method="post" class="forum-actions">
+                    {{ csrf_token() }}
+                    <input type="hidden" name="table" value="roulette">
+                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
+                    <select name="roulette_choice" required>
+                        <option value="red" {% if user_choice == 'red' %}selected{% endif %}>Red</option>
+                        <option value="black" {% if user_choice == 'black' %}selected{% endif %}>Black</option>
+                        <option value="green" {% if user_choice == 'green' %}selected{% endif %}>Green (14x)</option>
+                    </select>
+                    <button type="submit" class="btn-primary"><i class="fas fa-dot-circle"></i> Spin Roulette</button>
+                </form>
+                {% endif %}
+            </td>
+            <td>
+                {% if result %}
+                <div class="casino-result">
+                    {{ result }}
+                    {% if table == 'coinflip' and flip %}
+                        <br>Result: <b>{{ flip|capitalize }}</b>
+                    {% elif table == 'roulette' and roulette_result %}
+                        <br>Result: <b>{{ roulette_result|capitalize }}</b>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% if result and table == 'blackjack' %}
+        <tr>
+            <td colspan="3">
+                <div class="casino-hand-label">Your hand:</div>
+                <div class="casino-cards">
+                    {% for card in hand %}
+                        <div class="casino-card">{{ card }}</div>
+                    {% endfor %}
+                </div>
+                <div class="casino-hand-label">Dealer's hand:</div>
+                <div class="casino-cards">
+                    {% for card in dealer_hand %}
+                        <div class="casino-card">{{ card }}</div>
+                    {% endfor %}
+                </div>
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+{% endblock %}

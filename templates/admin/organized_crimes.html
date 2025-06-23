@@ -1,20 +1,116 @@
 {% extends "base.html" %}
 {% block title %}Manage Organized Crimes{% endblock %}
 {% block content %}
-<h1>Organized Crimes</h1>
-<table class="table table-dark table-striped">
-    <thead>
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.forum-table th, .forum-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.forum-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.forum-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.forum-actions {
+    display: flex;
+    gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+</style>
+<div class="forums-header">
+    <h1>Organized Crimes</h1>
+</div>
+<div class="forums-list">
+    <a href="{{ url_for('admin.admin_add_organized_crime') }}" class="btn btn-primary" style="margin-bottom:18px;">+ Add Organized Crime</a>
+    <table class="forum-table">
         <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Invite Code</th>
-            <th>Leader</th>
-            <th>Members</th>
-            <th>Actions</th>
+            <th style="width:7%;">ID</th>
+            <th style="width:20%;">Name</th>
+            <th style="width:18%;">Invite Code</th>
+            <th style="width:20%;">Leader</th>
+            <th style="width:10%;">Members</th>
+            <th style="width:25%;">Actions</th>
         </tr>
-    </thead>
-    <tbody>
-    {% for crime in crimes %}
+        {% for crime in crimes %}
         <tr>
             <td>{{ crime.id }}</td>
             <td>{{ crime.name }}</td>
@@ -22,13 +118,19 @@
             <td>{{ crime.leader.name if crime.leader else 'N/A' }}</td>
             <td>{{ crime.members|length }}</td>
             <td>
-                <a href="{{ url_for('admin.admin_edit_organized_crime', crime_id=crime.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                <form action="{{ url_for('admin.admin_delete_organized_crime', crime_id=crime.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this crime group?');">
-                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                </form>
+                <div class="forum-actions">
+                    <a href="{{ url_for('admin.admin_edit_organized_crime') }}" class="btn btn-primary" style="margin-bottom:18px;">+ Add Organized Crime</a>
+                    <form action="{{ url_for('admin.admin_delete_organized_crime', crime_id=crime.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this crime group?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
             </td>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        {% else %}
+        <tr>
+            <td colspan="6" class="forum-desc">No organized crimes found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

@@ -28,11 +28,22 @@
     text-shadow: 0 2px 12px #23243a;
     text-align: center;
 }
-.login-form input[type="username"],
+.login-form .form-group {
+    margin-bottom: 18px;
+}
+.login-form label {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.05em;
+    margin-bottom: 6px;
+    display: block;
+    letter-spacing: 0.5px;
+}
+.login-form input[type="text"],
 .login-form input[type="password"] {
     width: 100%;
     padding: 14px 16px;
-    margin: 14px 0;
+    margin: 6px 0 0 0;
     border-radius: 5px;
     border: 1.5px solid #8be9fd44;
     background: rgba(139,233,253,0.08);
@@ -42,12 +53,12 @@
     outline: none;
     transition: border 0.18s, background 0.18s;
 }
-.login-form input[type="username"]:focus,
+.login-form input[type="text"]:focus,
 .login-form input[type="password"]:focus {
     border: 1.5px solid #8be9fd;
     background: rgba(139,233,253,0.13);
 }
-.login-form button[type="submit"] {
+.login-form button[type="submit"], .login-form input[type="submit"] {
     width: 100%;
     padding: 14px 0;
     border-radius: 5px;
@@ -62,7 +73,8 @@
     cursor: pointer;
     letter-spacing: 1px;
 }
-.login-form button[type="submit"]:hover {
+.login-form button[type="submit"]:hover,
+.login-form input[type="submit"]:hover {
     background: #ffd700;
     color: #23243a;
 }
@@ -92,9 +104,22 @@
 <div class="login-container">
   <div class="login-title"><i class="fas fa-sign-in-alt"></i> Login</div>
   <form method="POST" class="login-form">
-    <input type="username" name="username" placeholder="Username" required>
-    <input id="password" name="password" type="password" placeholder="Password" required />
-    <button type="submit">Login</button>
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      {{ form.username.label }}
+      {{ form.username(class_="form-control", placeholder="Username") }}
+      {% for error in form.username.errors %}
+        <div class="text-danger" style="color:#ff5555;font-size:0.98em;">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="form-group">
+      {{ form.password.label }}
+      {{ form.password(class_="form-control", placeholder="Password") }}
+      {% for error in form.password.errors %}
+        <div class="text-danger" style="color:#ff5555;font-size:0.98em;">{{ error }}</div>
+      {% endfor %}
+    </div>
+    {{ form.submit(class_="btn btn-primary") }}
   </form>
   <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
 </div>

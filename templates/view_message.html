@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}View Message{% endblock %}
+{% block content %}
+<style>
+.message-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.message-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.message-view-container {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+}
+.message-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.message-table th, .message-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.message-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    width: 30%;
+}
+.message-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.message-table tr:hover {
+    background: #34355b;
+}
+.message-content {
+    color: #b8b8ff;
+    font-size: 1.1rem;
+    white-space: pre-line;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="message-header">
+    <h1>Private Message</h1>
+</div>
+<div class="message-view-container">
+    <table class="message-table">
+        <tr>
+            <th>From</th>
+            <td>{{ msg.sender.username }}</td>
+        </tr>
+        <tr>
+            <th>Sent</th>
+            <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        <tr>
+            <th>Message</th>
+            <td class="message-content">{{ msg.content }}</td>
+        </tr>
+    </table>
+    <div style="margin-top: 1.5rem;">
+        <a href="{{ url_for('inbox') }}" class="btn btn-primary">Back to Inbox</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,17 +1,87 @@
 {% extends "base.html" %}
 {% block title %}Admin - Jail{% endblock %}
 {% block content %}
-<div class="dashboard-hero">
-    <h2 style="color:#ffd700;">Jailed Characters</h2>
-    <table style="width:100%;color:#f5f6fa;">
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.forum-table th, .forum-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.forum-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.forum-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+</style>
+<div class="forums-header">
+    <h1>Jailed Characters</h1>
+</div>
+<div class="forums-list">
+    <table class="forum-table">
         <tr>
-            <th>ID</th><th>Name</th><th>Jail Until</th>
+            <th style="width:10%;">ID</th>
+            <th style="width:40%;">Name</th>
+            <th style="width:50%;">Jail Until</th>
         </tr>
         {% for char in jailed %}
         <tr>
             <td>{{ char.id }}</td>
             <td>{{ char.name }}</td>
             <td>{{ char.jail_until }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" class="forum-desc">No one is currently jailed.</td>
         </tr>
         {% endfor %}
     </table>

@@ -734,6 +734,12 @@
               <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
                 <i class="fas fa-plane"></i> <span>Travel</span>
               </a>
+              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Notifications</span>
+              </a>
+              <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Casino</span>
+              </a>
             </div>
           </div>
           <!-- Inventory -->
@@ -769,6 +775,7 @@
           {% block topbar_actions %}
           {% if current_user.is_authenticated and not current_user.premium %}
           <form action="{{ url_for('upgrade') }}" method="post" class="d-inline">
+            {{ csrf_token() }}
             <button type="submit" class="btn">
               <i class="fas fa-star"></i> Upgrade
             </button>

@@ -10,9 +10,11 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
+from flask_wtf import CSRFProtect, FlaskForm
 from flask_migrate import Migrate
-from wtforms import PasswordField, StringField, BooleanField, IntegerField
+from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField
 from wtforms.fields import DateTimeField
+from wtforms.validators import DataRequired
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -51,6 +53,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 migrate = Migrate(app, db)
+csrf = CSRFProtect(app)
 # Admin Authentication -------------------------------
 def admin_required(f):
     from functools import wraps
@@ -385,6 +388,27 @@ def admin_drugs_dashboard():
     drugs = Drug.query.order_by(Drug.id.desc()).all()
     dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
     return render_template('admin/drugs_dashboard.html', drugs=drugs, dealers=dealers)
+
+@admin_bp.route('/crews')
+@admin_required
+def admin_crews():
+    crews = Crew.query.all()
+    crew_forms = [(crew, DeleteCrewForm()) for crew in crews]
+    return render_template('admin/crews.html', crew_forms=crew_forms)
+
+@admin_bp.route('/crews/<int:crew_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_crew(crew_id):
+    crew = Crew.query.get_or_404(crew_id)
+    # Remove all members' crew_id
+    for user in crew.members:
+        user.crew_id = None
+    # Remove all CrewMember records
+    CrewMember.query.filter_by(crew_id=crew.id).delete()
+    db.session.delete(crew)
+    db.session.commit()
+    flash("Crew deleted.", "success")
+    return redirect(url_for('admin.admin_crews'))
 # Register the admin blueprint
 app.register_blueprint(admin_bp)
 # Admin Interface -------------------------------
@@ -415,6 +439,16 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Models -------------------------------
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Register')
+
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
@@ -456,7 +490,6 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
 class Character(db.Model):
     __tablename__ = 'character'
 
@@ -505,7 +538,11 @@ class Character(db.Model):
         if self.master and getattr(self.master, "is_admin", False):
             return True
         return False
+    
 
+
+class EarnForm(FlaskForm):
+    submit = SubmitField('Earn')
 class CharacterEditForm(SecureForm):
     name = StringField('Name')
     health = IntegerField('Health')
@@ -514,6 +551,9 @@ class CharacterEditForm(SecureForm):
     xp = IntegerField('XP')
     is_alive = BooleanField('Is Alive', default=True)
     profile_image = StringField('Profile Image URL')
+
+class DeleteCrewForm(FlaskForm):
+    submit = SubmitField('Delete')
 
 class UserEditForm(SecureForm):
     username = StringField('Username')
@@ -552,7 +592,16 @@ class OrganizedCrime(db.Model):
 
     def is_full(self):
         return len(self.members) >= 4
-    
+class PrivateMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')    
 class ShopItemModelView(ModelView):
     can_create = True
     can_edit = True
@@ -659,6 +708,24 @@ class Crew(db.Model):
     name = db.Column(db.String(150), unique=True, nullable=False)
     members = db.relationship('User', backref='crew', lazy=True)
 
+class InviteForm(FlaskForm):
+    submit = SubmitField('Invite Member')
+
+class LeaveForm(FlaskForm):
+    submit = SubmitField('Leave Crew')
+
+class RoleForm(FlaskForm):
+    new_role = SelectField('Role', choices=[
+        ('member', 'Member'),
+        ('left_hand', 'Left-Hand'),
+        ('right_hand', 'Right-Hand'),
+        ('leader', 'Leader')
+    ])
+    submit = SubmitField('Update')
+
+
+
+
 class CrewMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -710,13 +777,18 @@ class ForumPost(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-def generate_invite_code(length=6):
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+def generate_unique_invite_code(length=6):
+    """Generate a unique invite code for OrganizedCrime."""
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        if not OrganizedCrime.query.filter_by(invite_code=code).first():
+            return code
 
 def is_on_crime_cooldown(character, cooldown_minutes=360):
     if character.last_crime_time:
         return datetime.utcnow() < character.last_crime_time + timedelta(minutes=cooldown_minutes)
     return False
+
 def release_expired_jail():
         now = datetime.utcnow()
         expired = Character.query.filter(
@@ -818,7 +890,61 @@ def create_forum():
         flash("Forum created!", "success")
         return redirect(url_for('forums'))
     return render_template('create_forum.html')
+@app.route('/messages', methods=['GET'])
+@login_required
+def inbox():
+    messages = PrivateMessage.query.filter_by(recipient_id=current_user.id).order_by(PrivateMessage.timestamp.desc()).all()
+    return render_template('inbox.html', messages=messages)
 
+@app.route('/notifications')
+@login_required
+def notifications():
+    # Fetch notifications for the current user
+    notifications = []
+    # Only show unread private messages as notifications
+    messages = PrivateMessage.query.filter_by(recipient_id=current_user.id, is_read=False).order_by(PrivateMessage.timestamp.desc()).all()
+    for msg in messages:
+        notifications.append({
+            "type": "message",
+            "from": msg.sender.username if msg.sender else "Unknown",
+            "content": msg.content,
+            "timestamp": msg.timestamp,
+            "is_read": msg.is_read,
+            "msg_id": msg.id
+        })
+
+    # Sort notifications by timestamp descending
+    notifications.sort(key=lambda n: n["timestamp"], reverse=True)
+
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/messages/send/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def send_message(user_id):
+    recipient = User.query.get_or_404(user_id)
+    if request.method == 'POST':
+        content = request.form.get('content', '').strip()
+        if not content:
+            flash("Message cannot be empty.", "danger")
+            return redirect(url_for('send_message', user_id=user_id))
+        msg = PrivateMessage(sender_id=current_user.id, recipient_id=recipient.id, content=content)
+        db.session.add(msg)
+        db.session.commit()
+        flash("Message sent!", "success")
+        return redirect(url_for('inbox'))
+    return render_template('send_message.html', recipient=recipient)
+
+@app.route('/messages/view/<int:msg_id>')
+@login_required
+def view_message(msg_id):
+    msg = PrivateMessage.query.get_or_404(msg_id)
+    if msg.recipient_id != current_user.id and msg.sender_id != current_user.id:
+        flash("You do not have permission to view this message.", "danger")
+        return redirect(url_for('inbox'))
+    if msg.recipient_id == current_user.id:
+        msg.is_read = True
+        db.session.commit()
+    return render_template('view_message.html', msg=msg)
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
 def attempt_organized_crime():
@@ -875,9 +1001,24 @@ def attempt_organized_crime():
 def crew_page(crew_id):
     crew = Crew.query.get_or_404(crew_id)
     members = CrewMember.query.filter_by(crew_id=crew.id).all()
-    messages = CrewMessage.query.filter_by(crew_id=crew.id).order_by(CrewMessage.timestamp.desc()).limit(50).all()
-    my_role = next((m.role for m in members if m.user_id == current_user.id), None)
-    return render_template('crew_page.html', crew=crew, members=members, messages=messages, current_user_role=my_role)
+    invite_form = InviteForm()
+    leave_form = LeaveForm()
+    member_forms = [(member, RoleForm(new_role=member.role)) for member in members]
+    # Determine current user's role in the crew
+    current_user_role = None
+    for member in members:
+        if member.user_id == current_user.id:
+            current_user_role = member.role
+            break
+    return render_template(
+        'crew_page.html',
+        crew=crew,
+        members=members,
+        invite_form=invite_form,
+        leave_form=leave_form,
+        member_forms=member_forms,
+        current_user_role=current_user_role
+    )
 
 @app.route('/crew_member/<int:crew_member_id>/update_role', methods=['POST'])
 @login_required
@@ -1213,9 +1354,10 @@ def npc_profile(id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form.get('username').strip()
-        password = request.form.get('password')
+    form = RegisterForm()
+    if form.validate_on_submit():
+        username = form.username.data.strip()
+        password = form.password.data
         if User.query.filter_by(username=username).first():
             flash('Username already exists.')
             return redirect(url_for('register'))
@@ -1225,7 +1367,7 @@ def register():
         db.session.commit()
         flash('Registered successfully. Please log in.')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 @app.route('/send_crew_message', methods=['POST'])
 @login_required
@@ -1251,9 +1393,10 @@ def send_crew_message():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username').strip()
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data.strip()
+        password = form.password.data
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
@@ -1261,7 +1404,7 @@ def login():
             db.session.commit()
             return redirect(url_for('dashboard'))
         flash('Invalid credentials.')
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/create_character', methods=['GET', 'POST'])
 @login_required
@@ -1464,11 +1607,117 @@ def dashboard():
             online_characters.append(char)
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    earn_form = EarnForm()
+    return render_template(
+        'dashboard.html',
+        character=character,
+        online_users=online_users,
+        earn_form=earn_form,  # now a list of Character objects
+        npcs=npcs)
 
-    return render_template('dashboard.html',
-                           online_users=online_characters,  # now a list of Character objects
-                           npcs=npcs,
-                           character=character)
+@app.route('/casino', methods=['GET', 'POST'])
+@login_required
+def casino():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    result = None
+    hand = []
+    dealer_hand = []
+    bet = 0
+    table = request.args.get('table', 'blackjack')  # Default to blackjack
+
+    if request.method == 'POST':
+        table = request.form.get('table', 'blackjack')
+        bet = int(request.form.get('bet', 0))
+        if bet <= 0 or bet > character.money:
+            flash("Invalid bet amount.", "danger")
+            return redirect(url_for('casino', table=table))
+
+        if table == 'blackjack':
+            # Deal cards
+            deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11] * 4
+            random.shuffle(deck)
+            hand = [deck.pop(), deck.pop()]
+            dealer_hand = [deck.pop(), deck.pop()]
+
+            def hand_value(cards):
+                value = sum(cards)
+                aces = cards.count(11)
+                while value > 21 and aces:
+                    value -= 10
+                    aces -= 1
+                return value
+
+            player_val = hand_value(hand)
+            dealer_val = hand_value(dealer_hand)
+
+            # Simple logic: player auto-stands, dealer draws to 17+
+            while dealer_val < 17:
+                dealer_hand.append(deck.pop())
+                dealer_val = hand_value(dealer_hand)
+
+            if player_val > 21:
+                result = f"You busted! Lost ${bet}."
+                character.money -= bet
+            elif dealer_val > 21 or player_val > dealer_val:
+                result = f"You win! Won ${bet}."
+                character.money += bet
+            elif player_val == dealer_val:
+                result = "Push! It's a tie."
+            else:
+                result = f"You lose! Lost ${bet}."
+                character.money -= bet
+
+        elif table == 'coinflip':
+            import secrets
+            flip = secrets.choice(['heads', 'tails'])
+            user_choice = request.form.get('coin_choice', 'heads')
+            if user_choice == flip:
+                result = f"You won the coin flip! Won ${bet}."
+                character.money += bet
+            else:
+                result = f"You lost the coin flip! Lost ${bet}."
+                character.money -= bet
+
+        elif table == 'roulette':
+            import secrets
+            user_choice = request.form.get('roulette_choice', 'red')
+            roulette_result = secrets.choice(['red', 'black', 'green'])
+            if user_choice == roulette_result:
+                if roulette_result == 'green':
+                    win_amount = bet * 14
+                    result = f"Green! You won ${win_amount}!"
+                    character.money += win_amount
+                else:
+                    win_amount = bet * 2
+                    result = f"You won on {roulette_result}! Won ${win_amount}."
+                    character.money += win_amount
+            else:
+                result = f"You lost on {roulette_result}! Lost ${bet}."
+                character.money -= bet
+
+        db.session.commit()
+        return render_template(
+            'casino.html',
+            result=result,
+            hand=hand,
+            dealer_hand=dealer_hand,
+            bet=bet,
+            character=character,
+            table=table,
+            flip=flip if table == 'coinflip' else None,
+            roulette_result=roulette_result if table == 'roulette' else None,
+            user_choice=user_choice if table in ['coinflip', 'roulette'] else None
+        )
+
+    return render_template(
+        'casino.html',
+        result=result,
+        hand=hand,
+        dealer_hand=dealer_hand,
+        bet=bet,
+        character=character,
+        table=table
+    )
 
 @app.route('/refresh_shop')
 def refresh_shop():
@@ -1538,7 +1787,7 @@ def create_crime():
     if not character:
         flash("You must have an active character to create a crime group.", "danger")
         return redirect(url_for('dashboard'))
-
+    
     if character.crime_group:
         return redirect(url_for('crime_group'))
 
@@ -1553,16 +1802,19 @@ def create_crime():
         if not crime_name:
             crime_name = f"{character.name}'s Crew"
 
-        invite_code = generate_invite_code()
+        # Use the new unique invite code generator
+        invite_code = generate_unique_invite_code()
 
         # --- Double-check character existence in DB ---
-        db.session.refresh(character)  # Refresh from DB
-        char_in_db = Character.query.get(character.id)
-        if not char_in_db:
-            flash("Character does not exist in the database.", "danger")
-            return redirect(url_for('dashboard'))
+        if not character.id:
+            db.session.add(character)
+            db.session.commit()
+        else:
+            char_in_db = db.session.get(Character, character.id)
+            if not char_in_db:
+                flash("Character does not exist in the database.", "danger")
+                return redirect(url_for('dashboard'))
 
-        # --- Now create the crime group ---
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
@@ -2012,6 +2264,7 @@ def create_admin():
         user.is_admin = False
         db.session.commit()
         print("Admin user updated.")
+
 def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=500):
     """Randomize prices and stock for all DrugDealers."""
     dealers = DrugDealer.query.all()

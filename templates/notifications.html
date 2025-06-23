@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Join a Crew{% endblock %}
+{% block title %}Notifications{% endblock %}
 
 {% block content %}
 <style>
@@ -11,7 +11,7 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     margin-bottom: 0;
 }
-.notifications-header h2 {
+.notifications-header h1 {
     color: #ffd700;
     font-size: 2.5rem;
     text-align: center;
@@ -24,28 +24,67 @@
     padding: 1.5rem 2rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     width: 100%;
-    max-width: 700px;
+    max-width: 900px;
     margin: 0 auto;
 }
-.invite-item {
-    background: #282a36;
+.notification-table {
+    width: 100%;
     color: #f5f6fa;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    padding: 1.1rem 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    box-shadow: 0 2px 8px #18182433;
-    border: 1.5px solid #8be9fd22;
+    border-collapse: separate;
+    border-spacing: 0;
 }
-.invite-item strong {
+.notification-table th, .notification-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.notification-table th {
+    background: #181824;
     color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
 }
-.invite-actions {
+.notification-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.notification-table tr:hover {
+    background: #34355b;
+}
+.notification-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.notification-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.notification-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.notification-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 0.5rem;
+    gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
 }
 .btn-success {
     background: linear-gradient(90deg, #50fa7b 0%, #8be9fd 100%);
@@ -75,35 +114,85 @@
     background: #ff2222;
     color: #fff;
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
     .notifications-header, .notifications-list {
         padding: 1rem 0.5rem;
     }
-    .notifications-header h2 {
+    .notifications-header h1 {
         font-size: 1.5rem;
+    }
+    .notification-table th, .notification-table td {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.95em;
     }
 }
 </style>
 
 <div class="notifications-header">
-  <h2>Your Invitations</h2>
+    <h1>Your Notifications</h1>
 </div>
 <div class="notifications-list">
-  {% if invitations %}
-    {% for invite in invitations %}
-      <div class="invite-item">
-        <span>
-          Invitation from <strong>{{ invite.inviter.username }}</strong>
-          to join crew <strong>{{ invite.crew.name }}</strong>
-        </span>
-        <div class="invite-actions">
-          <a href="{{ url_for('accept_invite', invite_id=invite.id) }}" class="btn btn-success btn-sm">Accept</a>
-          <a href="{{ url_for('decline_invite', invite_id=invite.id) }}" class="btn btn-danger btn-sm">Decline</a>
-        </div>
-      </div>
-    {% endfor %}
-  {% else %}
-    <div style="color:#b8b8ff;text-align:center;">No invitations.</div>
-  {% endif %}
+    <table class="notification-table">
+        <tr>
+            <th style="width:5%;">#</th>
+            <th style="width:25%;">Type</th>
+            <th style="width:40%;">Description</th>
+            <th style="width:30%;">Actions</th>
+        </tr>
+        {% set notification_count = 0 %}
+        {% for n in notifications %}
+            {% if n.type == "message" %}
+            {% set notification_count = notification_count + 1 %}
+            <tr>
+                <td>{{ notification_count }}</td>
+                <td>
+                    <span class="notification-link">
+                        <i class="fas fa-envelope"></i> Private Message
+                        {% if not n.is_read %}<span style="color:#ffd700;"> (unread)</span>{% endif %}
+                    </span>
+                </td>
+                <td class="notification-desc">
+                    From <b>{{ n.from }}</b>: {{ n.content|truncate(50) }}
+                    <br>
+                    <small>{{ n.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                </td>
+                <td>
+                    <div class="notification-actions">
+                        <a href="{{ url_for('view_message', msg_id=n.msg_id) }}" class="btn btn-primary btn-sm">
+                            View
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        {% if invitations %}
+            {% for invite in invitations %}
+            <tr>
+                <td>—</td>
+                <td>
+                    <span class="notification-link">
+                        <i class="fas fa-users"></i> Crew Invitation
+                    </span>
+                </td>
+                <td class="notification-desc">
+                    Invitation from <strong>{{ invite.inviter.username }}</strong>
+                    to join crew <strong>{{ invite.crew.name }}</strong>
+                </td>
+                <td>
+                    <div class="notification-actions">
+                        <a href="{{ url_for('accept_invite', invite_id=invite.id) }}" class="btn btn-success btn-sm">Accept</a>
+                        <a href="{{ url_for('decline_invite', invite_id=invite.id) }}" class="btn btn-danger btn-sm">Decline</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        {% endif %}
+        {% if notification_count == 0 and not invitations %}
+        <tr>
+            <td colspan="4" style="color:#b8b8ff;text-align:center;">No notifications.</td>
+        </tr>
+        {% endif %}
+    </table>
 </div>
 {% endblock %}

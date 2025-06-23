@@ -1,375 +1,222 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-.crew-container {
-    max-width: 700px;
-    margin: 48px auto 0 auto;
-    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
-    border-radius: 22px;
-    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
-    padding: 44px 36px 36px 36px;
-    border: 2px solid #8be9fd55;
-    color: #f5f6fa;
-    font-family: "geo", sans-serif;
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
     text-align: center;
-    position: relative;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 2.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 0 auto 2rem auto;
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
     overflow: hidden;
 }
-.crew-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-}
-.crew-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.crew-logo {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.2em;
-    border: 3px solid #ffd700;
-    object-fit: cover;
-    box-shadow: 0 2px 12px #ffd70033;
-}
-.crew-header-info {
-    text-align: left;
-}
-.crew-header-info h1 {
-    color: #8be9fd;
-    font-size: 2.1em;
-    font-weight: 900;
-    margin: 0 0 4px 0;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 12px #23243a;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.crew-header-info .crew-id {
-    color: #ffd700;
-    font-size: 0.95em;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-.crew-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-end;
-}
-.crew-actions form,
-.crew-actions a {
-    display: inline-block;
-}
-.crew-actions button,
-.crew-actions a {
-    background: #8be9fd;
-    color: #23243a;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 22px;
-    font-weight: 700;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background 0.18s, color 0.18s;
-    margin-bottom: 2px;
-    text-decoration: none;
-}
-.crew-actions button:hover,
-.crew-actions a:hover {
-    background: #ffd700;
-    color: #23243a;
-}
-.crew-description {
-    margin: 18px 0 28px 0;
-    color: #b8b8ff;
-    font-size: 1.1em;
-    background: #181824;
-    border-radius: 10px;
-    padding: 16px 18px;
-    box-shadow: 0 1px 8px #8be9fd22;
-}
-.crew-section-title {
-    color: #ffd700;
-    font-size: 1.18em;
-    font-weight: 700;
-    margin-bottom: 16px;
-    margin-top: 24px;
-    letter-spacing: 0.5px;
-    text-align: left;
-}
-.crew-members-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 18px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.crew-member-item {
-    background: #23243a;
-    border-radius: 10px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 1.08em;
-    gap: 8px;
-    transition: box-shadow 0.18s;
-}
-.crew-member-item:hover {
-    box-shadow: 0 2px 12px #ffd70033;
-}
-.crew-member-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.crew-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3em;
-    margin-right: 6px;
-    border: 2px solid #8be9fd55;
-    object-fit: cover;
-}
-.badge-role {
-    font-size: 0.88em;
-    padding: 2px 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    margin-left: 8px;
-    margin-right: 2px;
-    letter-spacing: 0.5px;
-}
-.badge-leader {
-    background: #ffd700;
-    color: #23243a;
-}
-.badge-right {
-    background: #8be9fd;
-    color: #23243a;
-}
-.badge-left {
-    background: #50fa7b;
-    color: #23243a;
-}
-.badge-member {
-    background: #44475a;
-    color: #b8b8ff;
-}
-.crew-role-form select, .crew-role-form button {
-    border-radius: 6px;
-    border: none;
-    padding: 4px 10px;
-    margin-left: 4px;
-    font-size: 0.98em;
-    background: #23243a;
-    color: #8be9fd;
-    transition: background 0.18s, color 0.18s;
-}
-.crew-role-form button {
-    background: #8be9fd;
-    color: #23243a;
-    font-weight: 700;
-    margin-left: 6px;
-    cursor: pointer;
-}
-.crew-role-form button:hover {
-    background: #ffd700;
-    color: #23243a;
-}
-.crew-stats {
-    display: flex;
-    gap: 32px;
-    justify-content: center;
-    margin: 18px 0 0 0;
-    flex-wrap: wrap;
-}
-.crew-stat {
-    background: #181824;
-    border-radius: 10px;
-    padding: 16px 24px;
-    color: #8be9fd;
-    font-size: 1.1em;
-    font-weight: 700;
-    box-shadow: 0 1px 8px #8be9fd22;
-    min-width: 120px;
+.forum-table th, .forum-table td {
+    padding: 1.2rem 1rem;
     text-align: center;
+    vertical-align: middle;
 }
-.crew-stat .stat-label {
+.forum-table th {
+    background: #181824;
     color: #ffd700;
-    font-size: 0.95em;
-    font-weight: 600;
-    margin-bottom: 2px;
-    display: block;
+    font-size: 1.15rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    letter-spacing: 1px;
 }
-.back {
-    margin-top: 32px;
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
 }
-.back a {
-    color: #8be9fd;
-    font-weight: 600;
-    font-size: 1.1em;
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
     text-decoration: none;
-    border-radius: 12px;
-    padding: 10px 28px;
-    background: linear-gradient(90deg, #23243a 0%, #8be9fd 100%);
-    box-shadow: 0 1px 8px #8be9fd22;
-    transition: background 0.18s, color 0.18s;
-    width: fit-content;
-    display: inline-block;
+    transition: color 0.2s;
 }
-.back a:hover {
-    background: #8be9fd;
-    color: #23243a;
+.forum-link:hover {
+    color: #ffb86c;
     text-decoration: underline;
 }
-@media (max-width: 900px) {
-    .crew-container {
-        padding: 18px 2vw 16px 2vw;
-        margin: 18px 0 0 0;
-        max-width: 98vw;
-    }
-    .crew-header-info h1 {
-        font-size: 1.3em;
-    }
-    .crew-member-item {
-        padding: 10px 6px 8px 6px;
-        font-size: 0.98em;
-    }
-    .crew-stats {
-        gap: 12px;
-    }
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1.08rem;
+    font-weight: 500;
+    text-align: center;
+}
+.forum-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.08em;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
 }
 </style>
 
-<div class="crew-container">
-  <div class="crew-header">
-    <div class="crew-header-left">
-      <div class="crew-logo">
-        <i class="fas fa-users"></i>
-      </div>
-      <div class="crew-header-info">
-        <h1>{{ crew.name }}</h1>
-        <div class="crew-id">Crew ID: {{ crew.id }}</div>
-      </div>
+<div class="forums-header">
+    <h1>{{ crew.name }}</h1>
+</div>
+<div class="forums-list">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div class="crew-logo" style="width:64px;height:64px;border-radius:50%;background:#34355b;display:flex;align-items:center;justify-content:center;font-size:2.2em;border:3px solid #ffd700;object-fit:cover;box-shadow:0 2px 12px #ffd70033;">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="forum-link" style="font-size:1.5em;">{{ crew.name }}</div>
+                <div class="forum-desc" style="color:#ffd700;">Crew ID: {{ crew.id }}</div>
+            </div>
+        </div>
+        <div class="forum-actions" style="align-items:flex-end;">
+            {% if current_user_role == 'leader' %}
+                <form method="POST" action="{{ url_for('invite_to_crew') }}">
+                    {{ invite_form.hidden_tag() }}
+                    {{ invite_form.submit(class_="btn btn-primary") }}
+                </form>
+            {% elif current_user_role in ['right_hand', 'left_hand'] %}
+                <form method="POST" action="{{ url_for('invite_to_crew') }}">
+                    {{ invite_form.hidden_tag() }}
+                    {{ invite_form.submit(class_="btn btn-primary") }}
+                </form>
+            {% endif %}
+            {% if current_user.crew_id == crew.id %}
+                <form method="POST" action="{{ url_for('leave_crew') }}">
+                    {{ leave_form.hidden_tag() }}
+                    {{ leave_form.submit(class_="btn btn-danger") }}
+                </form>
+            {% endif %}
+        </div>
     </div>
-    <div class="crew-actions">
-      {% if current_user_role == 'leader' %}
-        {# 
-        <form method="POST" action="{{ url_for('edit_crew', crew_id=crew.id) }}">
-          <button type="submit"><i class="fas fa-edit"></i> Edit Crew</button>
-        </form>
-        #}
-        <form method="POST" action="{{ url_for('invite_to_crew') }}">
-          <button type="submit"><i class="fas fa-user-plus"></i> Invite Member</button>
-        </form>
-        {# 
-        <form method="POST" action="{{ url_for('delete_crew', crew_id=crew.id) }}" onsubmit="return confirm('Are you sure you want to delete this crew?');">
-          <button type="submit" style="background:#ff5555;color:#fff;"><i class="fas fa-trash"></i> Delete Crew</button>
-        </form>
-        #}
-      {% elif current_user_role in ['right_hand', 'left_hand'] %}
-        <form method="POST" action="{{ url_for('invite_to_crew') }}">
-          <button type="submit"><i class="fas fa-user-plus"></i> Invite Member</button>
-        </form>
-      {% endif %}
-      {% if current_user.crew_id == crew.id %}
-        <form method="POST" action="{{ url_for('leave_crew') }}">
-          <button type="submit" style="background:#44475a;color:#ffd700;"><i class="fas fa-sign-out-alt"></i> Leave Crew</button>
-        </form>
-      {% endif %}
-    </div>
-  </div>
 
-  {% if crew.description %}
-    <div class="crew-description">
-      {{ crew.description }}
+    {% if crew.description %}
+    <div class="forum-desc" style="background:#181824;border-radius:10px;padding:16px 18px;margin-bottom:24px;">
+        {{ crew.description }}
     </div>
-  {% endif %}
+    {% endif %}
 
-  <div class="crew-stats">
-    <div class="crew-stat">
-      <span class="stat-label">Members</span>
-      {{ members|length }}
-    </div>
-    <div class="crew-stat">
-      <span class="stat-label">Founded</span>
-      {{ crew.created_at.strftime('%b %d, %Y') if crew.created_at else 'Unknown' }}
-    </div>
-    <div class="crew-stat">
-      <span class="stat-label">Leader</span>
-      {% for member in members %}
-        {% if member.role == 'leader' %}
-          {{ member.user.character.name if member.user and member.user.character else 'Unknown' }}
-        {% endif %}
-      {% endfor %}
-    </div>
-  </div>
+    <table class="forum-table" style="margin-bottom:32px;">
+        <tr>
+            <th style="width:20%;">Members</th>
+            <th style="width:20%;">Founded</th>
+            <th style="width:20%;">Leader</th>
+        </tr>
+        <tr>
+            <td>{{ members|length }}</td>
+            <td>{{ crew.created_at.strftime('%b %d, %Y') if crew.created_at else 'Unknown' }}</td>
+            <td>
+                {% for member in members %}
+                    {% if member.role == 'leader' %}
+                        {{ member.user.character.name if member.user and member.user.character else 'Unknown' }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
 
-  <div class="crew-section-title">Members</div>
-  <ul class="crew-members-list">
-    {% for member in members %}
-    <li class="crew-member-item">
-      <div class="crew-member-info">
-        {% set character = member.user.character if member.user and member.user.character else None %}
-        {% if character and character.profile_image %}
-          <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar">
-        {% else %}
-          <span class="crew-avatar"><i class="fas fa-user"></i></span>
-        {% endif %}
-        <strong>
-          {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
-        </strong>
-        {% if member.role == 'leader' %}
-          <span class="badge-role badge-leader">Leader</span>
-        {% elif member.role == 'right_hand' %}
-          <span class="badge-role badge-right">Right-Hand</span>
-        {% elif member.role == 'left_hand' %}
-          <span class="badge-role badge-left">Left-Hand</span>
-        {% else %}
-          <span class="badge-role badge-member">Member</span>
-        {% endif %}
-      </div>
-      
-      {% if member.user and current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
-      <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
-        <select name="new_role">
-          <option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option>
-          <option value="left_hand" {% if member.role == 'left_hand' %}selected{% endif %}
-            {% if current_user_role != 'leader' %}disabled{% endif %}>Left-Hand</option>
-          <option value="right_hand" {% if member.role == 'right_hand' %}selected{% endif %}
-            {% if current_user_role != 'leader' %}disabled{% endif %}>Right-Hand</option>
-          {% if current_user_role == 'leader' %}
-            <option value="leader" {% if member.role == 'leader' %}selected{% endif %}>Leader</option>
-          {% endif %}
-        </select>
-        {% if current_user_role == 'leader' or member.role == 'member' %}
-          <button type="submit">Update</button>
-        {% endif %}
-      </form>
-      {% endif %}
-      
-    </li>
-    {% endfor %}
-  </ul>
-  
+    <div class="forum-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
+        Members
+    </div>
+    <table class="forum-table">
+        <tr>
+            <th style="width:40%;">Member</th>
+            <th style="width:30%;">Role</th>
+            <th style="width:30%;">Actions</th>
+        </tr>
+        {% for member, role_form in member_forms %}
+        <tr>
+            <td>
+                {% set character = member.user.character if member.user and member.user.character else None %}
+                {% if character and character.profile_image %}
+                  <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;">
+                {% else %}
+                  <span class="crew-avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;"><i class="fas fa-user"></i></span>
+                {% endif %}
+                <strong>
+                  {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
+                </strong>
+            </td>
+            <td>
+                {% if member.role == 'leader' %}
+                  <span class="badge-role badge-leader">Leader</span>
+                {% elif member.role == 'right_hand' %}
+                  <span class="badge-role badge-right">Right-Hand</span>
+                {% elif member.role == 'left_hand' %}
+                  <span class="badge-role badge-left">Left-Hand</span>
+                {% else %}
+                  <span class="badge-role badge-member">Member</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if member.user and current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
+                <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
+                    {{ role_form.hidden_tag() }}
+                    {{ role_form.new_role(class_="form-control", style="border-radius:6px;border:none;padding:4px 10px;margin-left:4px;font-size:0.98em;background:#23243a;color:#8be9fd;") }}
+                    {{ role_form.submit(class_="btn btn-primary", style="margin-left:6px;") }}
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 {% endblock %}

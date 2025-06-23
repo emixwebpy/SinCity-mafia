@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Inbox{% endblock %}
+{% block content %}
+<h2>Your Messages</h2>
+<ul>
+  {% for msg in messages %}
+    <li>
+      <a href="{{ url_for('view_message', msg_id=msg.id) }}">
+        From: {{ msg.sender.username }} - {{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}
+        {% if not msg.is_read %}<strong>(unread)</strong>{% endif %}
+      </a>
+    </li>
+  {% else %}
+    <li>No messages.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
