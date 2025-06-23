@@ -343,16 +343,7 @@ def load_user(user_id):
 def home():
     return redirect(url_for('dashboard'))
 
-@app.route('/fix_crew_members')
-def fix_crew_members():
-    users = {u.id for u in User.query.all()}
-    broken = CrewMember.query.filter(~CrewMember.user_id.in_(users)).all()
 
-    for b in broken:
-        db.session.delete(b)
-
-    db.session.commit()
-    return f"Removed {len(broken)} broken crew member entries."
 
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
@@ -376,7 +367,7 @@ def attempt_organized_crime():
         flash("You need at least 2 members to attempt the crime.", "warning")
         return redirect(url_for('dashboard'))
 
-    import random
+    
     success = random.random() < 0.35
     reward_money = random.randint(500, 1500) if success else 25
     reward_xp = random.randint(10, 30) if success else 25
@@ -392,13 +383,14 @@ def attempt_organized_crime():
                     jail_minutes = random.randint(5, 15)
                     member.in_jail = True
                     member.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
-            member.last_crime_time = datetime.utcnow()
+                    flash(f"{member.name} has been jailed for {jail_minutes} minutes due to failed crime.", "warning")
             member.crime_group_id = None  # Disband the crime group
 
     db.session.delete(crime)
     db.session.commit()
 
     if success:
+        
         flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
     else:
         flash(f"Crime failed! The crew has disbanded.", "danger")
@@ -802,6 +794,19 @@ def get_messages():
         'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')
     } for msg in reversed(messages)]) 
 
+@app.route('/jail')
+@login_required
+def jail():
+    now = datetime.utcnow()
+    # Find all alive characters currently in jail (jail_until in the future)
+    jailed_characters = Character.query.filter(
+        Character.in_jail == True,
+        Character.is_alive == True,
+        Character.jail_until != None,
+        Character.jail_until > now
+    ).order_by(Character.jail_until.asc()).all()
+    return render_template('jail.html', jailed_characters=jailed_characters, now=datetime.utcnow)
+
 @app.route('/join_crew', methods=['GET', 'POST'])
 @login_required
 def join_crew():
@@ -961,6 +966,22 @@ def create_crime():
             crime_name = f"{character.name}'s Crew"
 
         invite_code = generate_invite_code()
+
+        # Defensive: Ensure character is committed and exists in DB
+        if not character.id or not Character.query.get(character.id):
+            db.session.add(character)
+            db.session.commit()
+            # Re-query to ensure it's in DB
+            character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+            if not character or not character.id:
+                flash("Character not found in database.", "danger")
+                return redirect(url_for('dashboard'))
+
+        # Double-check: Character must exist in DB
+        if not Character.query.get(character.id):
+            flash("Character does not exist in the database.", "danger")
+            return redirect(url_for('dashboard'))
+
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
@@ -1062,6 +1083,11 @@ def upload_profile_image():
         flash("You don't have permission to upload a profile image.", "danger")
         return redirect(url_for('dashboard'))
 
+    # Only allow the owner of the character to upload
+    if character.master_id != current_user.id:
+        flash("You can only upload a profile image for your own character.", "danger")
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
         file = request.files.get('profile_image')
         if file and allowed_file(file.filename):
@@ -1074,7 +1100,7 @@ def upload_profile_image():
             db.session.commit()
 
             flash('Profile image updated!', 'success')
-            return redirect(url_for('profile', username=current_user.username))
+            return redirect(url_for('profile_by_id', char_id=character.id))
         else:
             flash('Invalid file type.', 'danger')
     return render_template('upload_profile_image.html')
@@ -1177,98 +1203,47 @@ def create_crew():
 
     return render_template('create_crew.html')
 
-@app.route('/earn')
+@app.route('/earn', methods=['POST', 'GET'])
 @login_required
 def earn():
-    cooldown = timedelta(seconds=5)
+    if not hasattr(current_user, 'character') or current_user.character is None:
+        return jsonify({'success': False, 'message': 'No character found.'}), 400
+
+    character = current_user.character
+
     now = datetime.utcnow()
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        return jsonify({'success': False, 'message': "No character found."})
-    
-    if character.in_jail and character.jail_until and character.jail_until > now:
-        remaining = character.jail_until - now
-        mins, secs = divmod(int(remaining.total_seconds()), 60)
-        return jsonify({'success': False, 'message': f"You are in jail! Wait {mins}m {secs}s."})
+    if hasattr(character, 'last_earned') and character.last_earned:
+        cooldown = timedelta(seconds=60)  # 1 minute cooldown
+        if now - character.last_earned < cooldown:
+            seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
+            return jsonify({'success': False, 'message': 'Cooldown active.', 'seconds_remaining': seconds_remaining}), 429
 
-    # Jail release
-    if character.in_jail and character.jail_until and character.jail_until <= now:
-        character.in_jail = False
-        character.jail_until = None
-        db.session.commit()
-
-    # ...existing cooldown check...
-
-    # Chance to fail and go to jail (e.g. 10%)
-    if random.random() < 0.75:
-        jail_minutes = random.randint(2, 6)
-        character.in_jail = True
-        character.jail_until = now + timedelta(minutes=jail_minutes)
-        db.session.commit()
-        return jsonify({'success': False, 'message': f"You got caught and are in jail for {jail_minutes} minutes!"})
-    # ✅ Make sure cooldown check works
-    if character.last_earned and (now - character.last_earned) < cooldown:
-        remaining = cooldown - (now - character.last_earned)
-        seconds = divmod(int(remaining.total_seconds()), 60)
-        return flash({
-            'success': False,
-            'message': f"Wait {seconds}s before earning again."
-        })
-
-    # Earnings and streak handling (unchanged)
-    earned_money = random.randint(200, 2000)
-    earned_xp = random.randint(20, 120)
-    
+    # Earn logic
+    earned_money = random.randint(5000, 150000)
+    earned_xp = random.randint(100, 500)
     character.money += earned_money
     character.xp += earned_xp
     character.last_earned = now
-    
-    # Level-up
+
+    # Level up: each level requires level * 250 XP
+    leveled_up = False
     while character.xp >= character.level * 250:
         character.xp -= character.level * 250
         character.level += 1
+        leveled_up = True
 
-    # Streak and item reward
-    character.earn_streak = (character.earn_streak or 0) + 1
-    reward_msg = ""
-    
-    # 🎲 Chance to find a random item (20% chance)
-    if random.random() < 0.2:
-        possible_items = ShopItem.query.filter(ShopItem.stock > 0).all()
-        if possible_items:
-            found_item = random.choice(possible_items)
-            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=found_item.id).first()
-            if inventory:
-                inventory.quantity += 1
-            else:
-                db.session.add(UserInventory(user_id=current_user.id, item_id=found_item.id, quantity=1))
+    db.session.commit()  # Always commit after earning
 
-            # Optional: auto-equip if it's a gun and player has none
-            if found_item.is_gun and not character.gun_id:
-                character.gun_id = found_item.id
+    if leveled_up:
+        flash(f"You leveled up to level {character.level}!", "success")
 
-            reward_msg = f" You found a {found_item.name}!"
-
-    # 🔁 Reset streak every 3 earns, and guarantee a Starter Pistol
-    if character.earn_streak >= 30:
-        starter = ShopItem.query.filter_by(name='Starter Pistol').first()
-        if starter:
-            inventory = UserInventory.query.filter_by(user_id=current_user.id, item_id=starter.id).first()
-            if inventory:
-                inventory.quantity += 1
-            else:
-                db.session.add(UserInventory(user_id=current_user.id, item_id=starter.id, quantity=1))
-
-            if not character.gun_id:
-                character.gun_id = starter.id
-
-            reward_msg += f" You also received a {starter.name} for your streak!"
-            character.earn_streak = 0
-            
-    db.session.commit()
-    flash(f"You earned ${earned_money} and {earned_xp} XP" + reward_msg, "success")
-
-    return jsonify({'success': True})
+    return jsonify ({
+        'success': True,
+        'money': character.money,
+        'xp': character.xp,
+        'level': character.level,
+        'message': f"You earned ${earned_money} and {earned_xp} XP!"
+    })
 
 @app.route('/user_stats')
 @login_required
@@ -1338,84 +1313,11 @@ def profile_by_id(char_id):
     character = Character.query.get_or_404(char_id)
     user = User.query.filter_by(id=character.master_id).first()
     crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
-    print("Serving profile for:", character.name)
+    
     return render_template('profile.html', user=user, character=character, crew=crew)
     
 
-@app.route('/create_fake_profile', methods=['GET', 'POST'])
-@login_required
-def create_fake_profile():
-    npc_price = 150000
-    npc_level = 10  # Cost to create a fake NPC profile
-    npc_user = User.query.filter_by(username="NPC").first()
 
-    if not npc_user:
-        npc_user = User(
-            username="NPC",
-            is_admin=False,
-            premium=False,
-            password_hash="npc",  # Set something, but they won’t log in anyway
-        )
-        db.session.add(npc_user)
-        db.session.commit()
-        print("NPC user created.")
-
-    # Step 2: Assign all orphan NPC characters to the dummy NPC user
-    orphan_npcs = Character.query.filter_by(master_id=0).all()
-    for npc in orphan_npcs:
-        npc.master_id = npc_user.id
-        npc.user_id = npc_user.id
-
-    db.session.commit()
-    print(f"Updated {len(orphan_npcs)} NPC(s) to link to user_id {npc_user.id}.")
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("You must have a character to create a fake profile.", "danger")
-        return redirect(url_for('dashboard'))
-
-    if character.money < npc_price:
-        flash("Not enough money to create a fake profile.", "danger")
-        return redirect(url_for('dashboard'))
-
-    if character.level < npc_level:
-        flash(f"You must be at least level {npc_level} to create a fake profile.", "danger")
-        return redirect(url_for('dashboard'))
-
-    # Generate a unique name for the NPC
-    npc_names = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Chris Lee', 'Taylor Brown', 'Morgan Black', 'Riley Stone']
-    attempts = 0
-    max_attempts = 10
-    while attempts < max_attempts:
-        npc_name = random.choice(npc_names) + f" #{random.randint(100, 999)}"
-        if not Character.query.filter_by(name=npc_name, master_id=0).first():
-            break
-        attempts += 1
-    else:
-        flash("Could not generate a unique NPC name. Try again later.", "danger")
-        return redirect(url_for('dashboard'))
-
-    character.money -= npc_price
-    npc = Character(
-        profile_image='uploads/default_npc.png',
-        master_id=npc_user.id,  # NPCs have master_id=0
-        name=npc_name,
-        money=random.randint(200, 1000000000000),
-        xp=random.randint(1, 500000),
-        level=random.randint(1, 25),
-        is_alive=True,
-        health=100,
-        user_id=npc_user.id,  # Link to the dummy NPC user
-    )
-
-    
-    db.session.add(npc)
-    db.session.commit()
-
-    flash(f"Fake profile '{npc_name}' created for ${npc_price}!", "success")
-    return redirect(url_for('dashboard'))
-
-    # # For GET requests, show the creation form
-    # return render_template('create_npc.html', npc_price=npc_price, npc_level=npc_level)
 
 @app.route('/send_public_message', methods=['POST'])
 @login_required

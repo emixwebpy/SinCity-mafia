@@ -169,58 +169,66 @@
 <div class="profile-whole">
   {% if character %}
     <div class="profile-container">
-      {% if character.profile_image %}
+      
+      {% if user.character.profile_image %}
         <img class="profile-img" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
       {% endif %}
+
+      {% if current_user.is_authenticated and current_user.id == character.master_id %}
+      <form action="{{ url_for('upload_profile_image') }}" method="get" style="margin-bottom:18px;">
+        <button type="submit" class="btn btn-primary">Change Profile Image</button>
+      </form>
+      {% endif %}
+
+
       <div class="profile-username">
-        <h1>Name: &nbsp;<strong>{{ character.name }}</strong></h1>
+        <h1>Name: &nbsp;<strong>{{ user.character.name }}</strong></h1>
       </div>
       <div class="profile-stats">
         <div class="profile-stat">
           <span class="profile-label">Level:&nbsp;</span>
-          {{ character.level }}
+          {{ user.character.level }}
         </div>
         <div class="profile-stat">
           <span class="profile-label">Wealth:&nbsp;</span>
-          {{ money_class(character.money)|safe }}
+          {{ money_class(user.character.money)|safe }}
         </div>
         <div class="profile-stat">
           <span class="profile-label">Health:&nbsp;</span>
-          <span class="profile-value">{{ character.health }}</span>
+          <span class="profile-value">{{ user.character.health }}</span>
         </div>
         <div class="profile-stat">
           <span class="profile-label">XP:&nbsp;</span>
-          {{ character.xp }}
+          {{ user.character.xp }}
         </div>
         <div class="profile-stat">
           <span class="profile-label">Kills:&nbsp;</span>
-          <span class="profile-value">{{ character.kills if character.kills is defined else 0 }}</span>
+          <span class="profile-value">{{ user.character.kills if user.character.kills is defined else 0 }}</span>
         </div>
         {% if character.gun %}
         <div class="profile-stat">
           <span class="profile-label">Gun:</span>
-          <span class="profile-value">{{ character.gun.name }} ({{ character.gun.damage }} dmg)</span>
+          <span class="profile-value">{{ user.character.gun.name }} ({{ user.character.gun.damage }} dmg)</span>
         </div>
         {% endif %}
-        {% if user %}
-        <div class="profile-stat">
-          <span class="profile-label">Owner:</span>
-          <span class="profile-value">{{ user.username }}</span>
-        </div>
-        {% endif %}
+        
         {% if crew %}
         <div class="profile-stat">
           <span class="profile-label">Crew:</span>
-          <span class="profile-value">{{ crew.name }}</span>
+          <span class="profile-value">
+            <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color: #8be9fd; text-decoration: underline;">
+              {{ crew.name }}
+            </a>
+          </span>
         </div>
         {% endif %}
       </div>
       {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
-      <form class="profile-stat" action="{{ url_for('kill', char_id=character.id) }}" method="post" style="margin-top:18px;">
+      <form class="profile-stat" action="{{ url_for('kill', char_id=user.character.id) }}" method="post" style="margin-top:18px;">
         <button type="submit" class="btn btn-danger">Shoot</button>
       </form>
       {% endif %}
-      {% if character.premium %}
+      {% if user.character.premium %}
       <div class="profile-premium">
         <i class="fas fa-crown"></i> Premium Member
       </div>

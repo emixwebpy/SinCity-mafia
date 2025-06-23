@@ -4,331 +4,264 @@
 
 {% block content %}
 <style>
-.dashboard-container {
-    max-width: 100vw;
-    width: 100%;
-    
-    background: rgba(25, 25, 40, 0.98);
+/* Modern Mafia Dashboard UI */
+.dashboard-hero {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
     border-radius: 5px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 38px 28px 32px 28px;
-    border: 1.5px solid #8be9fd44;
+    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
+    padding: 44px 36px 36px 36px;
+    border: 2px solid #8be9fd55;
     color: #f5f6fa;
     font-family: "geo", sans-serif;
-    text-align: center;
+    text-align: left;
     position: relative;
+    margin: 32px auto 0 auto;
+    max-width: 900px;
+    overflow: hidden;
 }
-.dashboard-cards {
-    display: flex;
-    gap: 18px;
-    justify-content: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-.dashboard-card {
-    background: #2a2b3d;
-    border-radius: 5px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 18px 20px;
-    min-width: 110px;
-    text-align: center;
-    color: #f5f6fa;
-    font-size: 1.05em;
-    margin-bottom: 12px;
-    flex: 1 1 0;
-}
-.dashboard-card h5 {
-    font-size: 1.1em;
-    color: #8be9fd;
-    margin-bottom: 8px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-.display-4 {
-    font-size: 1.5em;
-    font-weight: 900;
-    color: #ffd700;
-    letter-spacing: 1px;
-}
-.dashboard-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 18px;
-    width: 100%;
-}
-.dashboard-actions .btn {
-    border-radius: 5px;
-    font-weight: 600;
-    padding: 7px 22px;
-    background: #23243a;
-    color: #8be9fd;
-    border: 1.5px solid #8be9fd44;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    box-shadow: 0 1px 5px #8be9fd22;
-}
-.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
-    background: #8be9fd;
-    color: #23243a;
-    box-shadow: 0 2px 10px #8be9fd44;
-}
-.dashboard-actions .btn-danger {
-    background: #ff5555;
-    color: #fff;
-    border: none;
-}
-.dashboard-actions .btn-danger:hover {
-    background: #ff2222;
-    color: #fff;
-}
-.dashboard-actions .btn-info {
-    background: #50fa7b;
-    color: #23243a;
-    border: none;
-}
-.dashboard-actions .btn-info:hover {
-    background: #2ecc71;
-    color: #fff;
-}
-.current-city {
-    text-align: center;
-    font-size: 1.1em;
-    color: #b8b8ff;
-    margin-bottom: 18px;
-}
-.npc-create-container {
-    background: #2a2b3d;
-    border-radius: 5px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 14px 20px;
-    margin: 18px auto 0 auto;
-    max-width: 340px;
-    text-align: center;
-    margin-bottom: 18px;
-}
-.shop-title {
-    color: #8be9fd;
-    font-size: 1.1em;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-.shop-item {
-    background: rgba(139,233,253,0.08);
-    border-radius: 5px;
-    padding: 12px 18px;
-    color: #fff;
-    font-size: 1.08em;
-    font-weight: 500;
-    box-shadow: 0 1px 8px #8be9fd22;
-    border: 1px solid #8be9fd22;
-    margin-bottom: 8px;
-}
-.shop-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.shop-item-name {
-    font-weight: 700;
-    color: #8be9fd;
-}
-.shop-item-price {
-    color: #ffd700;
-    font-weight: 700;
-}
-.shop-item-desc {
-    font-size: 0.95em;
-    color: #b8b8ff;
-    margin-top: 4px;
-}
-.dashboard-users-online {
-    margin-top: 30px;
-}
-.dashboard-users-online h2 {
-    color: #8be9fd;
-    font-size: 1.05rem;
-    margin-bottom: 8px;
-    font-family: "geo", sans-serif;
-}
-.dashboard-users-online ul {
-    list-style: none;
-    display: flex;
-    padding: 0;
-    gap: 10px;
-    margin: 0;
-    margin-top: 10px;
-}
-.dashboard-users-online li {
-    background: #23243a;
-    border-radius: 5px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+.dashboard-hero-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 1em;
+    gap: 24px;
+    margin-bottom: 18px;
 }
-.user-avatar {
-    width: 28px;
-    height: 28px;
+.dashboard-avatar {
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     background: #34355b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1em;
-    margin-right: 6px;
-    border: 2px solid #8be9fd55;
+    font-size: 2.8em;
+    border: 3px solid #ffd700;
     object-fit: cover;
+    box-shadow: 0 2px 12px #ffd70033;
 }
-.dashboard-users-online a {
+.dashboard-hero-info h1 {
     color: #8be9fd;
+    font-size: 2.2em;
+    font-weight: 900;
+    margin: 0 0 4px 0;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 12px #23243a;
+}
+.dashboard-hero-info .hero-meta {
+    color: #ffd700;
+    font-size: 1.1em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.dashboard-stats {
+    display: flex;
+    gap: 32px;
+    justify-content: flex-start;
+    margin: 18px 0 0 0;
+    flex-wrap: wrap;
+}
+.dashboard-stat {
+    background: #23243a;
+    border-radius: 5px;
+    padding: 18px 32px;
+    color: #8be9fd;
+    font-size: 1.15em;
     font-weight: 700;
+    box-shadow: 0 1px 8px #8be9fd22;
+    min-width: 120px;
+    text-align: center;
+    position: relative;
+}
+.dashboard-stat .stat-label {
+    color: #ffd700;
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: block;
+}
+.dashboard-actions {
+    display: flex;
+    gap: 18px;
+    margin: 32px 0 0 0;
+    flex-wrap: wrap;
+}
+.dashboard-actions .btn {
+    border-radius: 5px;
+    font-weight: 700;
+    padding: 12px 32px;
+    background: #8be9fd;
+    color: #23243a;
+    border: none;
+    font-size: 1.1em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 8px #8be9fd22;
+    margin-bottom: 2px;
     text-decoration: none;
-    transition: color 0.18s;
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 1em;
+    gap: 10px;
+}
+.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
+    background: #ffd700;
+    color: #23243a;
+    box-shadow: 0 2px 10px #ffd70044;
+}
+.dashboard-section {
+    margin: 38px 0 0 0;
+    background: #181824;
+    border-radius: 5px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 8px #8be9fd22;
+}
+.dashboard-section-title {
+    color: #8be9fd;
+    font-size: 1.3em;
+    font-weight: 800;
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+}
+.dashboard-users-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    
+}
+.dashboard-user-card {
+    background: #23243a;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px #8be9fd22;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 180px;
+    font-size: 1.08em;
+    position: relative;
+}
+.dashboard-user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #34355b;
+    display: flex;
+    align-items: center;
     justify-content: center;
-}
-.dashboard-users-online a:hover {
-    color: #ffd700;
-    text-decoration: underline;
-}
-.badge-premium, .npc-badge {
-    margin-left: 0;
-    margin-top: 2px;
-    font-size: 0.85em;
-    padding: 2px 8px;
-    border-radius: 8px;
-    font-weight: bold;
+    font-size: 1.3em;
+    border: 2px solid #8be9fd55;
+    object-fit: cover;
 }
 .badge-premium {
     background: #ffd700;
     color: #23243a;
+    font-size: 0.88em;
+    padding: 2px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-left: 8px;
+    margin-right: 2px;
+    letter-spacing: 0.5px;
 }
-.npc-badge {
-    background: #8be9fd;
-    color: #23243a;
-}
-@media (max-width: 600px) {
-    .dashboard-container {
-        padding: 12px 2px 12px 2px;
+@media (max-width: 900px) {
+    .dashboard-hero {
+        padding: 18px 2vw 16px 2vw;
+        margin: 18px 0 0 0;
         max-width: 98vw;
     }
-    .dashboard-cards {
-        flex-direction: column;
-        gap: 10px;
+    .dashboard-hero-info h1 {
+        font-size: 1.3em;
     }
-    .dashboard-card {
+    .dashboard-stat {
         padding: 10px 8px;
         font-size: 0.98em;
+    }
+    .dashboard-section {
+        padding: 10px 8px;
     }
 }
 </style>
 
-<div class="dashboard-container">
-    {% if current_user.is_authenticated %}
-            <p class="text-center" style="color: #b8b8ff;">Welcome to Sin City Mafia, <strong>{{ current_character.name }}</strong>!</p>
+<div class="dashboard-hero">
+    <div class="dashboard-hero-header">
+        {% if current_character.profile_image %}
+            <img src="{{ url_for('static', filename=current_character.profile_image) if not current_character.profile_image.startswith('http') else current_character.profile_image }}" class="dashboard-avatar" alt="avatar">
+        {% else %}
+            <span class="dashboard-avatar"><i class="fas fa-user"></i></span>
         {% endif %}
-    <div class="dashboard-cards">
-      
-        <div class="dashboard-card">
+        <div class="dashboard-hero-info">
+            <a href="{{ url_for('profile_by_id', char_id=character.id) }}">
+                <h1>{{ current_character.name }}</h1>
+            </a>
             
-            <h5><i class="fas fa-money-bill-wave"></i> Money</h5>
-            <div class="display-4" id="money-container">
-                $<span id="money">{{ current_character.money }}</span>
-                <span id="money-effect" style="position: absolute; left: 100%; top: 0; color: #00ff99; font-weight: bold; opacity: 0;">+$</span>
+            <div class="hero-meta">
+                Level {{ current_character.level }} &bull; {{ current_character.city }}
+            </div>
+            <div style="color:#b8b8ff;font-size:1em;margin-top:6px;">
+                Welcome to Sin City Mafia!
             </div>
         </div>
-        <div class="dashboard-card">
-            <h5><i class="fa fa-star"></i> XP</h5>
-            <div class="display-4" id="xp">
-                <span id="xp"></span>{{ current_character.xp }}
-            </div>
+    </div>
+    <div class="dashboard-stats">
+        <div class="dashboard-stat">
+            <span class="stat-label"><i class="fas fa-money-bill-wave"></i> Money</span>
+            $<span id="money">{{ current_character.money }}</span>
+            <span id="money-effect" style="position: absolute; left: 100%; top: 0; color: #00ff99; font-weight: bold; opacity: 0;">+$</span>
+        </div>
+        <div class="dashboard-stat">
+            <span class="stat-label"><i class="fa fa-star"></i> XP</span>
+            <span id="xp">{{ current_character.xp }}</span>
             <span id="xp-effect" style="position: absolute; left: 100%; top: 0; color: #00ccff; font-weight: bold; opacity: 0;">+XP</span>
         </div>
-        <div class="dashboard-card">
-            <h5><i class="fas fa-layer-group"></i> Level</h5>
-            <div class="display-4" id="level">{{ current_character.level }}</div>
+        <div class="dashboard-stat">
+            <span class="stat-label"><i class="fas fa-layer-group"></i> Level</span>
+            <span id="level">{{ current_character.level }}</span>
         </div>
     </div>
     <div class="dashboard-actions">
-        {% if character and character.crew_id %}
-            <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn">
+        {% if current_character.crew_id %}
+            <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="btn">
                 <i class="fas fa-users"></i> Crew
             </a>
-            <form action="{{ url_for('leave_crew') }}" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave your crew?')">Leave Crew</button>
-            </form>
-            <form action="{{ url_for('invite_to_crew') }}" method="POST" >
-                <button type="submit" class="btn btn-info">
-                    <span class="btn-text">Send Invite</span>
-                    <span class="btn-icon">📨</span>
-                </button>
-            </form>
         {% else %}
             <a href="{{ url_for('create_crew') }}" class="btn"><i class="fas fa-plus"></i> Create Crew</a>
             <a href="{{ url_for('join_crew') }}" class="btn"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
         {% endif %}
+        <button id="earn-btn" class="btn" onclick="earn()">
+            <i class="fas fa-coins"></i> Earn <span id="earn-timer"></span>
+        </button>
     </div>
-    <div class="current-city">
-        <i class="fas fa-map-marker-alt"></i>
-        Current city: <strong>{{ character.city }}</strong>
-    </div>
-    <button id="earn-btn" class="btn btn-lg btn-primary shadow" onclick="earn()" style="margin: 18px 0;">
-        Earn <span id="earn-timer"></span>
-    </button>
     {% if current_user.gun %}
-    <div class="npc-create-container">
-        <h2 class="shop-title">Equipped Weapon</h2>
-        <div class="shop-item">
-            <div class="shop-item-header">
-                <div class="shop-item-name">{{ current_user.gun.name }}</div>
-                <div class="shop-item-price">{{ current_user.gun.damage }} dmg</div>
+    <div class="dashboard-section" style="margin-top:32px;">
+        <div class="dashboard-section-title"><i class="fas fa-gun"></i> Equipped Weapon</div>
+        <div class="dashboard-user-card">
+            <div class="dashboard-user-avatar"><i class="fas fa-gun"></i></div>
+            <div>
+                <div style="font-weight:700;color:#8be9fd;">{{ current_user.gun.name }}</div>
+                <div style="color:#ffd700;font-weight:700;">{{ current_user.gun.damage }} dmg</div>
+                <div style="font-size:0.95em;color:#b8b8ff;">This weapon is currently equipped.</div>
             </div>
-            <div class="shop-item-desc">This weapon is currently equipped.</div>
         </div>
     </div>
     {% endif %}
-    <div class="npc-create-container">
-        <h3 style="color: #8be9fd; font-family: 'Oswald', sans-serif;">Create a Fake Profile</h3>
-        <p style="color: #b8b8ff;">Cost: <strong style="color: #ffd700;">$150,000</strong></p>
-        <p style="color: #b8b8ff;">Level: <strong style="color: #ffd700;">15</strong></p>
-        <form method="POST" action="{{ url_for('create_fake_profile') }}">
-            <button type="submit" class="btn btn-primary"
-                    style="padding: 10px 20px; border-radius: 5px; background: #8be9fd; color: #23243a; font-weight: bold; border: none;">
-                Create NPC
-            </button>
-        </form>
-    </div>
-    <div class="dashboard-users-online">
-        <h2 class="text-center"><i class="fas fa-users"></i> Online Users</h2>
-        
-        {% if flashes %}
-            <div id="flash-container">
-                {% for category, message in flashes %}
-                    <div class="alert alert-{{ category }} flash-message">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
+</div>
+<div class="dashboard-section">
+    <div class="dashboard-section-title"><i class="fas fa-users"></i> Online Users</div>
+    <ul class="dashboard-users-list">
         {% for char in online_users %}
-        <li>
+        <li class="dashboard-user-card">
             {% if char.profile_image %}
-                <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="user-avatar" alt="avatar">
+                <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="dashboard-user-avatar" alt="avatar">
             {% else %}
-                <span class="user-avatar"><i class="fas fa-user"></i></span>
+                <span class="dashboard-user-avatar"><i class="fas fa-user"></i></span>
             {% endif %}
             <a href="{{ url_for('profile_by_id', char_id=char.id) }}">{{ char.name }}</a>
             {% if char.master and char.master.is_premium %}
-                <span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>
+                <span class="badge-premium"><i class="fas fa-crown"></i> Premium</span>
             {% endif %}
         </li>
         {% endfor %}
-    </div>
+    </ul>
 </div>
 <script>
 // ---------------- Earn Button Timer ----------------
@@ -341,7 +274,7 @@ async function updateEarnButton() {
   try {
     const res = await fetch('/earn_status');
     const data = await res.json();
-    
+
     if (earnTimerInterval) {
       clearInterval(earnTimerInterval);
       earnTimerInterval = null;
@@ -372,25 +305,37 @@ async function updateEarnButton() {
     console.error("Error updating earn button:", err);
   }
 }
-async function loadFlashMessages() {
-  const res = await fetch('/get_flashes');
-  const data = await res.json();
-  const container = document.getElementById('flash-container');
+async function earn() {
+  const btn = document.getElementById('earn-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/earn', { method: 'POST' });
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      alert("Unexpected server response. Please refresh the page.");
+      btn.disabled = false;
+      return;
+    }
+    const data = await res.json();
 
-  if (container && data.messages.length > 0) {
-    container.innerHTML = '';
-    data.messages.forEach(([category, message]) => {
-      const div = document.createElement('div');
-      div.className = `alert alert-${category} flash-message`;
-      div.textContent = message;
-      container.appendChild(div);
-
-      setTimeout(() => {
-        div.remove();
-      }, 3000); // Optional auto-remove
-    });
+    if (data.success) {
+      if (data.money !== undefined) document.getElementById('money').textContent = data.money;
+      if (data.xp !== undefined) document.getElementById('xp').textContent = data.xp;
+      if (data.level !== undefined) document.getElementById('level').textContent = data.level;
+      showFloatingEffect('money-effect');
+      showFloatingEffect('xp-effect');
+      if (data.message) alert(data.message);
+    } else {
+      if (data.message) alert(data.message);
+    }
+    updateEarnButton();
+  } catch (err) {
+    alert("An error occurred. Please refresh the page.");
+    btn.disabled = false;
   }
 }
+document.addEventListener('DOMContentLoaded', updateEarnButton);
+
 function showFloatingEffect(elementId) {
   const el = document.getElementById(elementId);
   el.style.opacity = '1';
@@ -407,52 +352,5 @@ function showFloatingEffect(elementId) {
     el.style.top = '0px';
   }, 1000);
 }
-async function earn() {
-  try {
-    const res = await fetch('/earn');
-    const data = await res.json();
-
-    if (data.success) {
-      const statsRes = await fetch('/user_stats');
-      const stats = await statsRes.json();
-      document.getElementById('money').textContent = stats.money;
-      document.getElementById('xp').textContent = stats.xp;
-      document.getElementById('level').textContent = stats.level;
-
-      // Animate $ and XP gain
-      showFloatingEffect('money-effect');
-      showFloatingEffect('xp-effect');
-      // Show animated dollar effect
-      const moneyEffect = document.getElementById('money-effect');
-      moneyEffect.style.opacity = '1';
-      moneyEffect.style.top = '0px';
-
-      setTimeout(() => {
-        moneyEffect.style.transition = 'opacity 0.5s ease-out, top 0.5s ease-out';
-        moneyEffect.style.opacity = '0';
-        moneyEffect.style.top = '-20px';
-      }, 10);
-
-      setTimeout(() => {
-        moneyEffect.style.transition = '';
-        moneyEffect.style.top = '0px';
-      }, 1000);
-
-      if (data.message) alert(data.message);
-    } else if (data.message) {
-      await loadFlashMessages();
-    }
-
-    updateEarnButton();
-  } catch (err) {
-    console.error("Earn failed:", err);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  updateEarnButton();
-  setInterval(updateEarnButton, 15000);
-});
-
 </script>
 {% endblock %}
