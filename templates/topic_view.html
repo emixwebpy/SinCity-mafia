@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.title }}{% endblock %}
+{% block content %}
+<style>
+.topic-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.topic-header h2 {
+    color: #ffd700;
+    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+}
+.topic-header .topic-meta {
+    color: #b8b8ff;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+.topic-posts {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.topic-posts ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.topic-posts li {
+    background: #282a36;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+.topic-posts li:hover {
+    background: #34355b;
+}
+.topic-post-author {
+    color: #8be9fd;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+.topic-post-content {
+    color: #f5f6fa;
+    font-size: 1.08rem;
+    margin-bottom: 0.2rem;
+}
+.topic-reply-form textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1.5px solid #8be9fd44;
+    background: rgba(139,233,253,0.08);
+    color: #f5f6fa;
+    font-size: 1.08em;
+    font-family: "geo", sans-serif;
+    outline: none;
+    padding: 12px;
+    transition: border 0.18s, background 0.18s;
+}
+.topic-reply-form textarea:focus {
+    border: 1.5px solid #8be9fd;
+    background: rgba(139,233,253,0.13);
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 1.2rem;
+    transition: background 0.2s;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+
+<div class="topic-header">
+    <h2>{{ topic.title }}</h2>
+    <div class="topic-meta">
+        In <a href="{{ url_for('forum_view', forum_id=topic.forum_id) }}" style="color:#8be9fd;">{{ topic.forum.title }}</a>
+    </div>
+</div>
+<div class="topic-posts">
+    <ul>
+        {% for post in posts %}
+            <li>
+                <div class="topic-post-author">
+                    {{ char_map[post.author_id] }} &middot; {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </div>
+                <div class="topic-post-content">{{ post.content }}</div>
+            </li>
+        {% endfor %}
+    </ul>
+    {% if current_user.is_authenticated %}
+    <form method="POST" class="topic-reply-form">
+        <textarea name="content" placeholder="Reply..." required></textarea>
+        <button type="submit" class="btn btn-primary">Reply</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

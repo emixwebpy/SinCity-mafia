@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Edit User{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">Edit User: {{ user.username }}</h2>
+    <form method="POST">
+        <label>Username:</label>
+        <input type="text" name="username" value="{{ user.username }}" required><br>
+        <label>Password (leave blank to keep current):</label>
+        <input type="password" name="password"><br>
+        <label>Crew ID:</label>
+        <input type="text" name="crew_id" value="{{ user.crew_id or '' }}"><br>
+        <label>Is Admin:</label>
+        <input type="checkbox" name="is_admin" value="1" {% if user.is_admin %}checked{% endif %}><br>
+        <label>Premium:</label>
+        <input type="checkbox" name="premium" value="1" {% if user.premium %}checked{% endif %}><br>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endblock %}

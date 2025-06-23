@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin - Users{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">All Users</h2>
+    <table style="width:100%;color:#f5f6fa;">
+        <tr>
+            <th>ID</th><th>Username</th><th>Admin</th><th>Premium</th><th>Crew</th><th>Actions</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+            <td>{{ 'Yes' if user.premium else 'No' }}</td>
+            <td>{{ user.crew_id or '-' }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="btn btn-primary">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

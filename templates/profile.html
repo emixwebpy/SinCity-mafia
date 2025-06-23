@@ -174,7 +174,7 @@
         <img class="profile-img" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
       {% endif %}
 
-      {% if current_user.is_authenticated and current_user.id == character.master_id %}
+      {% if character.is_authenticated and character.id == character.master_id %}
       <form action="{{ url_for('upload_profile_image') }}" method="get" style="margin-bottom:18px;">
         <button type="submit" class="btn btn-primary">Change Profile Image</button>
       </form>

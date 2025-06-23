@@ -645,7 +645,7 @@
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             <div class="sidebar-subnav">
-              <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
+              <a href="{{ url_for('admin.admin_dashboard') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
                 <i class="fas fa-tools"></i> <span>Admin</span>
               </a>
             </div>
@@ -663,6 +663,9 @@
               </a>
               <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Player Search</span>
+              </a>
+              <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Forums</span>
               </a>
               {% if current_user.is_authenticated and current_character and current_character.crew_id %}
               <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" >

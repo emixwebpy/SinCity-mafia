@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Add Shop Item{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">Add Item to Shop</h2>
+    <form method="POST">
+        <label>Name:</label>
+        <input type="text" name="name" required><br>
+        <label>Description:</label>
+        <input type="text" name="description"><br>
+        <label>Price:</label>
+        <input type="number" name="price" min="1" required><br>
+        <label>Stock:</label>
+        <input type="number" name="stock" min="0" required><br>
+        <label>Is Gun:</label>
+        <input type="checkbox" name="is_gun" value="1" id="is_gun_cb" onchange="document.getElementById('damage_row').style.display=this.checked?'block':'none';"><br>
+        <div id="damage_row" style="display:none;">
+            <label>Damage:</label>
+            <input type="number" name="damage" min="0" value="0"><br>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Item</button>
+    </form>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var cb = document.getElementById('is_gun_cb');
+    var row = document.getElementById('damage_row');
+    if(cb.checked) row.style.display = 'block';
+});
+</script>
+{% endblock %}

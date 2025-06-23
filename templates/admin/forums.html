@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Admin - Forums{% endblock %}
+{% block content %}
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.forum-table th, .forum-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.forum-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.forum-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.forum-actions {
+    display: flex;
+    gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+</style>
+<div class="forums-header">
+    <h1>All Forums</h1>
+</div>
+<div class="forums-list">
+    <table class="forum-table">
+        <tr>
+            <th style="width:5%;">ID</th>
+            <th style="width:25%;">Title</th>
+            <th style="width:50%;">Description</th>
+            <th style="width:20%;">Actions</th>
+        </tr>
+        {% for forum in forums %}
+        <tr>
+            <td>{{ forum.id }}</td>
+            <td><a href="{{ url_for('forum_view', forum_id=forum.id) }}" class="forum-link">{{ forum.title }}</a></td>
+            <td class="forum-desc">{{ forum.description }}</td>
+            <td>
+                <div class="forum-actions">
+                    <a href="{{ url_for('admin.admin_edit_forum', forum_id=forum.id) }}" class="btn btn-primary">Edit</a>
+                    <form action="{{ url_for('admin.admin_delete_forum', forum_id=forum.id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this forum?');">Delete</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" style="color:#b8b8ff;">No forums available.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -5,35 +5,35 @@
 {% block content %}
 <style>
 .login-container {
-    max-width: 380px;
-    margin: 150px 37% 0 auto;
-    background: rgba(25, 25, 40, 0.98);
-    border-radius: 28px;
-    box-shadow: 0 6px 32px #8be9fd44, 0 1.5px 0 #8be9fd22 inset;
-    padding: 38px 28px 32px 28px;
-    border: 1.5px solid #8be9fd44;
+    max-width: 420px;
+    margin: 64px auto 0 auto;
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 5px;
+    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
+    padding: 44px 36px 36px 36px;
+    border: 2px solid #8be9fd55;
     color: #f5f6fa;
     font-family: "geo", sans-serif;
-    text-align: center;
+    text-align: left;
     position: relative;
     overflow: hidden;
 }
 .login-title {
     color: #8be9fd;
-    
-    font-size: 1.7em;
+    font-size: 2.2em;
     font-weight: 900;
     letter-spacing: 1px;
     margin-bottom: 24px;
     font-family: "geo", sans-serif;
     text-shadow: 0 2px 12px #23243a;
+    text-align: center;
 }
 .login-form input[type="username"],
 .login-form input[type="password"] {
     width: 100%;
-    padding: 12px 14px;
-    margin: 12px 0;
-    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    border-radius: 5px;
     border: 1.5px solid #8be9fd44;
     background: rgba(139,233,253,0.08);
     color: #f5f6fa;
@@ -49,10 +49,10 @@
 }
 .login-form button[type="submit"] {
     width: 100%;
-    padding: 12px 0;
-    border-radius: 14px;
+    padding: 14px 0;
+    border-radius: 5px;
     border: none;
-    background: linear-gradient(90deg, #8be9fd 0%, #23243a 100%);
+    background: #8be9fd;
     color: #23243a;
     font-weight: 700;
     font-size: 1.1em;
@@ -63,20 +63,20 @@
     letter-spacing: 1px;
 }
 .login-form button[type="submit"]:hover {
-    background: #23243a;
-    color: #8be9fd;
+    background: #ffd700;
+    color: #23243a;
 }
 .login-container p {
     margin-top: 18px;
     color: #b8b8ff;
     font-size: 1em;
+    text-align: center;
 }
 .login-container a {
     color: #8be9fd;
     text-decoration: underline;
     font-weight: 600;
 }
-
 @media (max-width: 600px) {
     .login-container {
         padding: 18px 4vw 16px 4vw;
@@ -87,13 +87,7 @@
         font-size: 1.2em;
     }
 }
-
 </style>
-
-
-
-
-
 
 <div class="login-container">
   <div class="login-title"><i class="fas fa-sign-in-alt"></i> Login</div>

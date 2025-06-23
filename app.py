@@ -4,7 +4,7 @@ from calendar import c
 from doctest import master
 from email import message
 from sys import maxsize
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g, Blueprint
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_admin.contrib.sqla import ModelView
@@ -49,6 +49,184 @@ migrate = Migrate(app, db)
 DATABASE = 'users.db'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
+            flash("Admin access required.", "danger")
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@admin_bp.route('/')
+@admin_required
+def admin_dashboard():
+    user_count = User.query.count()
+    forum_count = Forum.query.count()
+    topic_count = ForumTopic.query.count()
+    jailed_count = Character.query.filter_by(in_jail=True).count()
+    return render_template('admin/dashboard.html',
+                           user_count=user_count,
+                           forum_count=forum_count,
+                           topic_count=topic_count,
+                           jailed_count=jailed_count)
+@admin_bp.route('/users')
+@admin_required
+def admin_users():
+    users = User.query.order_by(User.id.desc()).all()
+    return render_template('admin/users.html', users=users)
+
+@admin_bp.route('/forums')
+@admin_required
+def admin_forums():
+    forums = Forum.query.order_by(Forum.id.desc()).all()
+    return render_template('admin/forums.html', forums=forums)
+
+@admin_bp.route('/jail')
+@admin_required
+def admin_jail():
+    jailed = Character.query.filter_by(in_jail=True).all()
+    return render_template('admin/jail.html', jailed=jailed)
+@admin_bp.route('/characters')
+@admin_required
+def admin_characters():
+    characters = Character.query.order_by(Character.id.desc()).all()
+    return render_template('admin/characters.html', characters=characters)
+
+@admin_bp.route('/character/<int:char_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_character(char_id):
+    character = Character.query.get_or_404(char_id)
+    if request.method == 'POST':
+        character.name = request.form.get('name', character.name)
+        character.health = int(request.form.get('health', character.health))
+        character.money = int(request.form.get('money', character.money))
+        character.level = int(request.form.get('level', character.level))
+        character.xp = int(request.form.get('xp', character.xp))
+        character.is_alive = bool(request.form.get('is_alive', character.is_alive))
+        db.session.commit()
+        flash("Character updated.", "success")
+        return redirect(url_for('admin.admin_characters'))
+    return render_template('admin/edit_character.html', character=character)
+
+# --- Admin Edit Forum ---
+@admin_bp.route('/forums/<int:forum_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_forum(forum_id):
+    forum = Forum.query.get_or_404(forum_id)
+    if request.method == 'POST':
+        forum.title = request.form.get('title', forum.title)
+        forum.description = request.form.get('description', forum.description)
+        db.session.commit()
+        flash("Forum updated.", "success")
+        return redirect(url_for('admin.admin_forums'))
+    return render_template('admin/edit_forum.html', forum=forum)
+
+# --- Admin Delete Forum ---
+@admin_bp.route('/forums/<int:forum_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_forum(forum_id):
+    forum = Forum.query.get_or_404(forum_id)
+    db.session.delete(forum)
+    db.session.commit()
+    flash("Forum deleted.", "success")
+    return redirect(url_for('admin.admin_forums'))
+
+# --- Admin Delete Character ---
+@admin_bp.route('/character/<int:char_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_character(char_id):
+    character = Character.query.get_or_404(char_id)
+    db.session.delete(character)
+    db.session.commit()
+    flash("Character deleted.", "success")
+    return redirect(url_for('admin.admin_characters'))
+
+@admin_bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if request.method == 'POST':
+        username = request.form.get('username', user.username)
+        is_admin = bool(request.form.get('is_admin', user.is_admin))
+        premium = bool(request.form.get('premium', user.premium))
+        crew_id = request.form.get('crew_id', user.crew_id)
+        if crew_id == '':
+            crew_id = None
+        user.username = username
+        user.is_admin = is_admin
+        user.premium = premium
+        user.crew_id = crew_id
+        password = request.form.get('password', '')
+        if password:
+            user.set_password(password)
+        db.session.commit()
+        flash("User updated.", "success")
+        return redirect(url_for('admin.admin_users'))
+    return render_template('admin/edit_user.html', user=user)
+@admin_bp.route('/shop')
+@admin_required
+def admin_shop():
+    items = ShopItem.query.order_by(ShopItem.id.desc()).all()
+    return render_template('admin/shop.html', items=items)
+
+@admin_bp.route('/shop/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_shop_item():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        price = int(request.form.get('price', 0))
+        stock = int(request.form.get('stock', 0))
+        is_gun = bool(request.form.get('is_gun'))
+        damage = int(request.form.get('damage', 0)) if is_gun else 0
+
+        if not name or price <= 0 or stock < 0:
+            flash("Name, price, and stock are required. Price must be > 0.", "danger")
+            return redirect(url_for('admin.admin_add_shop_item'))
+
+        item = ShopItem(
+            name=name,
+            description=description,
+            price=price,
+            stock=stock,
+            is_gun=is_gun,
+            damage=damage
+        )
+        db.session.add(item)
+        db.session.commit()
+        flash("Shop item added!", "success")
+        return redirect(url_for('admin.admin_shop'))
+    return render_template('admin/add_shop_item.html')
+
+@admin_bp.route('/shop/<int:item_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_shop_item(item_id):
+    item = ShopItem.query.get_or_404(item_id)
+    if request.method == 'POST':
+        item.name = request.form.get('name', item.name)
+        item.description = request.form.get('description', item.description)
+        item.price = int(request.form.get('price', item.price))
+        item.stock = int(request.form.get('stock', item.stock))
+        item.is_gun = bool(request.form.get('is_gun', item.is_gun))
+        item.damage = int(request.form.get('damage', item.damage)) if item.is_gun else 0
+        db.session.commit()
+        flash("Shop item updated.", "success")
+        return redirect(url_for('admin.admin_shop'))
+    return render_template('admin/edit_shop_item.html', item=item)
+
+@admin_bp.route('/shop/<int:item_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_shop_item(item_id):
+    item = ShopItem.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    flash("Shop item deleted.", "success")
+    return redirect(url_for('admin.admin_shop'))
+app.register_blueprint(admin_bp)
 
 @app.context_processor
 def inject_user():
@@ -105,7 +283,7 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f'<User {self.username}>'
-
+    
     def add_xp(self, amount):
         self.xp += amount
         # Maybe also increase level if xp passes a threshold
@@ -158,7 +336,7 @@ class Character(db.Model):
     
     linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
     crew = db.relationship('Crew', backref='characters')
-
+    
     @property
     def immortal(self):
         # Admin users' characters are immortal
@@ -322,6 +500,28 @@ class CrewInvitation(db.Model):
     invitee = db.relationship('User', foreign_keys=[invitee_id])
     crew = db.relationship('Crew')
 
+class Forum(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(256), nullable=True)
+    topics = db.relationship('ForumTopic', backref='forum', lazy=True)
+
+class ForumTopic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
+    title = db.Column(db.String(128), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    posts = db.relationship('ForumPost', backref='topic', lazy=True)
+
+class ForumPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topic.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 def generate_invite_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
@@ -329,7 +529,18 @@ def is_on_crime_cooldown(character, cooldown_minutes=360):
     if character.last_crime_time:
         return datetime.utcnow() < character.last_crime_time + timedelta(minutes=cooldown_minutes)
     return False
-
+def release_expired_jail():
+        now = datetime.utcnow()
+        expired = Character.query.filter(
+            Character.in_jail == True,
+            Character.jail_until != None,
+            Character.jail_until <= now
+        ).all()
+        for char in expired:
+            char.in_jail = False
+            char.jail_until = None
+        if expired:
+            db.session.commit()
 # Admin Interface -------------------------------
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
@@ -343,7 +554,80 @@ def load_user(user_id):
 def home():
     return redirect(url_for('dashboard'))
 
+@app.route('/forums')
+def forums():
+    forums = Forum.query.all()
+    return render_template('forums.html', forums=forums)
 
+@app.route('/forum/<int:forum_id>')
+def forum_view(forum_id):
+    forum = Forum.query.get_or_404(forum_id)
+    topics = ForumTopic.query.filter_by(forum_id=forum.id).order_by(ForumTopic.created_at.desc()).all()
+    author_ids = {topic.author_id for topic in topics}
+    char_map = {}
+    for uid in author_ids:
+        char = Character.query.filter_by(master_id=uid).first()
+        char_map[uid] = char.name if char else f'User #{uid}'
+    return render_template('forum_view.html', forum=forum, topics=topics, char_map=char_map)
+
+@app.route('/forum/<int:forum_id>/new_topic', methods=['GET', 'POST'])
+@login_required
+def new_topic(forum_id):
+    forum = Forum.query.get_or_404(forum_id)
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        if not title or not content:
+            flash("Title and content are required.", "danger")
+            return redirect(url_for('new_topic', forum_id=forum_id))
+        topic = ForumTopic(forum_id=forum.id, title=title, author_id=current_user.id)
+        db.session.add(topic)
+        db.session.commit()
+        post = ForumPost(topic_id=topic.id, author_id=current_user.id, content=content)
+        db.session.add(post)
+        db.session.commit()
+        flash("Topic created!", "success")
+        return redirect(url_for('topic_view', topic_id=topic.id))
+    return render_template('new_topic.html', forum=forum)
+
+@app.route('/topic/<int:topic_id>', methods=['GET', 'POST'])
+def topic_view(topic_id):
+    topic = ForumTopic.query.get_or_404(topic_id)
+    posts = ForumPost.query.filter_by(topic_id=topic.id).order_by(ForumPost.created_at.asc()).all()
+    # Build a mapping of user_id to character name
+    author_ids = {post.author_id for post in posts}
+    char_map = {}
+    for uid in author_ids:
+        char = Character.query.filter_by(master_id=uid).first()
+        char_map[uid] = char.name if char else f'User #{uid}'
+    if request.method == 'POST' and current_user.is_authenticated:
+        content = request.form.get('content', '').strip()
+        if content:
+            post = ForumPost(topic_id=topic.id, author_id=current_user.id, content=content)
+            db.session.add(post)
+            db.session.commit()
+            flash("Reply posted.", "success")
+            return redirect(url_for('topic_view', topic_id=topic.id))
+    return render_template('topic_view.html', topic=topic, posts=posts, char_map=char_map)
+
+@app.route('/create_forum', methods=['GET', 'POST'])
+@login_required
+def create_forum():
+    if not getattr(current_user, 'is_admin', False):
+        flash("Only admins can create forums.", "danger")
+        return redirect(url_for('forums'))
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        if not title:
+            flash("Forum title is required.", "danger")
+            return redirect(url_for('create_forum'))
+        forum = Forum(title=title, description=description)
+        db.session.add(forum)
+        db.session.commit()
+        flash("Forum created!", "success")
+        return redirect(url_for('forums'))
+    return render_template('create_forum.html')
 
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
@@ -354,7 +638,6 @@ def attempt_organized_crime():
         return redirect(url_for('dashboard'))
 
     crime = character.crime_group
-
 
 
     # Only allow the group leader to start the crime
@@ -797,15 +1080,15 @@ def get_messages():
 @app.route('/jail')
 @login_required
 def jail():
+    release_expired_jail()
     now = datetime.utcnow()
-    # Find all alive characters currently in jail (jail_until in the future)
     jailed_characters = Character.query.filter(
         Character.in_jail == True,
         Character.is_alive == True,
         Character.jail_until != None,
         Character.jail_until > now
     ).order_by(Character.jail_until.asc()).all()
-    return render_template('jail.html', jailed_characters=jailed_characters, now=datetime.utcnow)
+    return render_template('jail.html', jailed_characters=jailed_characters, now=now)
 
 @app.route('/join_crew', methods=['GET', 'POST'])
 @login_required
@@ -1218,6 +1501,21 @@ def earn():
             seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
             return jsonify({'success': False, 'message': 'Cooldown active.', 'seconds_remaining': seconds_remaining}), 429
 
+    # Jail chance: 10% chance to be sent to jail for 1-5 minutes
+    jail_chance = 0.50
+    if random.random() < jail_chance:
+        jail_minutes = random.randint(1, 5)
+        character.in_jail = True
+        character.jail_until = now + timedelta(minutes=jail_minutes)
+        character.last_earned = now
+        db.session.commit()
+        return jsonify({
+            'success': False,
+            'jailed': True,
+            'jail_minutes': jail_minutes,
+            'message': f"You got caught and are in jail for {jail_minutes} minutes!"
+        }), 403
+
     # Earn logic
     earned_money = random.randint(5000, 150000)
     earned_xp = random.randint(100, 500)
@@ -1237,7 +1535,7 @@ def earn():
     if leveled_up:
         flash(f"You leveled up to level {character.level}!", "success")
 
-    return jsonify ({
+    return jsonify({
         'success': True,
         'money': character.money,
         'xp': character.xp,
@@ -1355,16 +1653,16 @@ def public_messages():
         for m in reversed(messages)
     ])
 
-admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
-admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
-admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
-admin.add_view(ModelView(CrewMember, db.session))
-admin.add_view(ModelView(UserInventory, db.session))
-admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
-admin.add_view(ModelView(Crew, db.session))
+# admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
+# admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
+# admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
+# admin.add_view(ModelView(CrewMember, db.session))
+# admin.add_view(ModelView(UserInventory, db.session))
+# admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
+# admin.add_view(ModelView(Crew, db.session))
 
-admin.add_view(ModelView(ChatMessage, db.session))
-admin.add_view(ModelView(CrewInvitation, db.session))
+# admin.add_view(ModelView(ChatMessage, db.session))
+# admin.add_view(ModelView(CrewInvitation, db.session))
 
 
 

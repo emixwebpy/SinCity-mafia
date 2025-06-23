@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Admin - Characters{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">All Characters</h2>
+    <table style="width:100%;color:#f5f6fa;">
+        <tr>
+            <th>ID</th><th>Name</th><th>Health</th><th>Money</th><th>Level</th><th>XP</th><th>Alive</th><th>Actions</th>
+        </tr>
+        {% for char in characters %}
+        <tr>
+            <td>{{ char.id }}</td>
+            <td>{{ char.name }}</td>
+            <td>{{ char.health }}</td>
+            <td>{{ char.money }}</td>
+            <td>{{ char.level }}</td>
+            <td>{{ char.xp }}</td>
+            <td>{{ 'Yes' if char.is_alive else 'No' }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_character', char_id=char.id) }}" class="btn btn-primary">Edit</a>
+                <form action="{{ url_for('admin.admin_delete_character', char_id=char.id) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this character?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

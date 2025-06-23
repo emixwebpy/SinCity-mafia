@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Admin - Jail{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">Jailed Characters</h2>
+    <table style="width:100%;color:#f5f6fa;">
+        <tr>
+            <th>ID</th><th>Name</th><th>Jail Until</th>
+        </tr>
+        {% for char in jailed %}
+        <tr>
+            <td>{{ char.id }}</td>
+            <td>{{ char.name }}</td>
+            <td>{{ char.jail_until }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

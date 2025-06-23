@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Create Forum{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+  <h2 style="color:#ffd700;">Create New Forum</h2>
+  <form method="POST">
+    <input type="text" name="title" placeholder="Forum Title" required style="width:100%;margin-bottom:12px;">
+    <textarea name="description" placeholder="Description (optional)" style="width:100%;height:80px;margin-bottom:12px;"></textarea>
+    <button type="submit" class="btn btn-primary">Create Forum</button>
+  </form>
+</div>
+{% endblock %}

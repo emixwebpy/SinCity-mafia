@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Admin - Shop{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <h2 style="color:#ffd700;">Shop Items</h2>
+    <a href="{{ url_for('admin.admin_add_shop_item') }}" class="btn btn-primary" style="margin-bottom:18px;">+ Add Item</a>
+    <table style="width:100%;color:#f5f6fa;">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Is Gun</th>
+            <th>Damage</th>
+            <th>Actions</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.stock }}</td>
+            <td>{{ 'Yes' if item.is_gun else 'No' }}</td>
+            <td>{{ item.damage if item.is_gun else '-' }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_shop_item', item_id=item.id) }}" class="btn btn-primary">Edit</a>
+                <form action="{{ url_for('admin.admin_delete_shop_item', item_id=item.id) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this item?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

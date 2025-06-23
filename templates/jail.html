@@ -5,8 +5,8 @@
 {% block content %}
 <style>
 .jail-hero {
-    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
-    border-radius: 18px;
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 5px;
     box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
     padding: 44px 36px 36px 36px;
     border: 2px solid #8be9fd55;
@@ -36,7 +36,7 @@
 }
 .jail-card {
     background: #23243a;
-    border-radius: 10px;
+    border-radius: 5px;
     box-shadow: 0 1px 5px #8be9fd22;
     padding: 18px 24px;
     display: flex;
@@ -74,6 +74,20 @@
     font-weight: 600;
     margin-top: 4px;
 }
+@media (max-width: 900px) {
+    .jail-hero {
+        padding: 18px 2vw 16px 2vw;
+        margin: 18px 0 0 0;
+        max-width: 98vw;
+    }
+    .jail-title {
+        font-size: 1.2em;
+    }
+    .jail-card {
+        padding: 10px 8px;
+        font-size: 0.98em;
+    }
+}
 </style>
 
 <div class="jail-hero">
@@ -89,7 +103,7 @@
                 <div class="jail-name">{{ char.name }}</div>
                 <div class="jail-timer">
                     Release in: 
-                    {% set remaining = (char.jail_until - (now() if callable(now) else now)).total_seconds()|int %}
+                    {% set remaining = (char.jail_until - now).total_seconds()|int %}
                     {% set mins = remaining // 60 %}
                     {% set secs = remaining % 60 %}
                     {{ mins }}m {{ secs }}s

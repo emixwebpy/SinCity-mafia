@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Forums{% endblock %}
+{% block content %}
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #8be9fd;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-header .forums-actions {
+    text-align: center;
+    margin-bottom: 1.2rem;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.forum-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.forum-item {
+    background: #282a36;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+}
+.forum-item:hover {
+    background: #34355b;
+}
+.forum-link {
+    color: #ffd700;
+    font-size: 1.3rem;
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: 1.5rem;
+    flex: 1;
+    transition: color 0.2s;
+}
+.forum-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.forum-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 1.2rem;
+    transition: background 0.2s;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="forums-header">
+    <h1>Forums</h1>
+    {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="forums-actions">
+            <a href="{{ url_for('create_forum') }}" class="btn btn-primary">+ Create Forum</a>
+        </div>
+    {% endif %}
+</div>
+<div class="forums-list">
+    {% if not forums %}
+        <p class="text-center" style="color: #b8b8ff;">No forums available at the moment.</p>
+    {% endif %}
+    <ul class="forum-list">
+        {% for forum in forums %}
+            <li class="forum-item">
+                <a href="{{ url_for('forum_view', forum_id=forum.id) }}" class="forum-link">{{ forum.title }}</a>
+                <div class="forum-desc">{{ forum.description }}</div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
