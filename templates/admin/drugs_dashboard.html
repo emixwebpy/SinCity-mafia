@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Admin - Drug Management{% endblock %}
+{% block content %}
+<style>
+.admin-drugs-dashboard {
+    max-width: 900px;
+    margin: 32px auto;
+    background: #23243a;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px #8be9fd33;
+    padding: 36px 28px 28px 28px;
+    color: #f5f6fa;
+}
+.admin-drugs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.admin-drugs-header h2 {
+    color: #ffd700;
+    font-weight: 900;
+    font-size: 2em;
+    margin: 0;
+}
+.admin-drugs-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.admin-drugs-actions a {
+    background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
+    color: #23243a;
+    font-weight: 700;
+    border-radius: 7px;
+    padding: 10px 18px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 8px #8be9fd22;
+}
+.admin-drugs-actions a:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
+    color: #23243a;
+    box-shadow: 0 2px 12px #ffd70044;
+}
+.admin-drugs-section {
+    margin-bottom: 32px;
+}
+.admin-drugs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+.admin-drugs-table th, .admin-drugs-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #8be9fd33;
+    text-align: left;
+}
+.admin-drugs-table th {
+    color: #ffd700;
+    font-weight: 800;
+    background: #181824;
+}
+.admin-drugs-table td {
+    color: #f5f6fa;
+    background: #23243a;
+}
+.admin-drugs-table tr:last-child td {
+    border-bottom: none;
+}
+.admin-drugs-actions-form {
+    display: inline;
+}
+@media (max-width: 700px) {
+    .admin-drugs-dashboard {
+        padding: 12px 2vw;
+    }
+    .admin-drugs-header h2 {
+        font-size: 1.2em;
+    }
+    .admin-drugs-table th, .admin-drugs-table td {
+        padding: 6px 2px;
+        font-size: .98em;
+    }
+}
+</style>
+
+<div class="admin-drugs-dashboard">
+    <div class="admin-drugs-header">
+        <h2><i class="fas fa-capsules"></i> Drug Management</h2>
+        <div class="admin-drugs-actions">
+            <a href="{{ url_for('admin.admin_add_drug') }}"><i class="fas fa-plus"></i> Add Drug</a>
+            <a href="{{ url_for('admin.admin_add_dealer') }}"><i class="fas fa-user-plus"></i> Add Dealer</a>
+        </div>
+    </div>
+
+    <div class="admin-drugs-section">
+        <h3 style="color:#8be9fd;">All Drugs</h3>
+        <table class="admin-drugs-table">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+            {% for drug in drugs %}
+            <tr>
+                <td>{{ drug.id }}</td>
+                <td>{{ drug.name }}</td>
+                <td>{{ drug.type }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" class="admin-drugs-actions-form" onsubmit="return confirm('Delete this drug?');">
+                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="admin-drugs-section">
+        <h3 style="color:#8be9fd;">Dealers by City</h3>
+        <table class="admin-drugs-table">
+            <tr>
+                <th>ID</th>
+                <th>City</th>
+                <th>Drug</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Actions</th>
+            </tr>
+            {% for dealer in dealers %}
+            <tr>
+                <td>{{ dealer.id }}</td>
+                <td>{{ dealer.city }}</td>
+                <td>{{ dealer.drug.name }}</td>
+                <td>{{ dealer.drug.type }}</td>
+                <td>${{ dealer.price }}</td>
+                <td>{{ dealer.stock }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.admin_delete_dealer', dealer_id=dealer.id) }}" class="admin-drugs-actions-form" onsubmit="return confirm('Delete this dealer?');">
+                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

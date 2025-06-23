@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin - Drug Dealers{% endblock %}
+{% block content %}
+<h2>Drug Dealers</h2>
+<a href="{{ url_for('admin.admin_add_dealer') }}" class="btn btn-primary">Add Dealer</a>
+<table class="table">
+    <tr><th>ID</th><th>City</th><th>Drug</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+    {% for dealer in dealers %}
+    <tr>
+        <td>{{ dealer.id }}</td>
+        <td>{{ dealer.city }}</td>
+        <td>{{ dealer.drug.name }}</td>
+        <td>{{ dealer.drug.type }}</td>
+        <td>${{ dealer.price }}</td>
+        <td>{{ dealer.stock }}</td>
+        <td>
+            <form method="post" action="{{ url_for('admin.admin_delete_dealer', dealer_id=dealer.id) }}" style="display:inline;">
+                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this dealer?');">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

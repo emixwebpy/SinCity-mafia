@@ -19,8 +19,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import Null, true
 from operator import is_
 from email.mime import base
-import sqlite3, string, logging, random
-import os
+import sqlite3, string, logging, random,threading, os, time
+
 CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
 
 log = logging.getLogger('werkzeug')
@@ -51,6 +51,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+# Admin Authentication -------------------------------
 def admin_required(f):
     from functools import wraps
     @wraps(f)
@@ -60,6 +61,8 @@ def admin_required(f):
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+# Admin Interface -------------------------------
 
 @admin_bp.route('/')
 @admin_required
@@ -73,29 +76,31 @@ def admin_dashboard():
                            forum_count=forum_count,
                            topic_count=topic_count,
                            jailed_count=jailed_count)
+# --- Admin users ---
 @admin_bp.route('/users')
 @admin_required
 def admin_users():
     users = User.query.order_by(User.id.desc()).all()
     return render_template('admin/users.html', users=users)
-
+# --- Admin forums ---
 @admin_bp.route('/forums')
 @admin_required
 def admin_forums():
     forums = Forum.query.order_by(Forum.id.desc()).all()
     return render_template('admin/forums.html', forums=forums)
-
+# --- Admin jail ---
 @admin_bp.route('/jail')
 @admin_required
 def admin_jail():
     jailed = Character.query.filter_by(in_jail=True).all()
     return render_template('admin/jail.html', jailed=jailed)
+# --- Admin characters ---
 @admin_bp.route('/characters')
 @admin_required
 def admin_characters():
     characters = Character.query.order_by(Character.id.desc()).all()
     return render_template('admin/characters.html', characters=characters)
-
+# --- Admin character edit ---
 @admin_bp.route('/character/<int:char_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_character(char_id):
@@ -145,6 +150,7 @@ def admin_delete_character(char_id):
     flash("Character deleted.", "success")
     return redirect(url_for('admin.admin_characters'))
 
+# --- Admin Edit User ---
 @admin_bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_user(user_id):
@@ -167,12 +173,15 @@ def admin_edit_user(user_id):
         flash("User updated.", "success")
         return redirect(url_for('admin.admin_users'))
     return render_template('admin/edit_user.html', user=user)
+
+# --- Admin shop management ---
 @admin_bp.route('/shop')
 @admin_required
 def admin_shop():
     items = ShopItem.query.order_by(ShopItem.id.desc()).all()
     return render_template('admin/shop.html', items=items)
 
+# --- Admin Add Shop Item ---
 @admin_bp.route('/shop/add', methods=['GET', 'POST'])
 @admin_required
 def admin_add_shop_item():
@@ -202,6 +211,7 @@ def admin_add_shop_item():
         return redirect(url_for('admin.admin_shop'))
     return render_template('admin/add_shop_item.html')
 
+# --- Admin Edit Shop Item ---
 @admin_bp.route('/shop/<int:item_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_shop_item(item_id):
@@ -218,20 +228,157 @@ def admin_edit_shop_item(item_id):
         return redirect(url_for('admin.admin_shop'))
     return render_template('admin/edit_shop_item.html', item=item)
 
+# --- Admin Delete Shop Item ---
 @admin_bp.route('/shop/<int:item_id>/delete', methods=['POST'])
 @admin_required
 def admin_delete_shop_item(item_id):
     item = ShopItem.query.get_or_404(item_id)
+
+    # Remove references from UserInventory
+    UserInventory.query.filter_by(item_id=item.id).delete()
+
+    # Remove references from User.gun_id
+    users_with_gun = User.query.filter_by(gun_id=item.id).all()
+    for user in users_with_gun:
+        user.gun_id = None
+
+    # Remove references from Character.gun_id
+    characters_with_gun = Character.query.filter_by(gun_id=item.id).all()
+    for char in characters_with_gun:
+        char.gun_id = None
+
     db.session.delete(item)
     db.session.commit()
     flash("Shop item deleted.", "success")
     return redirect(url_for('admin.admin_shop'))
-app.register_blueprint(admin_bp)
 
+# --- Admin Organized Crimes ---
+@admin_bp.route('/organized_crimes')
+@admin_required
+def admin_organized_crimes():
+    crimes = OrganizedCrime.query.order_by(OrganizedCrime.id.desc()).all()
+    return render_template('admin/organized_crimes.html', crimes=crimes)
+
+# --- Admin Add Organized Crime ---
+@admin_bp.route('/organized_crimes/<int:crime_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_organized_crime(crime_id):
+    crime = OrganizedCrime.query.get_or_404(crime_id)
+    if request.method == 'POST':
+        crime.name = request.form.get('name', crime.name)
+        invite_code = request.form.get('invite_code', crime.invite_code)
+        if invite_code and invite_code != crime.invite_code:
+            # Ensure invite code is unique
+            if OrganizedCrime.query.filter_by(invite_code=invite_code).first():
+                flash("Invite code already exists.", "danger")
+                return redirect(url_for('admin.admin_edit_organized_crime', crime_id=crime.id))
+            crime.invite_code = invite_code
+        db.session.commit()
+        flash("Organized crime updated.", "success")
+        return redirect(url_for('admin.admin_organized_crimes'))
+    return render_template('admin/edit_organized_crime.html', crime=crime)
+
+# --- Admin search ---
+@admin_bp.route('/search')
+@admin_required
+def admin_search():
+    q = request.args.get('q', '').strip()
+    users = []
+    characters = []
+    if q:
+        users = User.query.filter(User.username.ilike(f'%{q}%')).all()
+        characters = Character.query.filter(Character.name.ilike(f'%{q}%')).all()
+    return render_template('admin/search_results.html', q=q, users=users, characters=characters)
+
+# --- Admin Delete Organized Crime ---
+@admin_bp.route('/organized_crimes/<int:crime_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_organized_crime(crime_id):
+    crime = OrganizedCrime.query.get_or_404(crime_id)
+    # Remove members' crime_group_id
+    for member in crime.members:
+        member.crime_group_id = None
+    db.session.delete(crime)
+    db.session.commit()
+    flash("Organized crime deleted.", "success")
+    return redirect(url_for('admin.admin_organized_crimes'))
+# --- Admin Drugs ---
+@admin_bp.route('/drugs')
+@admin_required
+def admin_drugs():
+    drugs = Drug.query.order_by(Drug.id.desc()).all()
+    return render_template('admin/drugs.html', drugs=drugs)
+
+@admin_bp.route('/drugs/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_drug():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        drug_type = request.form.get('type', 'Other')
+        if not name:
+            flash("Drug name is required.", "danger")
+            return redirect(url_for('admin.admin_add_drug'))
+        if Drug.query.filter_by(name=name).first():
+            flash("Drug already exists.", "danger")
+            return redirect(url_for('admin.admin_add_drug'))
+        db.session.add(Drug(name=name, type=drug_type))
+        db.session.commit()
+        flash("Drug added!", "success")
+        return redirect(url_for('admin.admin_drugs'))
+    return render_template('admin/add_drug.html')
+
+@admin_bp.route('/drugs/<int:drug_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_drug(drug_id):
+    drug = Drug.query.get_or_404(drug_id)
+    db.session.delete(drug)
+    db.session.commit()
+    flash("Drug deleted.", "success")
+    return redirect(url_for('admin.admin_drugs'))
+
+# --- Admin Drug Dealers ---
+@admin_bp.route('/dealers')
+@admin_required
+def admin_dealers():
+    dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
+    return render_template('admin/dealers.html', dealers=dealers)
+
+@admin_bp.route('/dealers/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_dealer():
+    drugs = Drug.query.all()
+    if request.method == 'POST':
+        city = request.form.get('city')
+        drug_id = int(request.form.get('drug_id'))
+        price = int(request.form.get('price'))
+        stock = int(request.form.get('stock'))
+        db.session.add(DrugDealer(city=city, drug_id=drug_id, price=price, stock=stock))
+        db.session.commit()
+        flash("Dealer added!", "success")
+        return redirect(url_for('admin.admin_dealers'))
+    return render_template('admin/add_dealer.html', drugs=drugs, cities=CITIES)
+
+@admin_bp.route('/dealers/<int:dealer_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_dealer(dealer_id):
+    dealer = DrugDealer.query.get_or_404(dealer_id)
+    db.session.delete(dealer)
+    db.session.commit()
+    flash("Dealer deleted.", "success")
+    return redirect(url_for('admin.admin_dealers'))
+@admin_bp.route('/drugs/dashboard')
+@admin_required
+def admin_drugs_dashboard():
+    drugs = Drug.query.order_by(Drug.id.desc()).all()
+    dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
+    return render_template('admin/drugs_dashboard.html', drugs=drugs, dealers=dealers)
+# Register the admin blueprint
+app.register_blueprint(admin_bp)
+# Admin Interface -------------------------------
 @app.context_processor
 def inject_user():
     return dict(user=current_user)
-
+# Middleware -------------------------------
 @app.before_request
 def update_last_seen():
     if current_user.is_authenticated:
@@ -239,13 +386,13 @@ def update_last_seen():
         if not current_user.last_seen or (now - current_user.last_seen).seconds > 1:
             current_user.last_seen = now
             db.session.commit()
-
+# Middleware to enable SQLite foreign key constraints
 @app.before_request
 def enable_sqlite_fk():
     if db.engine.url.drivername == 'sqlite':
         with db.engine.connect() as conn:
             conn.execute(db.text("PRAGMA foreign_keys=ON"))
-
+# Middleware to check if character is alive
 @app.before_request
 def check_character_alive():
     if current_user.is_authenticated:
@@ -296,7 +443,7 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
+
 class Character(db.Model):
     __tablename__ = 'character'
 
@@ -324,6 +471,8 @@ class Character(db.Model):
     # The actual owner of the character
     master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
+    equipped_gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
+    equipped_gun = db.relationship('Gun', foreign_keys=[equipped_gun_id])
     
     earn_streak = db.Column(db.Integer, default=0)
     last_earned = db.Column(db.DateTime, nullable=True)
@@ -396,7 +545,7 @@ class ShopItemModelView(ModelView):
     can_edit = True
     can_delete = True
     can_view_details = True
-    column_list = ('id', 'name', 'description', 'price', 'stock', 'is_gun', 'damage')  # Add is_gun and damage
+    column_list = ('id', 'name', 'description', 'price', 'stock', 'is_gun', 'damage')  
     form_columns = ('name', 'description', 'price', 'stock', 'is_gun', 'damage')
     column_searchable_list = ('name', 'description')
     is_gun = BooleanField('Is Gun', default=False)
@@ -408,8 +557,10 @@ class ShopItem(db.Model):
     description = db.Column(db.String(256))
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False, default=0)
-    is_gun = db.Column(db.Boolean, default=False)
-    damage = db.Column(db.Integer, default=0)
+    is_gun = db.Column(db.Boolean, default=False) 
+    damage = db.Column(db.Integer, default=0)      
+    gun_id = db.Column(db.Integer, db.ForeignKey('gun.id', ondelete='CASCADE'), nullable=True)
+    gun = db.relationship('Gun')
 
 
 class UserInventory(db.Model):
@@ -421,12 +572,36 @@ class UserInventory(db.Model):
     user = db.relationship('User', backref='inventory')
     item = db.relationship('ShopItem')
 
+class Drug(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    type = db.Column(db.String(32), nullable=False, default="Other")
 
+class DrugDealer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    city = db.Column(db.String(64), nullable=False)
+    drug_id = db.Column(db.Integer, db.ForeignKey('drug.id'), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    stock = db.Column(db.Integer, nullable=False, default=10)
+    drug = db.relationship('Drug')
+
+class CharacterDrugInventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
+    drug_id = db.Column(db.Integer, db.ForeignKey('drug.id'), nullable=False)
+    quantity = db.Column(db.Integer, default=0)
+    drug = db.relationship('Drug')
+    character = db.relationship('Character')
 
 class Gun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
-    damage = db.Column(db.Integer)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    damage = db.Column(db.Integer, nullable=False)
+    accuracy = db.Column(db.Float, default=0.7)  # 0-1
+    rarity = db.Column(db.String(32), default='Common')
+    price = db.Column(db.Integer, nullable=False)
+    image = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.String(255), nullable=True)
     
 
 class CharacterModelView(ModelView):
@@ -541,6 +716,8 @@ def release_expired_jail():
             char.jail_until = None
         if expired:
             db.session.commit()
+
+
 # Admin Interface -------------------------------
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
@@ -724,22 +901,86 @@ def update_crew_role(crew_member_id):
     flash(f"Role updated.", "success")
     return redirect(url_for('crew_page', crew_id=target_crew_id))
 
+@app.route('/drug_dealer', methods=['GET', 'POST'])
+@login_required
+def drug_dealer():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
 
+    dealers = DrugDealer.query.filter_by(city=character.city).all()
+    if request.method == 'POST':
+        dealer_id = int(request.form.get('dealer_id'))
+        quantity = int(request.form.get('quantity', 1))
+        dealer = DrugDealer.query.get(dealer_id)
+        if not dealer or dealer.city != character.city:
+            flash("Dealer not found.", "danger")
+            return redirect(url_for('drug_dealer'))
+        total_price = dealer.price * quantity
+        if dealer.stock < quantity:
+            flash("Dealer doesn't have enough stock.", "danger")
+        elif character.money < total_price:
+            flash("Not enough money.", "danger")
+        else:
+            character.money -= total_price
+            dealer.stock -= quantity
+            inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=dealer.drug_id).first()
+            if not inv:
+                inv = CharacterDrugInventory(character_id=character.id, drug_id=dealer.drug_id, quantity=0)
+                db.session.add(inv)
+            inv.quantity += quantity
+            db.session.commit()
+            flash(f"You bought {quantity}x {dealer.drug.name} for ${total_price}.", "success")
+        return redirect(url_for('drug_dealer'))
+    return render_template('drug_dealer.html', dealers=dealers, character=character)
+
+@app.route('/sell_drugs', methods=['GET', 'POST'])
+@login_required
+def sell_drugs():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    dealers = DrugDealer.query.filter_by(city=character.city).all()
+    inventory = CharacterDrugInventory.query.filter_by(character_id=character.id).all()
+    if request.method == 'POST':
+        dealer_id = int(request.form.get('dealer_id'))
+        drug_id = int(request.form.get('drug_id'))
+        quantity = int(request.form.get('quantity', 1))
+        dealer = DrugDealer.query.get(dealer_id)
+        inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=drug_id).first()
+        if not dealer or dealer.city != character.city or dealer.drug_id != drug_id:
+            flash("Invalid dealer or drug.", "danger")
+        elif not inv or inv.quantity < quantity:
+            flash("Not enough drugs to sell.", "danger")
+        else:
+            total_price = dealer.price * quantity
+            character.money += total_price
+            inv.quantity -= quantity
+            dealer.stock += quantity
+            db.session.commit()
+            flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
+        return redirect(url_for('sell_drugs'))
+    return render_template('sell_drugs.html', dealers=dealers, inventory=inventory, character=character)
 
 @app.route('/kill/<username>', methods=['POST'])
 @login_required
 def kill(username):
-    # Ensure the current user has a living character
-    if not current_user.character or not current_user.character.is_alive:
-        flash(f"You need a living character to attack!", "danger")
-        return redirect(url_for('dashboard'))
+    # Get the attacker's character
+    attacker = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    # ... find target ...
+    gun = attacker.equipped_gun
+    if not gun:
+        flash("You don't have a gun equipped!", "danger")
+        return redirect(url_for('profile', username=username))
 
-    # Try to find a real user first
+    # Find the target character (real user or NPC)
     user = User.query.filter_by(username=username).first()
     if user:
-        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        target = Character.query.filter_by(master_id=user.id, is_alive=True).first()
     else:
-        # Try to find an NPC master user (username="NPC"), create if missing
         npc_master = User.query.filter_by(username="NPC").first()
         if not npc_master:
             npc_master = User(
@@ -750,44 +991,50 @@ def kill(username):
             )
             db.session.add(npc_master)
             db.session.commit()
-        # Find the NPC character by name and master_id
-        character = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
-        # For legacy NPCs (master_id=0), also check that
-        if not character:
-            character = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
+        target = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
+        if not target:
+            target = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
 
-    if not character:
-        flash(f"Target not found or already dead.", "danger")
+    if not target:
+        flash("Target not found or already dead.", "danger")
         return redirect(url_for('dashboard'))
 
     # Prevent killing your own character
-    if character.master_id == current_user.id:
-        flash(f"You can't kill your own character!", "danger")
+    if target.master_id == current_user.id:
+        flash("You can't kill your own character!", "danger")
         return redirect(url_for('dashboard'))
 
     # Prevent killing admin characters
-    if hasattr(character, "immortal") and character.immortal:
-        flash(f"You cannot kill an admin!", "danger")
+    if hasattr(target, "immortal") and target.immortal:
+        flash("You cannot kill an admin!", "danger")
         return redirect(url_for('dashboard'))
+
     # Prevent killing characters that are not alive
-    if not character.is_alive=='false':
-        flash(f"{character.name} is already dead!", "danger")
+    if not target.is_alive:
+        flash(f"{target.name} is already dead!", "danger")
         return redirect(url_for('dashboard'))
-    # Ensure the player has a gun equipped
-    if not current_user.gun:
-        flash(f"You don't have a gun equipped!", "danger")
+
+    # Ensure the attacker has a gun equipped (prefer equipped_gun, fallback to user.gun)
+    gun = attacker.equipped_gun or current_user.gun
+    if not gun:
+        flash("You don't have a gun equipped!", "danger")
+        return redirect(url_for('profile', username=username))
+
+    # Gun accuracy check (if using accuracy stat)
+    if hasattr(gun, "accuracy") and random.random() > gun.accuracy:
+        flash(f"You missed your shot with {gun.name}!", "warning")
         return redirect(url_for('profile', username=username))
 
     # Apply damage
-    character.health -= current_user.gun.damage
+    target.health -= gun.damage
     killed = False
 
-    if character.health <= 0:
-        character.is_alive = False
+    if target.health <= 0:
+        target.is_alive = False
         killed = True
-        flash(f"You killed {character.name}!", "success")
+        flash(f"You killed {target.name}!", "success")
     else:
-        flash(f"You shot {character.name}!", "success")
+        flash(f"You shot {target.name} for {gun.damage} damage!", "success")
 
     db.session.commit()
 
@@ -798,13 +1045,12 @@ def kill(username):
 
     return redirect(url_for('profile', username=username))
 
-# ...existing code...
+
 @app.route('/shop', methods=['GET', 'POST'])
 @login_required
 def shop():
     items = ShopItem.query.all()
     message = None
-    # Get the current user's character
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if request.method == 'POST':
         item_id = request.form.get('item_id')
@@ -823,13 +1069,7 @@ def shop():
                 inventory_item = UserInventory(user_id=current_user.id, item_id=item.id, quantity=1)
                 db.session.add(inventory_item)
 
-            # If it's a gun, equip it
-            if item.is_gun:
-                current_user.gun_id = item.id
-                message = f"You bought and equipped {item.name}!"
-            else:
-                message = f"You bought {item.name} for ${item.price}!"
-
+            message = f"You bought {item.name} for ${item.price}!"
             db.session.commit()
         elif item and item.stock <= 0:
             message = "Sorry, this item is out of stock."
@@ -1061,6 +1301,21 @@ def leave_crime():
     flash("You have left the crime group.", "success")
     return redirect(url_for('dashboard'))
 
+@app.route('/equip_gun/<int:gun_id>', methods=['POST'])
+@login_required
+def equip_gun(gun_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    gun = Gun.query.get_or_404(gun_id)
+    # Optionally: check if user owns this gun (in inventory)
+    owned = UserInventory.query.filter_by(user_id=current_user.id, item_id=gun.id).first()
+    if not owned:
+        flash("You don't own this gun.", "danger")
+        return redirect(url_for('inventory'))
+    character.equipped_gun_id = gun.id
+    db.session.commit()
+    flash(f"You equipped {gun.name}!", "success")
+    return redirect(url_for('inventory'))
+
 @app.route('/get_messages')
 @login_required
 def get_messages():
@@ -1089,6 +1344,42 @@ def jail():
         Character.jail_until > now
     ).order_by(Character.jail_until.asc()).all()
     return render_template('jail.html', jailed_characters=jailed_characters, now=now)
+
+@app.route('/breakout/<int:char_id>', methods=['POST'])
+@login_required
+def breakout(char_id):
+    target = Character.query.get_or_404(char_id)
+    actor = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    # Checks
+    if not actor:
+        flash("You must have a living character to attempt a breakout.", "danger")
+        return redirect(url_for('jail'))
+    if not target.in_jail or not target.is_alive:
+        flash("This character is not in jail.", "warning")
+        return redirect(url_for('jail'))
+    if actor.id == target.id:
+        flash("You can't break yourself out!", "warning")
+        return redirect(url_for('jail'))
+    if actor.in_jail:
+        flash("You can't attempt a breakout while in jail.", "danger")
+        return redirect(url_for('jail'))
+
+    # Breakout logic
+    success_chance = 0.35  # 35% chance to succeed
+    if random.random() < success_chance:
+        target.in_jail = False
+        target.jail_until = None
+        db.session.commit()
+        flash(f"You successfully broke {target.name} out of jail!", "success")
+    else:
+        # Fail: actor goes to jail for 2-6 minutes
+        jail_minutes = random.randint(2, 6)
+        actor.in_jail = True
+        actor.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
+        db.session.commit()
+        flash(f"You failed and got caught! You're in jail for {jail_minutes} minutes.", "danger")
+    return redirect(url_for('jail'))
 
 @app.route('/join_crew', methods=['GET', 'POST'])
 @login_required
@@ -1214,8 +1505,8 @@ def invite_to_crew():
             return redirect(url_for('invite_to_crew'))
 
         new_invite = CrewInvitation(
-            inviter_id=character.id,
-            invitee_id=invitee.id,
+            inviter_id=current_user.id,
+            invitee_id=invitee.master_id,
             crew_id=crew.id
         )
         db.session.add(new_invite)
@@ -1490,7 +1781,8 @@ def create_crew():
 @login_required
 def earn():
     if not hasattr(current_user, 'character') or current_user.character is None:
-        return jsonify({'success': False, 'message': 'No character found.'}), 400
+        flash('No character found.', 'danger')
+        return redirect(url_for('dashboard'))
 
     character = current_user.character
 
@@ -1499,7 +1791,8 @@ def earn():
         cooldown = timedelta(seconds=60)  # 1 minute cooldown
         if now - character.last_earned < cooldown:
             seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
-            return jsonify({'success': False, 'message': 'Cooldown active.', 'seconds_remaining': seconds_remaining}), 429
+            flash(f'Cooldown active. Please wait {seconds_remaining} seconds.', 'warning')
+            return redirect(url_for('dashboard'))
 
     # Jail chance: 10% chance to be sent to jail for 1-5 minutes
     jail_chance = 0.50
@@ -1509,12 +1802,8 @@ def earn():
         character.jail_until = now + timedelta(minutes=jail_minutes)
         character.last_earned = now
         db.session.commit()
-        return jsonify({
-            'success': False,
-            'jailed': True,
-            'jail_minutes': jail_minutes,
-            'message': f"You got caught and are in jail for {jail_minutes} minutes!"
-        }), 403
+        flash(f"You got caught and are in jail for {jail_minutes} minutes!", "danger")
+        return redirect(url_for('dashboard'))
 
     # Earn logic
     earned_money = random.randint(5000, 150000)
@@ -1535,13 +1824,8 @@ def earn():
     if leveled_up:
         flash(f"You leveled up to level {character.level}!", "success")
 
-    return jsonify({
-        'success': True,
-        'money': character.money,
-        'xp': character.xp,
-        'level': character.level,
-        'message': f"You earned ${earned_money} and {earned_xp} XP!"
-    })
+    flash(f"You earned ${earned_money} and {earned_xp} XP!", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/user_stats')
 @login_required
@@ -1699,7 +1983,22 @@ def create_admin():
         print("Admin user updated.")
 
 
+def randomize_drug_prices(interval_minutes=10):
+    with app.app_context():
+        while True:
+            dealers = DrugDealer.query.all()
+            for dealer in dealers:
+                # Set a random price between 50 and 500 (adjust as needed)
+                dealer.price = random.randint(50, 500)
+            db.session.commit()
+            time.sleep(interval_minutes * 60)
 
+# Start the background thread when the app starts
+def start_price_randomizer():
+    t = threading.Thread(target=randomize_drug_prices, args=(10,), daemon=True)  # 10 minutes interval
+    t.start()
+
+start_price_randomizer()
 
 def get_online_users():
     cutoff = datetime.utcnow() - timedelta(seconds=1)

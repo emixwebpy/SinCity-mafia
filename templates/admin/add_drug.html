@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Add Drug{% endblock %}
+{% block content %}
+<h2>Add Drug</h2>
+<form method="post">
+    <label for="drug-name">Drug Name:</label>
+    <input id="drug-name" type="text" name="name" placeholder="Drug Name" required>
+    <label for="drug-type">Drug Type:</label>
+    <select id="drug-type" name="type" required>
+        <option value="" disabled selected>Select type</option>
+        <option value="Stimulant">Stimulant</option>
+        <option value="Opiate">Opiate</option>
+        <option value="Hallucinogen">Hallucinogen</option>
+        <option value="Depressant">Depressant</option>
+        <option value="Other">Other</option>
+    </select>
+    <button type="submit" class="btn btn-success">Add</button>
+</form>
+{% endblock %}

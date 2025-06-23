@@ -150,20 +150,27 @@
     <p class="inventory-empty">You have no items in your inventory.</p>
   {% else %}
     <ul class="inventory-list">
-      {% for entry in inventory_items %}
-      <li class="inventory-item">
-        <div class="inventory-item-header">
-          <span class="inventory-item-name">{{ entry.item.name }}</span>
-          <span class="inventory-item-quantity">x{{ entry.quantity }}</span>
-        </div>
-        <div class="inventory-item-desc">Original Price: ${{ entry.item.price }}</div>
-        <div class="inventory-item-actions">
-          <form method="POST" action="{{ url_for('inventory') }}">
-            <input type="hidden" name="item_id" value="{{ entry.item.id }}">
-            <button type="submit" class="inventory-sell-btn">Sell for ${{ entry.item.price // 2 }}</button>
-          </form>
-        </div>
-      </li>
+      {% for inv in inventory_items %}
+        <li class="inventory-item">
+          <div class="inventory-item-header">
+            <span>{{ inv.item.name }}</span>
+            <span>x{{ inv.quantity }}</span>
+          </div>
+          {% if inv.item.description %}
+            <div class="inventory-item-desc">{{ inv.item.description }}</div>
+          {% endif %}
+          <div class="inventory-item-actions">
+            {% if inv.item.is_gun and inv.item.gun_id %}
+              <form action="{{ url_for('equip_gun', gun_id=inv.item.gun_id) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-primary btn-sm"
+                  {% if character.equipped_gun_id == inv.item.gun_id %}disabled{% endif %}>
+                  {% if character.equipped_gun_id == inv.item.gun_id %}Equipped{% else %}Equip{% endif %}
+                </button>
+              </form>
+            {% endif %}
+            <!-- Add other item actions here if needed -->
+          </div>
+        </li>
       {% endfor %}
     </ul>
   {% endif %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sell Drugs{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 style="color:#ffd700;">Sell Drugs in {{ character.city }}</h2>
+    <table class="table table-dark table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Your Drug</th>
+                <th>Quantity</th>
+                <th>Dealer</th>
+                <th>Dealer Price</th>
+                <th>Sell</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for inv in inventory %}
+            {% for dealer in dealers if dealer.drug_id == inv.drug_id %}
+            <tr>
+                <td>{{ inv.drug.name }}</td>
+                <td>{{ inv.quantity }}</td>
+                <td>{{ dealer.city }}</td>
+                <td>${{ dealer.price }}</td>
+                <td>
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="dealer_id" value="{{ dealer.id }}">
+                        <input type="hidden" name="drug_id" value="{{ inv.drug_id }}">
+                        <input type="number" name="quantity" value="1" min="1" max="{{ inv.quantity }}" style="width:60px;">
+                        <button type="submit" class="btn btn-warning btn-sm">Sell</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

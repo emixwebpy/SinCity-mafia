@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Admin Search{% endblock %}
+{% block content %}
+<style>
+    .search-header {
+        color: #ffd700;
+        font-size: 2em;
+        margin-bottom: 1em;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 4px #222;
+    }
+    .no-results {
+        color: #b8b8ff;
+        margin: 2em 0;
+        font-size: 1.2em;
+        background: #232347;
+        padding: 1em 2em;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .section-title {
+        color: #8be9fd;
+        margin-top: 2em;
+        font-size: 1.3em;
+        border-bottom: 2px solid #44475a;
+        padding-bottom: 0.3em;
+        margin-bottom: 1em;
+        letter-spacing: 0.5px;
+    }
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2em;
+        background: #282a36;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px #0003;
+    }
+    .styled-table th, .styled-table td {
+        padding: 0.8em 1em;
+        text-align: left;
+    }
+    .styled-table th {
+        background: #44475a;
+        color: #f8f8f2;
+        font-weight: 600;
+        border-bottom: 2px solid #6272a4;
+    }
+    .styled-table tr {
+        border-bottom: 1px solid #44475a;
+    }
+    .styled-table tr:nth-child(even) {
+        background: #34354a;
+    }
+    .styled-table tr:hover {
+        background: #44475a;
+        transition: background 0.2s;
+    }
+    .btn-primary {
+        background: #50fa7b;
+        color: #282a36;
+        border: none;
+        padding: 0.4em 1em;
+        border-radius: 4px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-primary:hover {
+        background: #8be9fd;
+        color: #282a36;
+    }
+</style>
+
+<h2 class="search-header">Search Results for "{{ q }}"</h2>
+{% if not users and not characters %}
+    <div class="no-results">No users or characters found.</div>
+{% endif %}
+
+{% if users %}
+    <h3 class="section-title">Users</h3>
+    <table class="styled-table">
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Admin</th>
+            <th>Premium</th>
+            <th>Actions</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+            <td>{{ 'Yes' if user.premium else 'No' }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="btn btn-primary">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endif %}
+
+{% if characters %}
+    <h3 class="section-title">Characters</h3>
+    <table class="styled-table">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Level</th>
+            <th>City</th>
+            <th>Owner</th>
+            <th>Actions</th>
+        </tr>
+        {% for char in characters %}
+        <tr>
+            <td>{{ char.id }}</td>
+            <td>{{ char.name }}</td>
+            <td>{{ char.level }}</td>
+            <td>{{ char.city }}</td>
+            <td>{{ char.owner.username if char.owner else '-' }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_character', char_id=char.id) }}" class="btn btn-primary">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endif %}
+{% endblock %}

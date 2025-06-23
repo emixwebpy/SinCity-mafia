@@ -171,13 +171,13 @@
     <div class="profile-container">
       
       {% if user.character.profile_image %}
-        <img class="profile-img" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+        <img class="profile-img" src="{{ url_for('static', filename=user.character.profile_image) if not user.character.profile_image.startswith('http') else user.character.profile_image }}" alt="avatar">
       {% endif %}
 
-      {% if character.is_authenticated and character.id == character.master_id %}
-      <form action="{{ url_for('upload_profile_image') }}" method="get" style="margin-bottom:18px;">
-        <button type="submit" class="btn btn-primary">Change Profile Image</button>
-      </form>
+      {% if character.is_authenticated and character.master_id == character.id %}
+        <form action="{{ url_for('upload_profile_image') }}" method="get" style="margin-bottom:18px;">
+          <button type="submit" class="btn btn-primary">Change Profile Image</button>
+        </form>
       {% endif %}
 
 
@@ -205,10 +205,10 @@
           <span class="profile-label">Kills:&nbsp;</span>
           <span class="profile-value">{{ user.character.kills if user.character.kills is defined else 0 }}</span>
         </div>
-        {% if character.gun %}
+        {% if character.equipped_gun %}
         <div class="profile-stat">
           <span class="profile-label">Gun:</span>
-          <span class="profile-value">{{ user.character.gun.name }} ({{ user.character.gun.damage }} dmg)</span>
+          <span class="profile-value">{{ character.equipped_gun.name }} ({{ character.equipped_gun.damage }} dmg)</span>
         </div>
         {% endif %}
         

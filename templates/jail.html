@@ -4,114 +4,137 @@
 
 {% block content %}
 <style>
-.jail-hero {
-    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    border-radius: 5px;
-    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
-    padding: 44px 36px 36px 36px;
-    border: 2px solid #8be9fd55;
-    color: #f5f6fa;
-    font-family: "geo", sans-serif;
-    text-align: left;
-    position: relative;
-    margin: 32px auto 0 auto;
-    max-width: 900px;
-    overflow: hidden;
+.jail-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 5px 5px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
 }
-.jail-title {
+.jail-header h1 {
     color: #ffd700;
-    font-size: 2em;
-    font-weight: 900;
-    margin-bottom: 18px;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 12px #23243a;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
 }
-.jail-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    list-style: none;
-    padding: 0;
-    margin: 24px 0 18px 0;
-}
-.jail-card {
+.jail-list-container {
     background: #23243a;
-    border-radius: 5px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 18px 24px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    min-width: 220px;
-    font-size: 1.08em;
-    position: relative;
-    border: 2px solid #ff5555;
-    transition: border 0.18s, box-shadow 0.18s;
+    border-radius: 0 0 5px 5px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.jail-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.jail-table th, .jail-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.jail-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.jail-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.jail-table tr:hover {
+    background: #34355b;
+}
+.jail-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.jail-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
 }
 .jail-avatar {
-    width: 48px;
-    height: 48px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: #34355b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2em;
+    font-size: 1.5em;
     border: 2px solid #8be9fd55;
     object-fit: cover;
 }
-.jail-info {
-    flex: 1;
-}
-.jail-name {
-    font-weight: 700;
-    color: #8be9fd;
-    font-size: 1.15em;
-}
-.jail-timer {
-    color: #ffd700;
-    font-size: 1em;
-    font-weight: 600;
-    margin-top: 4px;
-}
 @media (max-width: 900px) {
-    .jail-hero {
+    .jail-header {
         padding: 18px 2vw 16px 2vw;
         margin: 18px 0 0 0;
         max-width: 98vw;
     }
-    .jail-title {
+    .jail-header h1 {
         font-size: 1.2em;
     }
-    .jail-card {
+    .jail-list-container {
         padding: 10px 8px;
+    }
+    .jail-table th, .jail-table td {
+        padding: 0.5rem 0.5rem;
         font-size: 0.98em;
     }
 }
 </style>
 
-<div class="jail-hero">
-    <div class="jail-title"><i class="fas fa-gavel"></i> Jail</div>
+<div class="jail-header">
+    <h1><i class="fas fa-gavel"></i> Jail</h1>
+</div>
+<div class="jail-list-container">
     {% if jailed_characters %}
-    <ul class="jail-list">
+    <table class="jail-table">
+        <tr>
+            <tr>
+                <th>Avatar</th>
+                <th>Name</th>
+                <th>Release In</th>
+                <th>Actions</th>
+            </tr>
+        </tr>
         {% for char in jailed_characters %}
-        <li class="jail-card">
-            <span class="jail-avatar">
-                <i class="fas fa-user-slash"></i>
-            </span>
-            <div class="jail-info">
-                <div class="jail-name">{{ char.name }}</div>
-                <div class="jail-timer">
-                    Release in: 
-                    {% set remaining = (char.jail_until - now).total_seconds()|int %}
-                    {% set mins = remaining // 60 %}
-                    {% set secs = remaining % 60 %}
-                    {{ mins }}m {{ secs }}s
-                </div>
-            </div>
-        </li>
+        <tr>
+            <td>
+                {% if char.profile_image %}
+                    <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" alt="{{ char.name }}'s avatar" class="jail-avatar" />
+                {% else %}
+                    <span class="jail-avatar">
+                        <i class="fas fa-user-slash"></i>
+                    </span>
+                {% endif %}
+            </td>
+            <td>
+                <span class="jail-link">{{ char.name }}</span>
+            </td>
+            <td>
+                {% set remaining = (char.jail_until - now).total_seconds()|int %}
+                {% set mins = remaining // 60 %}
+                {% set secs = remaining % 60 %}
+                {{ mins }}m {{ secs }}s
+            </td>
+            <td>
+                {% if current_user.is_authenticated and current_character and current_character.id != char.id and not current_character.in_jail %}
+                    <form action="{{ url_for('breakout', char_id=char.id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-primary btn-sm">Break Out</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
         {% endfor %}
-    </ul>
+    </table>
     {% else %}
     <div style="color:#8be9fd;font-size:1.2em;">No one is currently in jail.</div>
     {% endif %}

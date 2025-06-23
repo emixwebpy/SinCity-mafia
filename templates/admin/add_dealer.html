@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Add Dealer{% endblock %}
+{% block content %}
+<h2>Add Drug Dealer</h2>
+<form method="post">
+    <label>City:</label>
+    <select name="city" required>
+        {% for city in cities %}
+        <option value="{{ city }}">{{ city }}</option>
+        {% endfor %}
+    </select>
+    <label>Drug:</label>
+    <select name="drug_id" required>
+        {% for drug in drugs %}
+        <option value="{{ drug.id }}">{{ drug.name }}</option>
+        {% endfor %}
+    </select>
+    <label>Price:</label>
+    <input type="number" name="price" min="1" required>
+    <label>Stock:</label>
+    <input type="number" name="stock" min="0" required>
+    <button type="submit" class="btn btn-success">Add Dealer</button>
+</form>
+{% endblock %}

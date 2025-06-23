@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Admin - Drugs{% endblock %}
+{% block content %}
+<h2>Drugs</h2>
+<a href="{{ url_for('admin.admin_add_drug') }}" class="btn btn-primary">Add Drug</a>
+<table class="table">
+    <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
+    {% for drug in drugs %}
+    <tr>
+        <td>{{ drug.id }}</td>
+        <td>{{ drug.name }}</td>
+        <td>
+            <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" style="display:inline;">
+                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this drug?');">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

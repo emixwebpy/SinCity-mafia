@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Manage Organized Crimes{% endblock %}
+{% block content %}
+<h1>Organized Crimes</h1>
+<table class="table table-dark table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Invite Code</th>
+            <th>Leader</th>
+            <th>Members</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for crime in crimes %}
+        <tr>
+            <td>{{ crime.id }}</td>
+            <td>{{ crime.name }}</td>
+            <td>{{ crime.invite_code }}</td>
+            <td>{{ crime.leader.name if crime.leader else 'N/A' }}</td>
+            <td>{{ crime.members|length }}</td>
+            <td>
+                <a href="{{ url_for('admin.admin_edit_organized_crime', crime_id=crime.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                <form action="{{ url_for('admin.admin_delete_organized_crime', crime_id=crime.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this crime group?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

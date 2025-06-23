@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Edit Organized Crime{% endblock %}
+{% block content %}
+<h1>Edit Organized Crime</h1>
+<form method="post">
+    <div class="form-group">
+        <label>Name</label>
+        <input name="name" class="form-control" value="{{ crime.name }}">
+    </div>
+    <div class="form-group">
+        <label>Invite Code</label>
+        <input name="invite_code" class="form-control" value="{{ crime.invite_code }}">
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

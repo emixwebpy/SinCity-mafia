@@ -7,11 +7,11 @@
     border-radius: 5px;
     box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
     padding: 40px 32px 32px 32px;
-    border: 3px solid #ffd700cc;
+    border: 1px solid #ffd700cc;
     color: #f5f6fa;
     font-family: "geo", sans-serif;
-    margin: 36px auto 0 auto;
-    max-width: 1100px;
+    margin: 0 auto 0 auto;
+    max-width: 1000px;
     overflow: hidden;
 }
 .admin-header {
@@ -20,13 +20,15 @@
     justify-content: space-between;
     margin-bottom: 32px;
     gap: 32px;
+    flex-wrap: wrap;
 }
 .admin-header-info {
     flex: 2;
+    min-width: 220px;
 }
 .admin-header-info h1 {
     color: #ffd700;
-    font-size: 2.3em;
+    font-size: 1.5em;
     font-weight: 900;
     margin: 0 0 8px 0;
     letter-spacing: 2px;
@@ -34,7 +36,7 @@
 }
 .admin-header-info .subtitle {
     color: #8be9fd;
-    font-size: 1.1em;
+    font-size: .95em;
     margin-top: 10px;
     font-weight: 600;
     letter-spacing: 1px;
@@ -44,70 +46,98 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    min-width: 80px;
 }
 .admin-header-icon-inner {
-    font-size: 4em;
+    font-size: 1em;
     color: #23243a;
     background: linear-gradient(135deg, #ffd700 60%, #8be9fd 100%);
     border-radius: 50%;
-    padding: 28px;
-    box-shadow: 0 2px 18px #ffd70055;
+    padding: 16px;
+    box-shadow: 0 2px 9px #ffd70055;
     border: 2px solid #ffd700;
+}
+.dashboard-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #34355b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8em;
+    border: 3px solid #ffd700;
+    object-fit: cover;
+    box-shadow: 0 2px 12px #ffd70033;
 }
 .admin-main {
     display: flex;
     gap: 40px;
     margin-top: 24px;
     flex-wrap: wrap;
+    align-items: flex-start;
 }
 .admin-actions {
     flex: 1 1 260px;
     background: #23243a;
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 32px 24px;
     box-shadow: 0 1px 12px #8be9fd22;
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 18px;
     min-width: 240px;
-    max-width: 320px;
+    max-width: 400px;
     align-items: stretch;
     border: 2px solid #ffd70044;
 }
-.admin-actions .btn {
-    border-radius: 5px;
+.admin-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-radius: 8px;
     font-weight: 800;
-    padding: 18px 0;
+    padding: 16px 0;
     background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
     color: #23243a;
     border: none;
-    font-size: 1.13em;
+    font-size: 1.15em;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.15s;
     box-shadow: 0 1px 12px #8be9fd22;
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 16px;
     letter-spacing: 1px;
-    justify-content: center;
+    justify-content: flex-start;
 }
-.admin-actions .btn:hover, .admin-actions .btn:focus {
+.admin-action-btn:hover, .admin-action-btn:focus {
     background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
     color: #23243a;
     box-shadow: 0 2px 16px #ffd70044;
     transform: translateY(-2px) scale(1.04);
 }
+.admin-action-icon {
+    font-size: 1.6em;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #181824;
+    border-radius: 50%;
+    color: #ffd700;
+    box-shadow: 0 1px 8px #ffd70033;
+}
 .admin-stats {
     flex: 2 1 400px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 24px;
     align-items: stretch;
+    min-width: 220px;
 }
 .admin-stat {
     background: linear-gradient(120deg, #23243a 60%, #181824 100%);
     border-radius: 5px;
-    padding: 32px 0 24px 0;
+    padding: 12px 0 12px 0;
     color: #8be9fd;
     font-size: 1.18em;
     font-weight: 700;
@@ -139,43 +169,157 @@
     color: #ffd700;
     display: block;
 }
+
+/* --- Responsive Styles --- */
 @media (max-width: 900px) {
     .admin-hero {
-        padding: 18px 2vw 16px 2vw;
-        margin: 18px 0 0 0;
-        max-width: 98vw;
+        padding: 10px 1vw 10px 1vw;
+        margin: 10px 0 0 0;
+        max-width: 100vw;
+    }
+    .admin-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .admin-header-info {
+        width: 100%;
     }
     .admin-header-info h1 {
-        font-size: 1.3em;
+        font-size: 1.1em;
+        margin-bottom: 4px;
+    }
+    .admin-header-info .subtitle {
+        font-size: .85em;
+        margin-top: 4px;
+    }
+    .admin-header-icon {
+        justify-content: flex-start;
+        margin-top: 6px;
+    }
+    .dashboard-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.1em !important;
     }
     .admin-main {
-        flex-direction: column;
-        gap: 18px;
+        
+        gap: 8px;
+        margin-top: 10px;
     }
     .admin-stats {
         grid-template-columns: 1fr;
-        gap: 18px;
+        gap: 8px;
+    }
+    .admin-stat {
+        font-size: .95em;
+        padding: 4px 0;
+    }
+    .admin-stat .stat-label {
+        font-size: .95em;
+        margin-bottom: 2px;
+    }
+    .admin-action-btn {
+        font-size: .95em;
+        padding: 8px 0;
+        gap: 6px;
+        border-radius: 6px;
+    }
+    .admin-action-icon {
+        font-size: 1em;
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        min-height: 22px;
     }
     .admin-actions {
-        padding: 18px 8px;
+        padding: 6px 2vw;
+        gap: 6px;
         min-width: 0;
         max-width: 100vw;
+        border-width: 1px;
+    }
+    form[action] input[type="text"] {
+        font-size: .95em;
+        padding: 4px 6px;
+    }
+    form[action] button {
+        font-size: .95em;
+        padding: 4px 8px;
+    }
+}
+@media (max-width: 500px) {
+    .admin-hero {
+        padding: 4px 0 4px 0;
+    }
+    .admin-header-info h1 {
+        font-size: .98em;
+    }
+    .admin-header-info .subtitle {
+        font-size: .75em;
+    }
+    .admin-actions {
+        padding: 2px 1vw;
+        gap: 4px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 100vw;
+        min-width: 0;
+    }
+    .admin-action-btn {
+        font-size: .9em;
+        padding: 6px 0;
+        gap: 4px;
+        border-radius: 5px;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+    .admin-action-icon {
+        font-size: .9em;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        min-height: 18px;
+    }
+    .admin-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    .admin-stat {
+        font-size: .9em;
+        padding: 2px 0;
+    }
+    .admin-stat .stat-label {
+        font-size: .9em;
+    }
+    .dashboard-avatar {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: .9em !important;
     }
 }
 </style>
 
 <div class="admin-hero">
     <div class="admin-header">
-        <div class="admin-header-info">
-            <h1>Admin Control Center</h1>
-            <div class="subtitle">
-                Welcome, <b>Admin</b>! Here you have full control over the game. Use the tools on the right to manage users, forums, shop, and more.
-            </div>
+    <div class="admin-header-info">
+        <h1>Admin Control Center</h1>
+        <div class="subtitle">
+            Welcome, <b>Admin</b>! Here you have full control over the game. Use the tools on the right to manage users, forums, shop, and more.
         </div>
-        <div class="admin-header-icon">
-            <span class="admin-header-icon-inner"><i class="fas fa-crown"></i></span>
-        </div>
+        <form method="get" action="{{ url_for('admin.admin_search') }}" style="margin-top:18px;display:flex;gap:10px;">
+            <input type="text" name="q" placeholder="Search users or characters..." style="flex:1;padding:8px 12px;border-radius:5px;border:1px solid #ffd70044;background:#181824;color:#ffd700;font-size:1em;">
+            <button type="submit" class="btn" style="background: #ffd700; padding:8px 18px;"><i class="fas fa-search"></i> Search</button>
+        </form>
     </div>
+    <div class="admin-header-icon">
+        {% if current_admin and current_admin.character and current_admin.character.profile_image %}
+            <img src="{{ url_for('static', filename=current_admin.character.profile_image) if not current_admin.character.profile_image.startswith('http') else current_admin.character.profile_image }}" class="dashboard-avatar" alt="avatar">
+        {% else %}
+            <span class="dashboard-avatar"><i class="fas fa-user"></i></span>
+        {% endif %}
+    </div>
+</div>
     <div class="admin-main">
         <div class="admin-stats">
             <div class="admin-stat">
@@ -199,13 +343,36 @@
                 <b>{{ jailed_count }}</b>
             </div>
         </div>
-        <div class="admin-actions">
-            <a href="{{ url_for('admin.admin_users') }}" class="btn"><i class="fas fa-users-cog"></i> Manage Users</a>
-            <a href="{{ url_for('admin.admin_characters') }}" class="btn"><i class="fas fa-user-edit"></i> Manage Characters</a>
-            <a href="{{ url_for('admin.admin_forums') }}" class="btn"><i class="fas fa-comments"></i> Manage Forums</a>
-            <a href="{{ url_for('admin.admin_jail') }}" class="btn"><i class="fas fa-gavel"></i> Jail List</a>
-            <a href="{{ url_for('admin.admin_shop') }}" class="btn"><i class="fas fa-store"></i> Manage Shop</a>
-        </div>
+            <div class="admin-actions">
+        <a href="{{ url_for('admin.admin_users') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-users-cog"></i></span>
+            <span>Manage Users</span>
+        </a>
+        <a href="{{ url_for('admin.admin_characters') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-user-edit"></i></span>
+            <span>Manage Characters</span>
+        </a>
+        <a href="{{ url_for('admin.admin_forums') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
+            <span>Manage Forums</span>
+        </a>
+        <a href="{{ url_for('admin.admin_jail') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-gavel"></i></span>
+            <span>Jail List</span>
+        </a>
+        <a href="{{ url_for('admin.admin_shop') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-store"></i></span>
+            <span>Manage Shop</span>
+        </a>
+        <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-mask"></i></span>
+            <span>Manage Organized Crimes</span>
+        </a>
+        <a href="{{ url_for('admin.admin_drugs_dashboard') }}" class="btn admin-action-btn">
+            <span class="admin-action-icon"><i class="fas fa-capsules"></i></span>
+            <span>Drug Management</span>
+        </a>
+    </div>
     </div>
 </div>
 {% endblock %}

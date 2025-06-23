@@ -668,8 +668,8 @@
                 <i class="fas fa-crosshairs"></i> <span>Forums</span>
               </a>
               {% if current_user.is_authenticated and current_character and current_character.crew_id %}
-              <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" >
-                <i class="fas fa-users"></i> Crew
+              <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
+                <i class="fas fa-users"></i> <span>Crew</span>
               </a>
               {% endif %}
               
