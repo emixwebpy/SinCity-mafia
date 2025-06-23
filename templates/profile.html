@@ -180,7 +180,11 @@
         </form>
       {% endif %}
 
-
+      {% if user.premium and user.premium_until and user.premium_until > now() %}
+        <div class="profile-premium">
+          <i class="fas fa-crown"></i> Premium Member
+        </div>
+      {% endif %}
       <div class="profile-username">
         <h1>Name: &nbsp;<strong>{{ user.character.name }}</strong></h1>
       </div>
@@ -228,11 +232,8 @@
         <button type="submit" class="btn btn-danger">Shoot</button>
       </form>
       {% endif %}
-      {% if user.character.premium %}
-      <div class="profile-premium">
-        <i class="fas fa-crown"></i> Premium Member
-      </div>
-      {% endif %}
+      
+      
     </div>
   {% else %}
     <div class="alert alert-warning" style="margin: 40px auto; max-width: 500px;">

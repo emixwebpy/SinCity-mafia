@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Drug Market{% endblock %}
+{% block content %}
+<style>
+.drug-dashboard-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.drug-dashboard-header h2 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+    font-weight: 900;
+}
+.drug-dashboard-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+.drug-dashboard-actions a {
+    background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
+    color: #23243a;
+    font-weight: 700;
+    border-radius: 7px;
+    padding: 10px 18px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 8px #8be9fd22;
+}
+.drug-dashboard-actions a:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
+    color: #23243a;
+    box-shadow: 0 2px 12px #ffd70044;
+}
+.drug-dashboard-container {
+    max-width: 900px;
+    margin: 32px auto;
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 8px 32px #8be9fd33;
+    padding: 0 0 28px 0;
+    color: #f5f6fa;
+}
+.drug-dashboard-section {
+    margin-bottom: 32px;
+    padding: 1.5rem 2rem 0 2rem;
+}
+.drug-dashboard-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 12px;
+}
+.drug-dashboard-table th, .drug-dashboard-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.drug-dashboard-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.drug-dashboard-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.drug-dashboard-table tr:hover {
+    background: #34355b;
+}
+@media (max-width: 700px) {
+    .drug-dashboard-header,
+    .drug-dashboard-section {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+    }
+    .drug-dashboard-header h2 {
+        font-size: 1.2em;
+    }
+    .drug-dashboard-table th, .drug-dashboard-table td {
+        padding: 6px 2px;
+        font-size: .98em;
+    }
+}
+</style>
+
+<div class="drug-dashboard-header">
+    <h2><i class="fas fa-capsules"></i> Drug Market in {{ character.city }}</h2>
+    <div class="drug-dashboard-actions">
+        <a href="{{ url_for('drug_dealer') }}"><i class="fas fa-arrow-circle-down"></i> Buy Drugs</a>
+        <a href="{{ url_for('sell_drugs') }}"><i class="fas fa-arrow-circle-up"></i> Sell Drugs</a>
+    </div>
+</div>
+<div class="drug-dashboard-container">
+    <div class="drug-dashboard-section">
+        <h3 style="color:#8be9fd;">Your Drug Inventory</h3>
+        <table class="drug-dashboard-table">
+            <tr>
+                <th>Drug</th>
+                <th>Type</th>
+                <th>Quantity</th>
+            </tr>
+            {% for inv in inventory %}
+            <tr>
+                <td>{{ inv.drug.name }}</td>
+                <td>{{ inv.drug.type }}</td>
+                <td>{{ inv.quantity }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="color:#b8b8ff;">No drugs in inventory.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="drug-dashboard-section">
+        <h3 style="color:#8be9fd;">Dealers in {{ character.city }}</h3>
+        <table class="drug-dashboard-table">
+            <tr>
+                <th>Drug</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Stock</th>
+            </tr>
+            {% for dealer in dealers %}
+            <tr>
+                <td>{{ dealer.drug.name }}</td>
+                <td>{{ dealer.drug.type }}</td>
+                <td>${{ dealer.price }}</td>
+                <td>{{ dealer.stock }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="color:#b8b8ff;">No dealers in this city.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

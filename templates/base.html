@@ -26,7 +26,7 @@
       /* Layout */
       .layout-root {
         display: flex;
-        min-height: 100vh;
+        min-height: 50vh;
         width: 100vw;
         background: none;
         overflow-x: hidden;
@@ -45,10 +45,11 @@
         border-right: none;
         height: 100vh;
         position: sticky;
+        
         top: 0;
         font-size: 1em;
         padding: 0;
-        overflow: hidden;
+        overflow: scroll;
       }
       .sidebar-header {
         color: #ffd700;
@@ -81,17 +82,18 @@
       .sidebar-nav {
         width: 100%;
         flex: 1;
-        display: flex;
         flex-direction: column;
-        gap: 18px;
-        padding: 0 0 12px 0;
+        gap: 10px;
+        padding: 0 0 18px 0;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #ffd70033 #23243a;
       }
       .sidebar-category {
         margin-bottom: 0;
-        overflow: hidden;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: #ffd70033 #23243a;
         background: rgba(139,233,253,0.04);
         
         box-shadow: 0 1px 8px #8be9fd11;
@@ -523,6 +525,7 @@
           border-radius: 0;
         }
         .sidebar-nav {
+          display: flex;
           width: 100vw;
           flex-direction: row;
           gap: 0;
@@ -530,14 +533,14 @@
           overflow-x: auto;
         }
         .sidebar-category {
-          min-width: 90px;
+          min-width: 60px;
           flex: 1 1 0;
           margin-bottom: 0;
           border-radius: 0;
         }
         .sidebar-category-title {
           font-size: 0.98em;
-          padding: 10px 8px 6px 8px;
+          padding: 8px 8px 6px 8px;
           border-radius: 0;
         }
         .sidebar-subnav {
@@ -576,7 +579,9 @@
       }
       @media (max-width: 600px) {
         html, body { font-size: 13px; }
+        
         .sidebar, .sidebar-nav {
+          display: flex;
           min-width: 0;
           width: 100vw;
         }
@@ -605,6 +610,40 @@
           justify-content: center;
           padding: 4px 2px;
         }
+      }
+      /* Custom scrollbar for Chrome, Edge, Safari */
+      .sidebar,
+      .sidebar-nav,
+      .sidebar-category,
+      .sidebar-subnav {
+        scrollbar-width: thin;
+        scrollbar-color: #ffd70033 #23243a;
+      }
+      .sidebar::-webkit-scrollbar{
+        position: sticky;
+      }
+      /* Webkit browsers (Chrome, Edge, Safari) */
+      .sidebar::-webkit-scrollbar,
+      .sidebar-nav::-webkit-scrollbar,
+      .sidebar-category::-webkit-scrollbar,
+      .sidebar-subnav::-webkit-scrollbar {
+        width: 8px;
+        background: #23243a;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb,
+      .sidebar-nav::-webkit-scrollbar-thumb,
+      .sidebar-category::-webkit-scrollbar-thumb,
+      .sidebar-subnav::-webkit-scrollbar-thumb {
+        background: #ffd70033;
+        border-radius: 6px;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb:hover,
+      .sidebar-nav::-webkit-scrollbar-thumb:hover,
+      .sidebar-category::-webkit-scrollbar-thumb:hover,
+      .sidebar-subnav::-webkit-scrollbar-thumb:hover {
+        background: #ffd70077;
       }
   </style>
 
@@ -686,8 +725,11 @@
               <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
                 <i class="fas fa-mask"></i> <span>Organized Crime</span>
               </a>
+              <a href="{{ url_for('drug_dashboard') }}" class="{% if request.endpoint == 'drug_dashboard' %}active{% endif %}">
+                <i class="fas fa-capsules"></i> <span>Drug Market</span>
+              </a>
               <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Jail</span>
+                <i class="fas fa-handcuffs"></i> <span>Jail</span>
               </a>
               <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
                 <i class="fas fa-plane"></i> <span>Travel</span>

@@ -2,177 +2,169 @@
 {% block title %}Inventory{% endblock %}
 {% block content %}
 <style>
-  .inventory-container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 30px;
-    background: linear-gradient(160deg, #1e1f2b 70%, #2a2b3d 100%);
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px #8be9fd33;
-    color: #f5f6fa;
-    font-family: 'Poppins', sans-serif;
+.inventory-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.inventory-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
     text-align: center;
-  }
-
-  .inventory-title {
-    font-size: 2em;
-    font-weight: 900;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.inventory-list-container {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.inventory-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.inventory-table th, .inventory-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.inventory-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.inventory-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.inventory-table tr:hover {
+    background: #34355b;
+}
+.inventory-item-name {
     color: #8be9fd;
-    margin-bottom: 25px;
-    text-shadow: 0 4px 12px #23243a;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.inventory-item-desc {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.inventory-item-qty {
+    color: #ffd700;
+    font-size: 1rem;
+    font-weight: bold;
+}
+.inventory-item-actions {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-  }
-
-  .inventory-money {
-    font-size: 1.5em;
+    gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+    font-size: 1em;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
+    color: #232526;
+}
+.inventory-out {
+    font-size: 1.1em;
+    color: #ff5555;
+    font-weight: 700;
+}
+.inventory-money {
+    font-size: 1.3em;
     font-weight: 700;
     color: #ffd700;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     display: block;
-  }
-
-  .inventory-message {
+    text-align: center;
+}
+.inventory-message {
     background: rgba(139, 233, 253, 0.1);
     color: #8be9fd;
     padding: 15px;
-    border-radius: 15px;
+    border-radius: 5px;
     margin-bottom: 25px;
     font-weight: 600;
     box-shadow: 0 2px 8px #8be9fd22;
-  }
-
-  .inventory-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-  }
-
-  .inventory-item {
-    background: rgba(139, 233, 253, 0.05);
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 4px 16px #8be9fd22;
-    transition: transform 0.3s, box-shadow 0.3s;
-  }
-
-  .inventory-item:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 6px 20px #8be9fd44;
-  }
-
-  .inventory-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.4em;
-    font-weight: 700;
-    color: #8be9fd;
-    margin-bottom: 15px;
-  }
-
-  .inventory-item-desc {
-    font-size: 1.1em;
-    color: #b8b8ff;
-    margin-bottom: 15px;
-  }
-
-  .inventory-item-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .inventory-sell-btn {
-    background: linear-gradient(90deg, #8be9fd 0%, #2a2b3d 100%);
-    color: #23243a;
-    border: none;
-    border-radius: 15px;
-    padding: 12px 28px;
-    font-weight: 700;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
-    box-shadow: 0 4px 12px #8be9fd33;
-  }
-
-  .inventory-sell-btn:hover {
-    background: #ffd700;
-    color: #23243a;
-    box-shadow: 0 6px 16px #ffd70055;
-  }
-
-  .inventory-empty {
+    text-align: center;
+}
+.inventory-empty {
     font-size: 1.2em;
     color: #b8b8ff;
     font-weight: 600;
     margin-top: 20px;
-  }
-
-  @media (max-width: 600px) {
-    .inventory-container {
-      padding: 20px;
+    text-align: center;
+}
+@media (max-width: 600px) {
+    .inventory-header, .inventory-list-container {
+        padding: 1rem;
     }
-
-    .inventory-title {
-      font-size: 2em;
+    .inventory-header h1 {
+        font-size: 2em;
     }
-
-    .inventory-item {
-      padding: 20px;
+    .inventory-table th, .inventory-table td {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.95em;
     }
-
-    .inventory-item-header {
-      font-size: 1.2em;
-    }
-
-    .inventory-sell-btn {
-      padding: 10px 20px;
-      font-size: 1em;
-    }
-  }
+}
 </style>
 
-<div class="inventory-container">
-  <h1 class="inventory-title"><i class="fas fa-boxes"></i> Inventory</h1>
-  <span class="inventory-money">Your money: ${{ character.money }}</span>
-  {% if message %}
-    <div class="inventory-message">{{ message }}</div>
-  {% endif %}
+<div class="inventory-header">
+    <h1><i class="fas fa-boxes"></i> Inventory</h1>
+</div>
+<div class="inventory-list-container">
+    <span class="inventory-money">Your money: ${{ character.money }}</span>
+    {% if message %}
+      <div class="inventory-message">{{ message }}</div>
+    {% endif %}
 
-  {% if not inventory_items %}
-    <p class="inventory-empty">You have no items in your inventory.</p>
-  {% else %}
-    <ul class="inventory-list">
-      {% for inv in inventory_items %}
-        <li class="inventory-item">
-          <div class="inventory-item-header">
-            <span>{{ inv.item.name }}</span>
-            <span>x{{ inv.quantity }}</span>
-          </div>
-          {% if inv.item.description %}
-            <div class="inventory-item-desc">{{ inv.item.description }}</div>
-          {% endif %}
-          <div class="inventory-item-actions">
-            {% if inv.item.is_gun and inv.item.gun_id %}
-              <form action="{{ url_for('equip_gun', gun_id=inv.item.gun_id) }}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-primary btn-sm"
-                  {% if character.equipped_gun_id == inv.item.gun_id %}disabled{% endif %}>
-                  {% if character.equipped_gun_id == inv.item.gun_id %}Equipped{% else %}Equip{% endif %}
-                </button>
-              </form>
-            {% endif %}
-            <!-- Add other item actions here if needed -->
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% if not inventory_items %}
+      <p class="inventory-empty">You have no items in your inventory.</p>
+    {% else %}
+      <table class="inventory-table">
+        <tr>
+          <th style="width:30%;">Item</th>
+          <th style="width:40%;">Description</th>
+          <th style="width:10%;">Quantity</th>
+          <th style="width:20%;">Actions</th>
+        </tr>
+        {% for inv in inventory_items %}
+        <tr>
+          <td class="inventory-item-name">{{ inv.item.name }}</td>
+          <td class="inventory-item-desc">{{ inv.item.description }}</td>
+          <td class="inventory-item-qty">x{{ inv.quantity }}</td>
+          <td>
+            <div class="inventory-item-actions">
+              {% if inv.item.is_gun and inv.item.gun_id %}
+                <form action="{{ url_for('equip_gun', gun_id=inv.item.gun_id) }}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-primary btn-sm"
+                    {% if character.equipped_gun_id == inv.item.gun_id %}disabled{% endif %}>
+                    {% if character.equipped_gun_id == inv.item.gun_id %}Equipped{% else %}Equip{% endif %}
+                  </button>
+                </form>
+              {% endif %}
+              <!-- Add other item actions here if needed -->
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
 </div>
 {% endblock %}

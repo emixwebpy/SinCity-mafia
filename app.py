@@ -45,12 +45,12 @@ def allowed_file(filename):
 db = SQLAlchemy(app)
 with app.app_context():
     db.create_all()
-migrate = Migrate(app, db)
+
 DATABASE = 'users.db'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
-
+migrate = Migrate(app, db)
 # Admin Authentication -------------------------------
 def admin_required(f):
     from functools import wraps
@@ -350,12 +350,25 @@ def admin_add_dealer():
     if request.method == 'POST':
         city = request.form.get('city')
         drug_id = int(request.form.get('drug_id'))
-        price = int(request.form.get('price'))
-        stock = int(request.form.get('stock'))
+        price = request.form.get('price')
+        stock = request.form.get('stock', 10)
+
+        # Validate price
+        try:
+            price = int(price)
+        except (TypeError, ValueError):
+            flash("Price is required and must be a number.", "danger")
+            return redirect(url_for('admin.admin_add_dealer'))
+
+        try:
+            stock = int(stock)
+        except (TypeError, ValueError):
+            stock = 10
+
         db.session.add(DrugDealer(city=city, drug_id=drug_id, price=price, stock=stock))
         db.session.commit()
         flash("Dealer added!", "success")
-        return redirect(url_for('admin.admin_dealers'))
+        return redirect(url_for('admin.admin_drugs_dashboard'))
     return render_template('admin/add_dealer.html', drugs=drugs, cities=CITIES)
 
 @admin_bp.route('/dealers/<int:dealer_id>/delete', methods=['POST'])
@@ -1517,6 +1530,7 @@ def invite_to_crew():
 
     return render_template('invite_to_crew.html', crew=crew)
 
+# ...existing code...
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
 def create_crime():
@@ -1541,21 +1555,14 @@ def create_crime():
 
         invite_code = generate_invite_code()
 
-        # Defensive: Ensure character is committed and exists in DB
-        if not character.id or not Character.query.get(character.id):
-            db.session.add(character)
-            db.session.commit()
-            # Re-query to ensure it's in DB
-            character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-            if not character or not character.id:
-                flash("Character not found in database.", "danger")
-                return redirect(url_for('dashboard'))
-
-        # Double-check: Character must exist in DB
-        if not Character.query.get(character.id):
+        # --- Double-check character existence in DB ---
+        db.session.refresh(character)  # Refresh from DB
+        char_in_db = Character.query.get(character.id)
+        if not char_in_db:
             flash("Character does not exist in the database.", "danger")
             return redirect(url_for('dashboard'))
 
+        # --- Now create the crime group ---
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
@@ -1568,6 +1575,7 @@ def create_crime():
         return redirect(url_for('crime_group'))
 
     return render_template('create_crime.html')
+# ...existing code...
 
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
@@ -1788,7 +1796,7 @@ def earn():
 
     now = datetime.utcnow()
     if hasattr(character, 'last_earned') and character.last_earned:
-        cooldown = timedelta(seconds=60)  # 1 minute cooldown
+        cooldown = timedelta(seconds=random.randint(60, 240)) # Random cooldown between 30 and 120 seconds
         if now - character.last_earned < cooldown:
             seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
             flash(f'Cooldown active. Please wait {seconds_remaining} seconds.', 'warning')
@@ -1797,17 +1805,25 @@ def earn():
     # Jail chance: 10% chance to be sent to jail for 1-5 minutes
     jail_chance = 0.50
     if random.random() < jail_chance:
-        jail_minutes = random.randint(1, 5)
+        jail_minutes = random.randint(2, 15)
         character.in_jail = True
         character.jail_until = now + timedelta(minutes=jail_minutes)
         character.last_earned = now
         db.session.commit()
         flash(f"You got caught and are in jail for {jail_minutes} minutes!", "danger")
         return redirect(url_for('dashboard'))
+    
+    # Premium bonus
+    
+    money_min, money_max = 5000, 150000
+    xp_min, xp_max = 100, 500
+    if current_user.premium and current_user.premium_until and current_user.premium_until > now:
+        money_min, money_max = int(money_min * 1.5), int(money_max * 1.5)
+        xp_min, xp_max = int(xp_min * 1.5), int(xp_max * 1.5)
+        cooldown = timedelta(seconds=random.randint(30, 120))  # Random cooldown between 30 and 120 seconds
 
-    # Earn logic
-    earned_money = random.randint(5000, 150000)
-    earned_xp = random.randint(100, 500)
+    earned_money = random.randint(money_min, money_max)
+    earned_xp = random.randint(xp_min, xp_max)
     character.money += earned_money
     character.xp += earned_xp
     character.last_earned = now
@@ -1842,14 +1858,20 @@ def user_stats():
 @app.route('/earn_status')
 @login_required
 def earn_status():
-    cooldown = timedelta(minutes=2, seconds=10)
+    # Use the same cooldown logic as in the /earn route
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-
     if not character:
         return jsonify({'seconds_remaining': 0})
 
+    now = datetime.utcnow()
+    # Default cooldown
+    cooldown = timedelta(seconds=60)
+    # Premium cooldown
+    if current_user.premium and current_user.premium_until and current_user.premium_until > now:
+        cooldown = timedelta(seconds=30)
+
     if character.last_earned:
-        elapsed = datetime.utcnow() - character.last_earned
+        elapsed = now - character.last_earned
         remaining = cooldown - elapsed
         seconds_remaining = max(0, int(remaining.total_seconds()))
     else:
@@ -1921,7 +1943,13 @@ def send_public_message():
     db.session.add(chat_msg)
     db.session.commit()
     return jsonify(success=True)
-
+@app.route('/drug_dashboard')
+@login_required
+def drug_dashboard():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    dealers = DrugDealer.query.filter_by(city=character.city).all()
+    inventory = CharacterDrugInventory.query.filter_by(character_id=character.id).all()
+    return render_template('drug_dashboard.html', character=character, dealers=dealers, inventory=inventory)
 @app.route('/public_messages')
 @login_required
 def public_messages():
@@ -1960,7 +1988,10 @@ def inject_current_character():
     return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
 
-
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.utcnow}
 
 @app.cli.command("init-db")
 def init_db():
@@ -1981,16 +2012,18 @@ def create_admin():
         user.is_admin = False
         db.session.commit()
         print("Admin user updated.")
+def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=500):
+    """Randomize prices and stock for all DrugDealers."""
+    dealers = DrugDealer.query.all()
+    for dealer in dealers:
+        dealer.price = random.randint(min_price, max_price)
+        dealer.stock = random.randint(min_stock, max_stock)
+    db.session.commit()
 
-
-def randomize_drug_prices(interval_minutes=10):
+def randomize_drug_prices(interval_minutes=random.randint(5, 10)):
     with app.app_context():
         while True:
-            dealers = DrugDealer.query.all()
-            for dealer in dealers:
-                # Set a random price between 50 and 500 (adjust as needed)
-                dealer.price = random.randint(50, 500)
-            db.session.commit()
+            randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=50)
             time.sleep(interval_minutes * 60)
 
 # Start the background thread when the app starts
@@ -2000,6 +2033,7 @@ def start_price_randomizer():
 
 start_price_randomizer()
 
+
 def get_online_users():
     cutoff = datetime.utcnow() - timedelta(seconds=1)
     # Real users online
@@ -2008,6 +2042,12 @@ def get_online_users():
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     # Optionally, create a fake User object for each NPC if your template expects User
     return real_online, npcs
+
+@app.cli.command("randomize-drug-prices")
+def randomize_drug_prices_command():
+    """Randomize all drug dealer prices (manual trigger)."""
+    randomize_all_drug_prices()
+    print("Drug dealer prices randomized.")
 
 @app.cli.command("init-db")
 def init_db():

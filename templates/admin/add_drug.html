@@ -1,19 +1,91 @@
 {% extends "base.html" %}
 {% block title %}Add Drug{% endblock %}
 {% block content %}
-<h2>Add Drug</h2>
-<form method="post">
-    <label for="drug-name">Drug Name:</label>
-    <input id="drug-name" type="text" name="name" placeholder="Drug Name" required>
-    <label for="drug-type">Drug Type:</label>
-    <select id="drug-type" name="type" required>
-        <option value="" disabled selected>Select type</option>
-        <option value="Stimulant">Stimulant</option>
-        <option value="Opiate">Opiate</option>
-        <option value="Hallucinogen">Hallucinogen</option>
-        <option value="Depressant">Depressant</option>
-        <option value="Other">Other</option>
-    </select>
-    <button type="submit" class="btn btn-success">Add</button>
-</form>
+<style>
+.add-drug-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.add-drug-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.add-drug-form-container {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+.add-drug-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 1rem;
+    display: block;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+.add-drug-form input,
+.add-drug-form select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    margin-top: 0.3rem;
+    margin-bottom: 1.2rem;
+    border-radius: 6px;
+    border: none;
+    background: #282a36;
+    color: #f5f6fa;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px #8be9fd11;
+    outline: none;
+    transition: background 0.2s;
+}
+.add-drug-form input:focus,
+.add-drug-form select:focus {
+    background: #34355b;
+}
+.btn-success {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+    text-decoration: none;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-success:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="add-drug-header">
+    <h1>Add Drug</h1>
+</div>
+<div class="add-drug-form-container">
+    <form method="post" class="add-drug-form">
+        <label for="drug-name">Drug Name:</label>
+        <input id="drug-name" type="text" name="name" placeholder="Drug Name" required>
+        <label for="drug-type">Drug Type:</label>
+        <select id="drug-type" name="type" required>
+            <option value="" disabled selected>Select type</option>
+            <option value="Stimulant">Stimulant</option>
+            <option value="Opiate">Opiate</option>
+            <option value="Hallucinogen">Hallucinogen</option>
+            <option value="Depressant">Depressant</option>
+            <option value="Other">Other</option>
+        </select>
+        <button type="submit" class="btn btn-success">Add</button>
+    </form>
+</div>
 {% endblock %}

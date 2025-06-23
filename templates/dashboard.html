@@ -88,12 +88,12 @@
     border-radius: 6px;
     font-weight: 700;
     padding: 12px 32px;
-    background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
-    color: #23243a;
+    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
+    color: #ffd700;
     border: none;
     font-size: 1.1em;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    box-shadow: 0 1px 8px #8be9fd22;
+    box-shadow: 0px 0px 10px 0px #ffd700;
     margin-bottom: 2px;
     text-decoration: none;
     display: flex;
@@ -101,9 +101,9 @@
     gap: 10px;
 }
 .dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
-    background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
-    color: #23243a;
-    box-shadow: 0 2px 10px #ffd70044;
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    color: #ffd700;
+    box-shadow: 0 0px 5px #ffd700;
 }
 .dashboard-section {
     margin: 38px 0 0 0;
@@ -253,8 +253,8 @@
                 <span class="dashboard-user-avatar"><i class="fas fa-user"></i></span>
             {% endif %}
             <a href="{{ url_for('profile_by_id', char_id=char.id) }}">{{ char.name }}</a>
-            {% if char.master and char.master.is_premium %}
-                <span class="badge-premium"><i class="fas fa-crown"></i> Premium</span>
+            {% if user.premium and user.premium_until and user.premium_until > now() %}
+                <span class="badge-premium"><i class="fas fa-crown"></i></span>
             {% endif %}
         </li>
         {% endfor %}

@@ -1,24 +1,96 @@
 {% extends "base.html" %}
 {% block title %}Add Dealer{% endblock %}
 {% block content %}
-<h2>Add Drug Dealer</h2>
-<form method="post">
-    <label>City:</label>
-    <select name="city" required>
-        {% for city in cities %}
-        <option value="{{ city }}">{{ city }}</option>
-        {% endfor %}
-    </select>
-    <label>Drug:</label>
-    <select name="drug_id" required>
-        {% for drug in drugs %}
-        <option value="{{ drug.id }}">{{ drug.name }}</option>
-        {% endfor %}
-    </select>
-    <label>Price:</label>
-    <input type="number" name="price" min="1" required>
-    <label>Stock:</label>
-    <input type="number" name="stock" min="0" required>
-    <button type="submit" class="btn btn-success">Add Dealer</button>
-</form>
+<style>
+.add-dealer-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.add-dealer-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.add-dealer-form-container {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+.add-dealer-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 1rem;
+    display: block;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+.add-dealer-form input,
+.add-dealer-form select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    margin-top: 0.3rem;
+    margin-bottom: 1.2rem;
+    border-radius: 6px;
+    border: none;
+    background: #282a36;
+    color: #f5f6fa;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px #8be9fd11;
+    outline: none;
+    transition: background 0.2s;
+}
+.add-dealer-form input:focus,
+.add-dealer-form select:focus {
+    background: #34355b;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #8be9fd 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+    text-decoration: none;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #8be9fd 100%);
+    color: #232526;
+}
+</style>
+<div class="add-dealer-header">
+    <h1>Add Drug Dealer</h1>
+</div>
+<div class="add-dealer-form-container">
+    <form method="post" class="add-dealer-form">
+        <label>City:</label>
+        <select name="city" required>
+            {% for city in cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+        </select>
+        <label>Drug:</label>
+        <select name="drug_id" required>
+            {% for drug in drugs %}
+            <option value="{{ drug.id }}">{{ drug.name }}</option>
+            {% endfor %}
+        </select>
+        <label>Price:</label>
+        <input type="number" name="price" required min="1">
+        <label>Stock:</label>
+        <input type="number" name="stock" value="10" min="0">
+        <button type="submit" class="btn btn-primary">Add Dealer</button>
+    </form>
+</div>
 {% endblock %}

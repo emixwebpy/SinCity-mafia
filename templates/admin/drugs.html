@@ -1,20 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Admin - Drugs{% endblock %}
 {% block content %}
-<h2>Drugs</h2>
-<a href="{{ url_for('admin.admin_add_drug') }}" class="btn btn-primary">Add Drug</a>
-<table class="table">
-    <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
-    {% for drug in drugs %}
-    <tr>
-        <td>{{ drug.id }}</td>
-        <td>{{ drug.name }}</td>
-        <td>
-            <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" style="display:inline;">
-                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this drug?');">Delete</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<style>
+.drugs-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.drugs-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.drugs-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.drug-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.drug-table th, .drug-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.drug-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.drug-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.drug-table tr:hover {
+    background: #34355b;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+</style>
+<div class="drugs-header">
+    <h1>All Drugs</h1>
+</div>
+<div class="drugs-list">
+    <a href="{{ url_for('admin.admin_add_drug') }}" class="btn btn-primary" style="margin-bottom: 1rem;">Add Drug</a>
+    <table class="drug-table">
+        <tr>
+            <th style="width:10%;">ID</th>
+            <th style="width:60%;">Name</th>
+            <th style="width:30%;">Actions</th>
+        </tr>
+        {% for drug in drugs %}
+        <tr>
+            <td>{{ drug.id }}</td>
+            <td>{{ drug.name }}</td>
+            <td>
+                <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" style="display:inline;">
+                    <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this drug?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" style="color:#b8b8ff;">No drugs available.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}
