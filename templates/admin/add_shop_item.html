@@ -4,21 +4,22 @@
 <div class="dashboard-hero">
     <h2 style="color:#ffd700;">Add Item to Shop</h2>
     <form method="POST">
+        {{ form.hidden_tag() }}
         <label>Name:</label>
-        <input type="text" name="name" required><br>
+        {{ form.name(class_="form-control", required=True) }}<br>
         <label>Description:</label>
-        <input type="text" name="description"><br>
+        {{ form.description(class_="form-control") }}<br>
         <label>Price:</label>
-        <input type="number" name="price" min="1" required><br>
+        {{ form.price(class_="form-control", min=1, required=True) }}<br>
         <label>Stock:</label>
-        <input type="number" name="stock" min="0" required><br>
+        {{ form.stock(class_="form-control", min=0, required=True) }}<br>
         <label>Is Gun:</label>
-        <input type="checkbox" name="is_gun" value="1" id="is_gun_cb" onchange="document.getElementById('damage_row').style.display=this.checked?'block':'none';"><br>
+        {{ form.is_gun(class_="form-check-input", id="is_gun_cb", onchange="document.getElementById('damage_row').style.display=this.checked?'block':'none';") }}<br>
         <div id="damage_row" style="display:none;">
             <label>Damage:</label>
-            <input type="number" name="damage" min="0" value="0"><br>
+            {{ form.damage(class_="form-control", min=0, value=0) }}<br>
         </div>
-        <button type="submit" class="btn btn-primary">Add Item</button>
+        {{ form.submit(class_="btn btn-primary") }}
     </form>
 </div>
 <script>

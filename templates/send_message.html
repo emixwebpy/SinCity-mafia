@@ -3,8 +3,8 @@
 {% block content %}
 <h2>Send Message to {{ recipient.username }}</h2>
 <form method="post">
-    {{ csrf_token() }}
-    <textarea name="content" rows="5" cols="40" required></textarea><br>
-    <button type="submit" class="btn btn-primary">Send</button>
+    {{ form.hidden_tag() }}
+    {{ form.content(class_="form-control", rows="5", cols="40", required=True) }}<br>
+    {{ form.submit(class_="btn btn-primary") }}
 </form>
 {% endblock %}

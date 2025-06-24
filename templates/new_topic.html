@@ -1,13 +1,73 @@
 {% extends "base.html" %}
 {% block title %}New Topic{% endblock %}
 {% block content %}
-<div class="dashboard-hero">
-  <h2 style="color:#ffd700;">New Topic in {{ forum.title }}</h2>
-  <form method="POST">
-    {{ form.hidden_tag() }}
-    {{ form.title(class_="form-control", placeholder="Topic Title", style="width:100%;margin-bottom:12px;") }}
-    {{ form.content(class_="form-control", placeholder="Content", style="width:100%;height:120px;margin-bottom:12px;") }}
-    {{ form.submit(class_="btn btn-primary") }}
-  </form>
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.new-topic-form {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 1.5rem 2rem;
+    width: 75%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 900px; /* Increased width */
+    margin: 0 auto 2rem auto;
+}
+.form-control {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.2rem;
+    border-radius: 8px;
+    border: none;
+    background: #181824;
+    color: #f5f6fa;
+    font-size: 1.1em;
+    box-shadow: 0 1px 5px #8be9fd22;
+    outline: none;
+    transition: background 0.18s, color 0.18s;
+}
+.form-control:focus {
+    background: #23243a;
+    color: #ffd700;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: background 0.2s;
+    box-shadow: 0 1px 5px #8be9fd22;
+    cursor: pointer;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="forums-header">
+    <h1>New Topic in {{ forum.title }}</h1>
+</div>
+<div class="new-topic-form">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.title(class_="form-control", placeholder="Topic Title") }}
+        {{ form.content(class_="form-control", placeholder="Content", style="height:180px; font-size:1.15em;") }}
+        {{ form.submit(class_="btn btn-primary") }}
+    </form>
 </div>
 {% endblock %}

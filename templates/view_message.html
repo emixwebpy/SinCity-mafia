@@ -11,50 +11,63 @@
 }
 .message-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
+    font-size: 2.2rem;
     margin-bottom: 0.5rem;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
+    text-align: center;
 }
-.message-view-container {
+.message-posts {
     background: #23243a;
     border-radius: 0 0 12px 12px;
     padding: 1.5rem 2rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    width: 100%;
     max-width: 700px;
     margin: 0 auto;
 }
-.message-table {
-    width: 100%;
-    color: #f5f6fa;
-    border-collapse: separate;
-    border-spacing: 0;
+.message-posts ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
-.message-table th, .message-table td {
-    padding: 1rem 1rem;
-    text-align: left;
-    vertical-align: middle;
-}
-.message-table th {
-    background: #181824;
-    color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-    width: 30%;
-}
-.message-table tr {
+.message-posts li {
     background: #282a36;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
     transition: background 0.2s;
 }
-.message-table tr:hover {
+.message-posts li:hover {
     background: #34355b;
 }
-.message-content {
-    color: #b8b8ff;
-    font-size: 1.1rem;
+.message-post-meta {
+    color: #8be9fd;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+.message-post-content {
+    color: #f5f6fa;
+    font-size: 1.08rem;
+    margin-bottom: 0.2rem;
     white-space: pre-line;
+}
+.message-reply-form textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1.5px solid #8be9fd44;
+    background: rgba(139,233,253,0.08);
+    color: #f5f6fa;
+    font-size: 1.08em;
+    font-family: "geo", sans-serif;
+    outline: none;
+    padding: 12px;
+    transition: border 0.18s, background 0.18s;
+}
+.message-reply-form textarea:focus {
+    border: 1.5px solid #8be9fd;
+    background: rgba(139,233,253,0.13);
 }
 .btn-primary {
     background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
@@ -63,7 +76,7 @@
     padding: 0.6rem 1.2rem;
     border-radius: 6px;
     font-weight: bold;
-    margin-bottom: 0;
+    margin-bottom: 1.2rem;
     transition: background 0.2s;
     text-decoration: none;
 }
@@ -72,26 +85,34 @@
     color: #232526;
 }
 </style>
+
 <div class="message-header">
     <h1>Private Message</h1>
 </div>
-<div class="message-view-container">
-    <table class="message-table">
-        <tr>
-            <th>From</th>
-            <td>{{ msg.sender.username }}</td>
-        </tr>
-        <tr>
-            <th>Sent</th>
-            <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        </tr>
-        <tr>
-            <th>Message</th>
-            <td class="message-content">{{ msg.content }}</td>
-        </tr>
-    </table>
+<div class="message-posts">
+    <ul>
+        <li>
+            <div class="message-post-meta">
+                From
+                <span style="color:#8be9fd;">
+                    {{ char_map[msg.sender_id] }}
+                </span>
+                at {{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}
+            </div>
+            <div class="message-post-content">
+                {{ msg.content }}
+            </div>
+        </li>
+    </ul>
     <div style="margin-top: 1.5rem;">
         <a href="{{ url_for('inbox') }}" class="btn btn-primary">Back to Inbox</a>
     </div>
+    {% if current_user.id != msg.sender_id %}
+    <form method="POST" action="{{ url_for('send_message', user_id=msg.sender_id) }}" class="message-reply-form" style="margin-top:2rem;">
+        {{ form.hidden_tag() }}
+        {{ form.content(class_="form-control", placeholder="Type your reply...", rows="4", required=True) }}
+        {{ form.submit(class_="btn btn-primary", value="Send Reply") }}
+    </form>
+    {% endif %}
 </div>
 {% endblock %}

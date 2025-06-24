@@ -33,9 +33,9 @@
 .casino-tab {
     background: #181824;
     color: #ffd700;
-    border: 2px solid #ffd70055;
-    border-radius: 8px 8px 0 0;
-    padding: 0.7em 2em;
+    
+    border-radius: 8px;
+    padding: 2px;
     font-size: 1.1em;
     font-weight: bold;
     cursor: pointer;
@@ -123,7 +123,7 @@ input[type="number"], select {
     text-align: center;
 }
 input[type="number"]:focus, select:focus {
-    border: 2px solid #ffb347;
+    border: 1px solid #ffb347;
 }
 .casino-cards {
     display: flex;
@@ -180,16 +180,75 @@ input[type="number"]:focus, select:focus {
         font-size: 1.1em;
     }
 }
+.casino-items {
+    margin: 2em auto 1em auto;
+    max-width: 700px;
+    background: #23243a;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    padding: 1.5em 2em;
+}
+.casino-items-title {
+    color: #ffd700;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 0.7em;
+    text-align: center;
+    letter-spacing: 1px;
+}
+.casino-item-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2em;
+    justify-content: center;
+    margin-bottom: 0.5em;
+}
+.casino-item {
+    background: #181824;
+    border: 2px solid #ffd70055;
+    border-radius: 8px;
+    padding: 10px 10px;
+    color: #ffd700;
+    font-size: 1.1em;
+    text-align: center;
+    min-width: 120px;
+    box-shadow: 0 2px 8px #ffd70022;
+}
+.casino-item .emoji {
+    font-size: 1.5em;
+    display: block;
+    margin-bottom: 0.3em;
+}
 </style>
 
 <div class="forums-header">
     <h1>Casino</h1>
 </div>
+<div class="casino-items">
+    <div class="casino-items-title">Casino Items</div>
+    <div class="casino-item-list">
+        <a href="{{ url_for('casino', table='blackjack') }}" class="casino-tab{% if table == 'blackjack' %} active{% endif %}">
+        <div href="{{ url_for('casino', table='blackjack') }}" class="casino-item">
+            <span class="emoji">🂡🂱🃁🃑</span>
+            Blackjack Cards
+        </div>
+        </a>
+        <a href="{{ url_for('casino', table='coinflip') }}" class="casino-tab{% if table == 'coinflip' %} active{% endif %}">
+        <div href="{{ url_for('casino', table='coinflip') }}" class="casino-item">
+            <span class="emoji">🪙</span>
+            Coin for Coin Flip
+        </div>
+        </a>
+        <a href="{{ url_for('casino', table='roulette') }}" class="casino-tab{% if table == 'roulette' %} active{% endif %}">
+        <div class="casino-item">
+            <span class="emoji">🎯</span>
+            Roulette Wheel
+        </div>
+        </a>
 <div class="forums-list">
     <div class="casino-tabs">
-        <a href="{{ url_for('casino', table='blackjack') }}" class="casino-tab{% if table == 'blackjack' %} active{% endif %}">Blackjack</a>
-        <a href="{{ url_for('casino', table='coinflip') }}" class="casino-tab{% if table == 'coinflip' %} active{% endif %}">Coin Flip</a>
-        <a href="{{ url_for('casino', table='roulette') }}" class="casino-tab{% if table == 'roulette' %} active{% endif %}">Roulette</a>
+        
+        
     </div>
     <table class="forum-table">
         <tr>

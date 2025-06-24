@@ -96,17 +96,24 @@
     <ul>
         {% for post in posts %}
             <li>
-                <div class="topic-post-author">
-                    {{ char_map[post.author_id] }} &middot; {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                <div class="post-meta">
+                    Posted by
+                    <a href="{{ url_for('profile_by_id', char_id=post.author_id) }}" style="color:#8be9fd;">
+                        {{ char_map[post.author_id] }}
+                    </a>
+                    at {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
                 </div>
-                <div class="topic-post-content">{{ post.content }}</div>
+                <div class="post-content">
+                    {{ post.html_content|safe }}
+                </div>
             </li>
         {% endfor %}
     </ul>
     {% if current_user.is_authenticated %}
     <form method="POST" class="topic-reply-form">
-        <textarea name="content" placeholder="Reply..." required></textarea>
-        <button type="submit" class="btn btn-primary">Reply</button>
+        {{ form.hidden_tag() }}
+        {{ form.content(class_="form-control", placeholder="Reply...", rows="4", required=True) }}
+        {{ form.submit(class_="btn btn-primary") }}
     </form>
     {% endif %}
 </div>

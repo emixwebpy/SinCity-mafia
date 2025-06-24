@@ -95,10 +95,6 @@
 
 <div class="drug-dashboard-header">
     <h2><i class="fas fa-capsules"></i> Drug Market in {{ character.city }}</h2>
-    <div class="drug-dashboard-actions">
-        <a href="{{ url_for('drug_dealer') }}"><i class="fas fa-arrow-circle-down"></i> Buy Drugs</a>
-        <a href="{{ url_for('sell_drugs') }}"><i class="fas fa-arrow-circle-up"></i> Sell Drugs</a>
-    </div>
 </div>
 <div class="drug-dashboard-container">
     <div class="drug-dashboard-section">
@@ -108,16 +104,24 @@
                 <th>Drug</th>
                 <th>Type</th>
                 <th>Quantity</th>
+                <th>Sell</th>
             </tr>
             {% for inv in inventory %}
             <tr>
                 <td>{{ inv.drug.name }}</td>
                 <td>{{ inv.drug.type }}</td>
                 <td>{{ inv.quantity }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('sell_drug_form', drug_id=inv.drug.id) }}" style="display:inline;">
+                        {{ sell_forms[inv.drug.id].hidden_tag() }}
+                        {{ sell_forms[inv.drug.id].quantity(class_="form-control", min=1, max=inv.quantity, value=1, style="width:60px;display:inline-block;", required=True) }}
+                        {{ sell_forms[inv.drug.id].submit(class_="btn btn-danger btn-sm") }}
+                    </form>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="3" style="color:#b8b8ff;">No drugs in inventory.</td>
+                <td colspan="4" style="color:#b8b8ff;">No drugs in inventory.</td>
             </tr>
             {% endfor %}
         </table>
@@ -130,6 +134,7 @@
                 <th>Type</th>
                 <th>Price</th>
                 <th>Stock</th>
+                <th>Buy</th>
             </tr>
             {% for dealer in dealers %}
             <tr>
@@ -137,10 +142,17 @@
                 <td>{{ dealer.drug.type }}</td>
                 <td>${{ dealer.price }}</td>
                 <td>{{ dealer.stock }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('buy_drug_form', dealer_id=dealer.id) }}" style="display:inline;">
+                        {{ buy_forms[dealer.id].hidden_tag() }}
+                        {{ buy_forms[dealer.id].quantity(class_="form-control", min=1, max=dealer.stock, value=1, style="width:60px;display:inline-block;", required=True) }}
+                        {{ buy_forms[dealer.id].submit(class_="btn btn-success btn-sm") }}
+                    </form>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="4" style="color:#b8b8ff;">No dealers in this city.</td>
+                <td colspan="5" style="color:#b8b8ff;">No dealers in this city.</td>
             </tr>
             {% endfor %}
         </table>

@@ -4,7 +4,7 @@ from calendar import c
 from doctest import master
 from email import message
 from sys import maxsize
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g, Blueprint
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g, Blueprint, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_admin.contrib.sqla import ModelView
@@ -22,7 +22,7 @@ from sqlalchemy import Null, true
 from operator import is_
 from email.mime import base
 import sqlite3, string, logging, random,threading, os, time
-
+from markupsafe import Markup, escape
 CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
 
 log = logging.getLogger('werkzeug')
@@ -192,7 +192,8 @@ def admin_shop():
 @admin_bp.route('/shop/add', methods=['GET', 'POST'])
 @admin_required
 def admin_add_shop_item():
-    if request.method == 'POST':
+    form = AddShopItemForm()
+    if form.validate_on_submit():
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         price = int(request.form.get('price', 0))
@@ -216,14 +217,15 @@ def admin_add_shop_item():
         db.session.commit()
         flash("Shop item added!", "success")
         return redirect(url_for('admin.admin_shop'))
-    return render_template('admin/add_shop_item.html')
+    return render_template('admin/add_shop_item.html', form=form)
 
 # --- Admin Edit Shop Item ---
 @admin_bp.route('/shop/<int:item_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_shop_item(item_id):
     item = ShopItem.query.get_or_404(item_id)
-    if request.method == 'POST':
+    form = EditShopItemForm(obj=item)
+    if form.validate_on_submit():
         item.name = request.form.get('name', item.name)
         item.description = request.form.get('description', item.description)
         item.price = int(request.form.get('price', item.price))
@@ -233,7 +235,7 @@ def admin_edit_shop_item(item_id):
         db.session.commit()
         flash("Shop item updated.", "success")
         return redirect(url_for('admin.admin_shop'))
-    return render_template('admin/edit_shop_item.html', item=item)
+    return render_template('admin/edit_shop_item.html', form=form, item=item)
 
 # --- Admin Delete Shop Item ---
 @admin_bp.route('/shop/<int:item_id>/delete', methods=['POST'])
@@ -383,6 +385,18 @@ def admin_add_dealer():
         drugs=Drug.query.all(),
         cities=CITIES
     )
+@admin_bp.route('/delete_drug/<int:drug_id>', methods=['POST'])
+@admin_required
+def admin_delete_drug(drug_id):
+    drug = Drug.query.get_or_404(drug_id)
+    # Optionally: delete all dealers for this drug
+    DrugDealer.query.filter_by(drug_id=drug.id).delete()
+    # Optionally: delete all inventory for this drug
+    CharacterDrugInventory.query.filter_by(drug_id=drug.id).delete()
+    db.session.delete(drug)
+    db.session.commit()
+    flash("Drug deleted.", "success")
+    return redirect(url_for('admin.admin_drugs_dashboard'))
 
 @admin_bp.route('/dealers/<int:dealer_id>/delete', methods=['POST'])
 @admin_required
@@ -448,7 +462,32 @@ def check_character_alive():
             if request.endpoint not in ('create_character', 'logout', 'static'):
                 return redirect(url_for('create_character'))
 
-#flask-login user loader
+#Flask Forms -------------------------------
+class EditShopItemForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    description = StringField('Description', validators=[Optional()])
+    price = IntegerField('Price', validators=[DataRequired()])
+    stock = IntegerField('Stock', validators=[DataRequired()])
+    is_gun = BooleanField('Is Gun')
+    damage = IntegerField('Damage', default=0, validators=[Optional()])
+    submit = SubmitField('Save Changes')
+class AddShopItemForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    description = StringField('Description', validators=[Optional()])
+    price = IntegerField('Price', validators=[DataRequired()])
+    stock = IntegerField('Stock', validators=[DataRequired()])
+    is_gun = BooleanField('Is Gun')
+    damage = IntegerField('Damage', default=0, validators=[Optional()])
+    submit = SubmitField('Add Item')
+class ReplyForm(FlaskForm):
+    content = TextAreaField('Reply', validators=[DataRequired()])
+    submit = SubmitField('Reply')
+class BuyDrugForm(FlaskForm):
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Buy')
+class SellDrugForm(FlaskForm):
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Sell')
 class DeleteForm(FlaskForm):
     submit = SubmitField('Delete')
 class NewTopicForm(FlaskForm):
@@ -525,8 +564,53 @@ class JoinCrimeForm(FlaskForm):
     submit = SubmitField('Join')
 class CreateCrimeForm(FlaskForm):
     submit = SubmitField('Create Group')
-
-
+class UpgradeForm(FlaskForm):
+    submit = SubmitField('Upgrade')
+class EarnForm(FlaskForm):
+    submit = SubmitField('Earn')
+class CharacterEditForm(SecureForm):
+    name = StringField('Name')
+    health = IntegerField('Health')
+    money = IntegerField('Money')
+    level = IntegerField('Level')
+    xp = IntegerField('XP')
+    is_alive = BooleanField('Is Alive', default=True)
+    profile_image = StringField('Profile Image URL')
+class DeleteCrewForm(FlaskForm):
+    submit = SubmitField('Delete')
+class UserEditForm(SecureForm):
+    username = StringField('Username')
+    password = PasswordField('Password')
+    crew_id = StringField('Crew ID')
+    is_admin = BooleanField('Is Admin')
+    premium = BooleanField('Premium User')
+    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
+class InviteForm(FlaskForm):
+    submit = SubmitField('Invite Member')
+class LeaveForm(FlaskForm):
+    submit = SubmitField('Leave Crew')
+class RoleForm(FlaskForm):
+    new_role = SelectField('Role', choices=[
+        ('member', 'Member'),
+        ('left_hand', 'Left-Hand'),
+        ('right_hand', 'Right-Hand'),
+        ('leader', 'Leader')
+    ])
+    submit = SubmitField('Update')
+class BlackjackForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Play Blackjack')
+class CoinflipForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    coin_choice = SelectField('Coin Side', choices=[('heads', 'Heads'), ('tails', 'Tails')], validators=[DataRequired()])
+    submit = SubmitField('Flip Coin')
+class RouletteForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    roulette_choice = SelectField('Roulette Choice', choices=[('red', 'Red'), ('black', 'Black'), ('green', 'Green (14x)')], validators=[DataRequired()])
+    submit = SubmitField('Spin Roulette')
+class SendMessageForm(FlaskForm):
+    content = TextAreaField('Message', validators=[DataRequired()])
+    submit = SubmitField('Send')
 
 # Models -------------------------------
 class User(db.Model, UserMixin):
@@ -618,31 +702,6 @@ class Character(db.Model):
             return True
         return False
     
-class UpgradeForm(FlaskForm):
-    submit = SubmitField('Upgrade')
-
-class EarnForm(FlaskForm):
-    submit = SubmitField('Earn')
-class CharacterEditForm(SecureForm):
-    name = StringField('Name')
-    health = IntegerField('Health')
-    money = IntegerField('Money')
-    level = IntegerField('Level')
-    xp = IntegerField('XP')
-    is_alive = BooleanField('Is Alive', default=True)
-    profile_image = StringField('Profile Image URL')
-
-class DeleteCrewForm(FlaskForm):
-    submit = SubmitField('Delete')
-
-class UserEditForm(SecureForm):
-    username = StringField('Username')
-    password = PasswordField('Password')
-    crew_id = StringField('Crew ID')
-    is_admin = BooleanField('Is Admin')
-    premium = BooleanField('Premium User')
-    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
-
 class CrewMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
@@ -788,35 +847,7 @@ class Crew(db.Model):
     name = db.Column(db.String(150), unique=True, nullable=False)
     members = db.relationship('User', backref='crew', lazy=True)
 
-class InviteForm(FlaskForm):
-    submit = SubmitField('Invite Member')
 
-class LeaveForm(FlaskForm):
-    submit = SubmitField('Leave Crew')
-
-class RoleForm(FlaskForm):
-    new_role = SelectField('Role', choices=[
-        ('member', 'Member'),
-        ('left_hand', 'Left-Hand'),
-        ('right_hand', 'Right-Hand'),
-        ('leader', 'Leader')
-    ])
-    submit = SubmitField('Update')
-
-
-class BlackjackForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Play Blackjack')
-
-class CoinflipForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    coin_choice = SelectField('Coin Side', choices=[('heads', 'Heads'), ('tails', 'Tails')], validators=[DataRequired()])
-    submit = SubmitField('Flip Coin')
-
-class RouletteForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    roulette_choice = SelectField('Roulette Choice', choices=[('red', 'Red'), ('black', 'Black'), ('green', 'Green (14x)')], validators=[DataRequired()])
-    submit = SubmitField('Spin Roulette')
 
 class CrewMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -946,21 +977,26 @@ def new_topic(forum_id):
 def topic_view(topic_id):
     topic = ForumTopic.query.get_or_404(topic_id)
     posts = ForumPost.query.filter_by(topic_id=topic.id).order_by(ForumPost.created_at.asc()).all()
-    # Build a mapping of user_id to character name
     author_ids = {post.author_id for post in posts}
     char_map = {}
     for uid in author_ids:
         char = Character.query.filter_by(master_id=uid).first()
         char_map[uid] = char.name if char else f'User #{uid}'
-    if request.method == 'POST' and current_user.is_authenticated:
-        content = request.form.get('content', '').strip()
+
+    # Attach processed HTML to each post
+    for post in posts:
+        post.html_content = Markup(escape(post.content).replace('\n', Markup('<br>')))
+
+    form = ReplyForm()
+    if form.validate_on_submit() and current_user.is_authenticated:
+        content = form.content.data.strip()
         if content:
             post = ForumPost(topic_id=topic.id, author_id=current_user.id, content=content)
             db.session.add(post)
             db.session.commit()
             flash("Reply posted.", "success")
             return redirect(url_for('topic_view', topic_id=topic.id))
-    return render_template('topic_view.html', topic=topic, posts=posts, char_map=char_map)
+    return render_template('topic_view.html', topic=topic, posts=posts, char_map=char_map, form=form)
 
 @app.route('/create_forum', methods=['GET', 'POST'])
 @login_required
@@ -984,7 +1020,11 @@ def create_forum():
 @login_required
 def inbox():
     messages = PrivateMessage.query.filter_by(recipient_id=current_user.id).order_by(PrivateMessage.timestamp.desc()).all()
-    return render_template('inbox.html', messages=messages)
+    char_map = {}
+    for msg in messages:
+        char = Character.query.filter_by(master_id=msg.sender.id, is_alive=True).first()
+        char_map[msg.sender.id] = char.name if char else ""
+    return render_template("inbox.html", messages=messages, char_map=char_map)
 
 @app.route('/notifications')
 @login_required
@@ -1012,7 +1052,8 @@ def notifications():
 @login_required
 def send_message(user_id):
     recipient = User.query.get_or_404(user_id)
-    if request.method == 'POST':
+    form = SendMessageForm()
+    if form.validate_on_submit():
         content = request.form.get('content', '').strip()
         if not content:
             flash("Message cannot be empty.", "danger")
@@ -1022,9 +1063,9 @@ def send_message(user_id):
         db.session.commit()
         flash("Message sent!", "success")
         return redirect(url_for('inbox'))
-    return render_template('send_message.html', recipient=recipient)
+    return render_template("send_message.html", form=form, recipient=recipient)
 
-@app.route('/messages/view/<int:msg_id>')
+@app.route('/messages/view/<int:msg_id>', methods=['GET', 'POST'])
 @login_required
 def view_message(msg_id):
     msg = PrivateMessage.query.get_or_404(msg_id)
@@ -1034,7 +1075,20 @@ def view_message(msg_id):
     if msg.recipient_id == current_user.id:
         msg.is_read = True
         db.session.commit()
-    return render_template('view_message.html', msg=msg)
+    form = SendMessageForm()
+    if form.validate_on_submit() and current_user.id != msg.sender_id:
+        content = form.content.data.strip()
+        if not content:
+            flash("Message cannot be empty.", "danger")
+            return redirect(url_for('view_message', msg_id=msg_id))
+        reply = PrivateMessage(sender_id=current_user.id, recipient_id=msg.sender_id, content=content)
+        db.session.add(reply)
+        db.session.commit()
+        flash("Reply sent!", "success")
+        return redirect(url_for('inbox'))
+    char = Character.query.filter_by(master_id=msg.sender_id, is_alive=True).first()
+    char_map = {msg.sender_id: char.name if char else "Unknown"}
+    return render_template("view_message.html", msg=msg, form=form, char_map=char_map)
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
 def attempt_organized_crime():
@@ -1145,69 +1199,7 @@ def update_crew_role(crew_member_id):
     flash(f"Role updated.", "success")
     return redirect(url_for('crew_page', crew_id=target_crew_id))
 
-@app.route('/drug_dealer', methods=['GET', 'POST'])
-@login_required
-def drug_dealer():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("No character found.", "danger")
-        return redirect(url_for('dashboard'))
 
-    dealers = DrugDealer.query.filter_by(city=character.city).all()
-    if request.method == 'POST':
-        dealer_id = int(request.form.get('dealer_id'))
-        quantity = int(request.form.get('quantity', 1))
-        dealer = DrugDealer.query.get(dealer_id)
-        if not dealer or dealer.city != character.city:
-            flash("Dealer not found.", "danger")
-            return redirect(url_for('drug_dealer'))
-        total_price = dealer.price * quantity
-        if dealer.stock < quantity:
-            flash("Dealer doesn't have enough stock.", "danger")
-        elif character.money < total_price:
-            flash("Not enough money.", "danger")
-        else:
-            character.money -= total_price
-            dealer.stock -= quantity
-            inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=dealer.drug_id).first()
-            if not inv:
-                inv = CharacterDrugInventory(character_id=character.id, drug_id=dealer.drug_id, quantity=0)
-                db.session.add(inv)
-            inv.quantity += quantity
-            db.session.commit()
-            flash(f"You bought {quantity}x {dealer.drug.name} for ${total_price}.", "success")
-        return redirect(url_for('drug_dealer'))
-    return render_template('drug_dealer.html', dealers=dealers, character=character)
-
-@app.route('/sell_drugs', methods=['GET', 'POST'])
-@login_required
-def sell_drugs():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("No character found.", "danger")
-        return redirect(url_for('dashboard'))
-
-    dealers = DrugDealer.query.filter_by(city=character.city).all()
-    inventory = CharacterDrugInventory.query.filter_by(character_id=character.id).all()
-    if request.method == 'POST':
-        dealer_id = int(request.form.get('dealer_id'))
-        drug_id = int(request.form.get('drug_id'))
-        quantity = int(request.form.get('quantity', 1))
-        dealer = DrugDealer.query.get(dealer_id)
-        inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=drug_id).first()
-        if not dealer or dealer.city != character.city or dealer.drug_id != drug_id:
-            flash("Invalid dealer or drug.", "danger")
-        elif not inv or inv.quantity < quantity:
-            flash("Not enough drugs to sell.", "danger")
-        else:
-            total_price = dealer.price * quantity
-            character.money += total_price
-            inv.quantity -= quantity
-            dealer.stock += quantity
-            db.session.commit()
-            flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
-        return redirect(url_for('sell_drugs'))
-    return render_template('sell_drugs.html', dealers=dealers, inventory=inventory, character=character)
 
 @app.route('/kill/<username>', methods=['POST'])
 @login_required
@@ -1745,7 +1737,7 @@ def casino():
     table = request.args.get('table', 'blackjack')  # Default to blackjack
     flip = None
     roulette_result = None
-    user_choice = None # Default to blackjack
+    user_choice = None
 
     blackjack_form = BlackjackForm()
     coinflip_form = CoinflipForm()
@@ -1759,7 +1751,6 @@ def casino():
             return redirect(url_for('casino', table=table))
 
         if table == 'blackjack':
-            # Deal cards
             deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11] * 4
             random.shuffle(deck)
             hand = [deck.pop(), deck.pop()]
@@ -1776,7 +1767,6 @@ def casino():
             player_val = hand_value(hand)
             dealer_val = hand_value(dealer_hand)
 
-            # Simple logic: player auto-stands, dealer draws to 17+
             while dealer_val < 17:
                 dealer_hand.append(deck.pop())
                 dealer_val = hand_value(dealer_hand)
@@ -1784,31 +1774,40 @@ def casino():
             if player_val > 21:
                 result = f"You busted! Lost ${bet}."
                 character.money -= bet
-                flash(result, "danger")
+                
             elif dealer_val > 21 or player_val > dealer_val:
-                result = f"You win! Won ${bet}."
-                character.money += bet
-                flash(result, "success")
+                win_amount = bet * 2
+                result = f"You win! Won ${win_amount}."
+                character.money += win_amount
+                
             elif player_val == dealer_val:
                 result = "Push! It's a tie."
-                flash(result, "info")
+                
             else:
                 result = f"You lose! Lost ${bet}."
                 character.money -= bet
-                flash(result, "danger")
+                
+
+            # Store in session
+            session['casino_result'] = result
+            session['casino_hand'] = hand
+            session['casino_dealer_hand'] = dealer_hand
 
         elif table == 'coinflip':
             import secrets
             flip = secrets.choice(['heads', 'tails'])
             user_choice = request.form.get('coin_choice', 'heads')
             if user_choice == flip:
-                result = f"You won the coin flip! Won ${bet}."
-                character.money += bet
-                flash(result, "success")
+                win_amount = bet * 2
+                result = f"You won the coin flip! Won ${win_amount}."
+                character.money += win_amount
+                
             else:
                 result = f"You lost the coin flip! Lost ${bet}."
                 character.money -= bet
-                flash(result, "danger")
+                
+            session['casino_result'] = result
+            session['casino_flip'] = flip
 
         elif table == 'roulette':
             import secrets
@@ -1819,19 +1818,28 @@ def casino():
                     win_amount = bet * 14
                     result = f"Green! You won ${win_amount}!"
                     character.money += win_amount
-                    flash(result, "success")
+                    
                 else:
                     win_amount = bet * 2
                     result = f"You won on {roulette_result}! Won ${win_amount}."
                     character.money += win_amount
-                    flash(result, "success")
+                    
             else:
                 result = f"You lost on {roulette_result}! Lost ${bet}."
                 character.money -= bet
                 flash(result, "danger")
+            session['casino_result'] = result
+            session['casino_roulette_result'] = roulette_result
 
         db.session.commit()
-        return redirect(url_for('casino', table=table)) 
+        return redirect(url_for('casino', table=table))
+
+    # GET: retrieve from session if present
+    result = session.pop('casino_result', None)
+    hand = session.pop('casino_hand', [])
+    dealer_hand = session.pop('casino_dealer_hand', [])
+    flip = session.pop('casino_flip', None)
+    roulette_result = session.pop('casino_roulette_result', None)
 
     return render_template(
         'casino.html',
@@ -1844,7 +1852,9 @@ def casino():
         blackjack_form=blackjack_form,
         coinflip_form=coinflip_form,
         roulette_form=roulette_form,
-        user_choice=user_choice
+        user_choice=user_choice,
+        flip=flip,
+        roulette_result=roulette_result
     )
 
 @app.route('/refresh_shop')
@@ -2321,13 +2331,38 @@ def send_public_message():
     db.session.add(chat_msg)
     db.session.commit()
     return jsonify(success=True)
-@app.route('/drug_dashboard')
+
+@app.route('/drug_dashboard', methods=['GET', 'POST'])
 @login_required
 def drug_dashboard():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     dealers = DrugDealer.query.filter_by(city=character.city).all()
     inventory = CharacterDrugInventory.query.filter_by(character_id=character.id).all()
-    return render_template('drug_dashboard.html', character=character, dealers=dealers, inventory=inventory)
+
+    # Create a BuyDrugForm for each dealer
+    buy_forms = {dealer.id: BuyDrugForm(prefix=f'buy_{dealer.id}') for dealer in dealers}
+    # Create a SellDrugForm for each inventory drug
+    sell_forms = {inv.drug.id: SellDrugForm(prefix=f'sell_{inv.drug.id}') for inv in inventory}
+
+    # Handle buy/sell POSTs
+    for dealer in dealers:
+        form = buy_forms[dealer.id]
+        if form.validate_on_submit() and form.submit.data and form.quantity.data and f'buy_{dealer.id}-submit' in request.form:
+            return buy_drug_form(dealer.id, form)
+
+    for inv in inventory:
+        form = sell_forms[inv.drug.id]
+        if form.validate_on_submit() and form.submit.data and form.quantity.data and f'sell_{inv.drug.id}-submit' in request.form:
+            return sell_drug_form(inv.drug.id, form)
+
+    return render_template(
+        'drug_dashboard.html',
+        character=character,
+        dealers=dealers,
+        inventory=inventory,
+        buy_forms=buy_forms,
+        sell_forms=sell_forms
+    )
 @app.route('/public_messages')
 @login_required
 def public_messages():
@@ -2343,18 +2378,72 @@ def public_messages():
         for m in reversed(messages)
     ])
 
-# admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())
-# admin.add_view(ModelView(Character, db.session, endpoint='character_admin'))
-# admin.add_view(UserModelView(User, db.session, endpoint='admin_users'))
-# admin.add_view(ModelView(CrewMember, db.session))
-# admin.add_view(ModelView(UserInventory, db.session))
-# admin.add_view(ShopItemModelView(ShopItem, db.session))  # <-- use the new view here
-# admin.add_view(ModelView(Crew, db.session))
+@app.route('/buy_drug/<int:dealer_id>', methods=['POST'])
+@login_required
+def buy_drug_form(dealer_id, form=None):
+    if form is None:
+        form = BuyDrugForm(request.form, prefix=f'buy_{dealer_id}')
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    dealer = DrugDealer.query.get_or_404(dealer_id)
+    quantity = form.quantity.data
 
-# admin.add_view(ModelView(ChatMessage, db.session))
-# admin.add_view(ModelView(CrewInvitation, db.session))
+    # Fix: Ensure quantity is valid
+    if quantity is None:
+        flash("Please enter a quantity.", "danger")
+        return redirect(url_for('drug_dashboard'))
+
+    if dealer.city != character.city:
+        flash("Dealer not in your city.", "danger")
+        return redirect(url_for('drug_dashboard'))
+    if quantity < 1 or quantity > dealer.stock:
+        flash("Invalid quantity.", "danger")
+        return redirect(url_for('drug_dashboard'))
+    total_price = dealer.price * quantity
+    if character.money < total_price:
+        flash("Not enough money.", "danger")
+        return redirect(url_for('drug_dashboard'))
+    character.money -= total_price
+    dealer.stock -= quantity
+    inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=dealer.drug_id).first()
+    if not inv:
+        inv = CharacterDrugInventory(character_id=character.id, drug_id=dealer.drug_id, quantity=0)
+        db.session.add(inv)
+    inv.quantity += quantity
+    db.session.commit()
+    flash(f"You bought {quantity}x {dealer.drug.name} for ${total_price}.", "success")
+    return redirect(url_for('drug_dashboard'))
+
+@app.route('/sell_drug/<int:drug_id>', methods=['POST'])
+@login_required
+def sell_drug_form(drug_id, form=None):
+    if form is None:
+        form = SellDrugForm(request.form, prefix=f'sell_{drug_id}')
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    quantity = form.quantity.data
+
+    # Fix: Ensure quantity is valid
+    if quantity is None:
+        flash("Please enter a quantity.", "danger")
+        return redirect(url_for('drug_dashboard'))
+
+    inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=drug_id).first()
+    if not inv or inv.quantity < quantity or quantity < 1:
+        flash("Not enough drugs to sell.", "danger")
+        return redirect(url_for('drug_dashboard'))
+    dealer = DrugDealer.query.filter_by(city=character.city, drug_id=drug_id).first()
+    if not dealer:
+        flash("No dealer in your city buys this drug.", "danger")
+        return redirect(url_for('drug_dashboard'))
+    total_price = dealer.price * quantity
+    character.money += total_price
+    inv.quantity -= quantity
+    dealer.stock += quantity
+    db.session.commit()
+    flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
+    return redirect(url_for('drug_dashboard'))
 
 
+# Create Flask app and configure it
 @app.context_processor
 def inject_upgrade_form():
     return dict(upgrade_form=UpgradeForm())

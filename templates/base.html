@@ -709,6 +709,7 @@
               <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crew</span>
               </a>
+              
               {% endif %}
             </div>
           </div>
@@ -728,15 +729,28 @@
               <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
                 <i class="fas fa-handcuffs"></i> <span>Jail</span>
               </a>
-              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Travel</span>
-              </a>
-              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Notifications</span>
-              </a>
               <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
                 <i class="fas fa-plane"></i> <span>Casino</span>
               </a>
+              
+            </div>
+          </div>
+          <div class="sidebar-category">
+            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+              <i class="fas fa-mask"></i> Commuincations
+              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            <div class="sidebar-subnav">
+              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Notifications</span>
+              </a>
+              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Inbox</span>
+              </a>
+              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Travel</span>
+              </a>
+              
             </div>
           </div>
           <!-- Inventory -->

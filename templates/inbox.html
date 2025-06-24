@@ -1,17 +1,88 @@
 {% extends "base.html" %}
 {% block title %}Inbox{% endblock %}
 {% block content %}
-<h2>Your Messages</h2>
-<ul>
-  {% for msg in messages %}
-    <li>
-      <a href="{{ url_for('view_message', msg_id=msg.id) }}">
-        From: {{ msg.sender.username }} - {{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}
-        {% if not msg.is_read %}<strong>(unread)</strong>{% endif %}
-      </a>
-    </li>
-  {% else %}
-    <li>No messages.</li>
-  {% endfor %}
-</ul>
+<style>
+.inbox-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.inbox-header h1 {
+    color: #8be9fd;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.inbox-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.message-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.message-item {
+    background: #282a36;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+}
+.message-item:hover {
+    background: #34355b;
+}
+.message-link {
+    color: #ffd700;
+    font-size: 1.15rem;
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: 1.5rem;
+    flex: 1;
+    transition: color 0.2s;
+}
+.message-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.message-meta {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.unread {
+    font-weight: bold;
+    color: #ffd700;
+    margin-left: 0.7em;
+}
+</style>
+<div class="inbox-header">
+    <h1>Your Messages</h1>
+</div>
+<div class="inbox-list">
+    <ul class="message-list">
+      {% for msg in messages %}
+        <li class="message-item">
+          <a href="{{ url_for('view_message', msg_id=msg.id) }}" class="message-link">
+            From: 
+            {% if char_map[msg.sender.id] %}
+              <span style="color:#ffffff;">{{ char_map[msg.sender.id] }}</span>
+            {% endif %}
+          </a>
+          <span class="message-meta">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+          {% if not msg.is_read %}
+            <span class="unread">(unread)</span>
+          {% endif %}
+        </li>
+      {% else %}
+        <li class="message-item" style="color: #b8b8ff;">No messages.</li>
+      {% endfor %}
+    </ul>
+</div>
 {% endblock %}
