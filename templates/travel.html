@@ -79,19 +79,20 @@
   <p>Current city: <strong>{{ character.city }}</strong></p>
   {% if time_left %}
     <p style="color:#ffb86c;">You can travel again in {{ time_left.seconds // 3600 }}h {{ (time_left.seconds // 60) % 60 }}m.</p>
-    {% endif %}
+  {% endif %}
   <form method="POST">
+    {{ travel_form.hidden_tag() }}
     <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
-      {% for city in cities %}
+     
         <label style="display: flex; text-align: center; align-items: center; gap: 8px; width: 100%; padding: 6px 0;">
-          <input type="radio" name="city" value="{{ city }}" {% if city == character.city %}checked{% endif %} style="margin-right: 8px; text-align: center;">
-          <span>{{ city }}</span>
+          {{ travel_form.city(value=value, checked=(value == character.city), style="margin-right: 8px; text-align: center;") }}
+          <span>{{ label }}</span>
         </label>
-      {% endfor %}
+      
     </div>
     <br>
-    <button type="submit" class="btn btn-primary">Travel</button>
+    {{ travel_form.submit(class_="btn btn-primary") }}
   </form>
-  <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+  
 </div>
 {% endblock %}

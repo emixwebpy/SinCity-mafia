@@ -98,12 +98,10 @@
     {% if jailed_characters %}
     <table class="jail-table">
         <tr>
-            <tr>
-                <th>Avatar</th>
-                <th>Name</th>
-                <th>Release In</th>
-                <th>Actions</th>
-            </tr>
+            <th>Avatar</th>
+            <th>Name</th>
+            <th>Release In</th>
+            <th>Actions</th>
         </tr>
         {% for char in jailed_characters %}
         <tr>
@@ -128,7 +126,8 @@
             <td>
                 {% if current_user.is_authenticated and current_character and current_character.id != char.id and not current_character.in_jail %}
                     <form action="{{ url_for('breakout', char_id=char.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-primary btn-sm">Break Out</button>
+                        {{ breakout_form.hidden_tag() }}
+                        {{ breakout_form.submit(class_="btn btn-primary btn-sm") }}
                     </form>
                 {% endif %}
             </td>

@@ -652,27 +652,26 @@
   <div class="layout-root fade-in">
     <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
       <nav class="sidebar">
-        
         {% if current_user.is_authenticated %}
           <div class="sidebar-user">
             {% set character = current_character %}
-                {% if character and character.profile_image %}
-                  <img
-                    src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}"
-                    class="crew-avatar"
-                    alt="avatar"
-                    style="width:48px;height:48px;border-radius:50%;margin-bottom:6px;border:2px solid #ffd700;object-fit:cover;"
-                  >
-                {% else %}
-                  <i id="char-name" class="fas fa-user-circle"></i>
-                {% endif %}
-                {% if character %}
-                  <a href="{{ url_for('profile_by_id', char_id=character.id) }}" style="color:inherit; text-decoration: underline;">
-                    <strong>{{ character.name }}</strong>
-                  </a>
-                {% else %}
-                  <span><strong>No character</strong></span>
-                {% endif %}
+            {% if character and character.profile_image %}
+              <img
+                src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}"
+                class="crew-avatar"
+                alt="avatar"
+                style="width:48px;height:48px;border-radius:50%;margin-bottom:6px;border:2px solid #ffd700;object-fit:cover;"
+              >
+            {% else %}
+              <i id="char-name" class="fas fa-user-circle"></i>
+            {% endif %}
+            {% if character %}
+              <a href="{{ url_for('profile_by_id', char_id=character.id) }}" style="color:inherit; text-decoration: underline;">
+                <strong>{{ character.name }}</strong>
+              </a>
+            {% else %}
+              <span><strong>No character</strong></span>
+            {% endif %}
           </div>
         {% endif %}
         <div class="sidebar-nav">
@@ -711,10 +710,8 @@
                 <i class="fas fa-users"></i> <span>Crew</span>
               </a>
               {% endif %}
-              
             </div>
           </div>
-          
           <!-- Crime -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
@@ -757,7 +754,6 @@
               </a>
             </div>
           </div>
-          
         </div>
         <div class="sidebar-footer">
           {% if current_user.is_authenticated %}
@@ -775,10 +771,8 @@
           {% block topbar_actions %}
           {% if current_user.is_authenticated and not current_user.premium %}
           <form action="{{ url_for('upgrade') }}" method="post" class="d-inline">
-            {{ csrf_token() }}
-            <button type="submit" class="btn">
-              <i class="fas fa-star"></i> Upgrade
-            </button>
+            {{ upgrade_form.hidden_tag() }}
+            {{ upgrade_form.submit(class_="btn") }}
           </form>
           {% elif current_user.is_authenticated and current_user.premium %}
           <span class="badge">
@@ -822,6 +816,7 @@
       </div>
       <div id="chat-messages" class="chat-messages"></div>
       <form id="chat-form" autocomplete="off">
+        <input type="hidden" id="chat-csrf" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" id="chat-input" placeholder="Type a message..." maxlength="250" />
         <button type="submit" id="chat-submit"><i class="fas fa-paper-plane"></i></button>
       </form>
@@ -898,78 +893,73 @@
     });
 
     // Floating Chat Tabs and Messaging
-    let currentTab = 'public';
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.chat-tab').forEach(btn => btn.classList.remove('active-tab'));
-      document.getElementById(`tab-${tab}`).classList.add('active-tab');
-      fetchMessages();
-    }
-    async function fetchCrewMessages() {
-      try {
-        const res = await fetch('/crew_messages');
-        const data = await res.json();
-        const messageBox = document.getElementById('chat-messages');
-        const isNearBottom = messageBox.scrollHeight - messageBox.scrollTop <= messageBox.clientHeight + 50;
-        messageBox.innerHTML = '';
-        data.forEach(msg => {
-          const div = document.createElement('div');
-          div.className = 'chat-message' + (msg.character_name === "{{ current_character.name }}" ? ' me' : '');
-          div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
-          messageBox.appendChild(div);
-        });
-        if (isNearBottom) {
-          messageBox.scrollTop = messageBox.scrollHeight;
-        }
-      } catch (err) {
-        console.error('Failed to fetch crew messages:', err);
-      }
-    }
-    async function fetchMessages() {
-      try {
-        const res = await fetch(`/${currentTab}_messages`);
-        const data = await res.json();
-        const messageBox = document.getElementById('chat-messages');
-        const isNearBottom = messageBox.scrollHeight - messageBox.scrollTop <= messageBox.clientHeight + 50;
-        messageBox.innerHTML = '';
-        data.forEach(msg => {
-          const div = document.createElement('div');
-          div.className = 'chat-message' + (msg.character_name === "{{ current_character.name }}" ? ' me' : '');
-          div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
-          messageBox.appendChild(div);
-        });
-        if (isNearBottom) {
-          messageBox.scrollTop = messageBox.scrollHeight;
-        }
-      } catch (err) {
-        console.error(`Failed to fetch ${currentTab} messages:`, err);
-      }
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      switchTab('public');
-      setInterval(fetchMessages, 1000);
-      const chatForm = document.getElementById('chat-form');
-      const chatInput = document.getElementById('chat-input');
-      chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message) return;
-        const url = `/send_${currentTab}_message`;
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({ message })
-          });
-          if (res.ok) {
-            chatInput.value = '';
-            fetchMessages();
-          }
-        } catch (err) {
-          console.error("Send error:", err);
-        }
+  let currentTab = 'public';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.chat-tab').forEach(btn => btn.classList.remove('active-tab'));
+    document.getElementById(`tab-${tab}`).classList.add('active-tab');
+    fetchMessages();
+  }
+
+  async function fetchMessages() {
+    try {
+      const res = await fetch(`/${currentTab}_messages`);
+      const data = await res.json();
+      const messageBox = document.getElementById('chat-messages');
+      const isNearBottom = messageBox.scrollHeight - messageBox.scrollTop <= messageBox.clientHeight + 50;
+      messageBox.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message' + (msg.character_name === "{{ current_character.name }}" ? ' me' : '');
+        div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
+        messageBox.appendChild(div);
       });
+      if (isNearBottom) {
+        messageBox.scrollTop = messageBox.scrollHeight;
+      }
+    } catch (err) {
+      console.error(`Failed to fetch ${currentTab} messages:`, err);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    switchTab('public'); // This will call fetchMessages once on load
+
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+      const csrfToken = document.getElementById('chat-csrf').value;
+      const url = `/send_${currentTab}_message`;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ message, csrf_token: csrfToken })
+        });
+        if (res.ok) {
+          chatInput.value = '';
+          fetchMessages(); // Only refresh after sending a message
+        } else {
+          let text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            alert("Server error: " + text);
+            return;
+          }
+          alert(data.error || "Failed to send message.");
+        }
+      } catch (err) {
+        alert("Send error: " + err);
+        console.error("Send error:", err);
+      }
     });
+  });
   </script>
 </body>
 </html>

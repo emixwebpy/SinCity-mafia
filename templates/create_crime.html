@@ -2,7 +2,6 @@
 
 {% block header %}
   <h1>{% block title %}OC Create{% endblock %}</h1>
-  
 {% endblock %}
 
 {% block content %}
@@ -20,8 +19,8 @@
     text-align: center;
     position: relative;
     overflow: hidden;
-}
-.login-form button[type="submit"] {
+  }
+  .login-form button[type="submit"], .login-form .btn {
     padding: 10px 20px; 
     background: #8be9fd; 
     color: #23243a; 
@@ -29,59 +28,42 @@
     font-weight: 700; 
     border-radius: 5px;
     margin-bottom: 10px;
-}
-.login-form button[type="submit"]:hover {
-    background: #23243a;
-    color: #8be9fd;
-    box-shadow: 0 1px 5px #8be9fd22;
-}
-.btn {
     width: 118.267px;
-    padding: 10px 20px; 
-    background: #8be9fd; 
-    color: #23243a; 
-    border: none; 
-    font-weight: 700; 
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-.btn:hover {
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  }
+  .login-form button[type="submit"]:hover, .login-form .btn:hover {
     background: #23243a;
     color: #8be9fd;
     box-shadow: 0 1px 5px #8be9fd22;
-}
-@media screen and (max-width: 991px) {
+  }
+  @media screen and (max-width: 991px) {
     .login-form {
-        max-width: 380px;
-        margin: auto;
-        background: rgba(25, 25, 40, 0.98);
-        border-radius: 5px;
-        box-shadow: 0 1px 5px #8be9fd22;
-        padding: 38px 28px 32px 28px;
-        border: 1.5px solid #8be9fd44;
-        color: #f5f6fa;
-        font-family: "geo", sans-serif;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+      max-width: 380px;
+      margin: auto;
+      background: rgba(25, 25, 40, 0.98);
+      border-radius: 5px;
+      box-shadow: 0 1px 5px #8be9fd22;
+      padding: 38px 28px 32px 28px;
+      border: 1.5px solid #8be9fd44;
+      color: #f5f6fa;
+      font-family: "geo", sans-serif;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
     }
     .login-form button[type="submit"] {
-        font-size: 1em;
+      font-size: 1em;
     }
-  
-}
-
+  }
 </style>
-  <div class="login-form">
-      <h2 >Create Organized Crime Group</h2>
-      <div>
-        <form method="POST">
-        <button type="submit">Create Group</button>
-        </form>
-        <a href="{{ url_for('join_crime') }}" class="btn">Join Group</a>
-    </div>
-      
-      
+<div class="login-form">
+  <h2>Create Organized Crime Group</h2>
+  <div>
+    <form method="POST">
+      {{ create_crime_form.hidden_tag() }}
+      {{ create_crime_form.submit(class_="btn") }}
+    </form>
+    <a href="{{ url_for('join_crime') }}" class="btn">Join Group</a>
   </div>
-  
+</div>
 {% endblock %}

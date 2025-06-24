@@ -244,9 +244,7 @@
 </style>
 
 <div class="forums-header">
-    
     <h1>{{ user.character.name }}</h1>
-    
 </div>
 <div class="forums-list">
     {% macro money_class(money) -%}
@@ -273,9 +271,14 @@
                 <img class="profile-img" src="{{ url_for('static', filename=user.character.profile_image) if not user.character.profile_image.startswith('http') else user.character.profile_image }}" alt="avatar">
             {% endif %}
 
-            {% if character.is_authenticated and character.master_id == character.id %}
-                <form action="{{ url_for('upload_profile_image') }}" method="get" style="margin-bottom:18px;">
-                    <button type="submit" class="btn btn-primary">Change Profile Image</button>
+            {% if current_user.is_authenticated and current_user.id == user.id %}
+                <form action="{{ url_for('upload_profile_image') }}" method="post" enctype="multipart/form-data" class="profile-upload-form" style="margin-bottom:18px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                    {{ upload_image_form.hidden_tag() }}
+                    <label for="profile_image" class="btn btn-primary" style="cursor:pointer; margin-bottom:0;">
+                        <i class="fas fa-upload"></i> Choose Image
+                        {{ upload_image_form.profile_image(class_="form-control-file", style="display:none;", id="profile_image") }}
+                    </label>
+                    {{ upload_image_form.submit(class_="btn btn-primary", style="margin-top:0;") }}
                 </form>
             {% endif %}
 
@@ -332,7 +335,8 @@
             </div>
             {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
             <form class="profile-stat" action="{{ url_for('kill', char_id=user.character.id) }}" method="post" style="margin-top:18px;">
-                <button type="submit" class="btn btn-danger">Shoot</button>
+                {{ kill_form.hidden_tag() }}
+                {{ kill_form.submit(class_="btn btn-danger") }}
             </form>
             {% endif %}
         </div>

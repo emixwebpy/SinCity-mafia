@@ -21,7 +21,7 @@
     .invite-container h2 {
         margin-bottom: 36px;
     }
-    .invite-container input[type="text"] {
+    .invite-container input[type="text"], .invite-container input[type="search"] {
         margin-bottom: 25px;
         padding: 12px;
         border-radius: 10px;
@@ -32,7 +32,7 @@
         color: #f5f6fa;
         font-size: 1.1em;
     }
-    .invite-container button[type="submit"] {
+    .invite-container button[type="submit"], .invite-container input[type="submit"] {
         padding: 10px 20px;
         background: #8be9fd;
         color: #23243a;
@@ -44,7 +44,7 @@
         box-shadow: 0 1px 5px #8be9fd22;
         cursor: pointer;
     }
-    .invite-container button[type="submit"]:hover {
+    .invite-container button[type="submit"]:hover, .invite-container input[type="submit"]:hover {
         background: #23243a;
         color: #8be9fd;
         box-shadow: 0 2px 10px #8be9fd44;
@@ -89,9 +89,9 @@
         <i class="fas fa-user-plus"></i> Invite to {{ crew.name }}
     </h2>
     <form method="POST">
-        <input type="text" name="username" placeholder="Enter character name" required>
-        <button type="submit">Send Invite</button>
+        {{ form.hidden_tag() }}
+        {{ form.username(class_="form-control", placeholder="Enter character name") }}
+        {{ form.submit(class_="btn btn-primary") }}
     </form>
-    
 </div>
 {% endblock %}

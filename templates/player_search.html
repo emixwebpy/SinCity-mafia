@@ -18,7 +18,6 @@
         font-family: "geo", sans-serif;
         text-align: center;
         position: relative;
-        
     }
     .search-container h2{
         margin-bottom: 50px;
@@ -53,13 +52,9 @@
     </h2>
 
     <form method="post" class="mb-4">
-        <input type="text" name="query" value="{{ query }}" class="form-control"
-               placeholder="Enter username..." required
-               style="padding: 12px; border-radius: 10px; border: none; outline: none; width: 100%; background: #1c1d2f; color: #f5f6fa; font-size: 1.1em;">
-        <button type="submit" class="btn btn-primary mt-3"
-                style="padding: 10px 20px; background: #8be9fd; color: #23243a; border: none; font-weight: 700; border-radius: 10px;">
-            Search
-        </button>
+        {{ search_form.hidden_tag() }}
+        {{ search_form.query(class_="form-control", placeholder="Enter username...", style="padding: 12px; border-radius: 10px; border: none; outline: none; width: 100%; background: #1c1d2f; color: #f5f6fa; font-size: 1.1em;") }}
+        {{ search_form.submit(class_="btn btn-primary mt-3", style="padding: 10px 20px; background: #8be9fd; color: #23243a; border: none; font-weight: 700; border-radius: 10px;") }}
     </form>
 
     {% if results %}
@@ -67,18 +62,16 @@
             {% for character in results %}
             <li class="player-item">
                 <div style="text-align: left;">
-                    {% if user.character %}
-                        <p>{{ character.name }}</p>
-                    {% endif %}
+                    <p>{{ character.name }}</p>
                     <div class="player-level">
                         Level {{ character.level }}, Health: {{ character.health }}
                     </div>
                 </div>
-
                 <div>
                     {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
-                        <form action="{{ url_for('kill', username=character.name) }}" method="POST">
-                            <button type="submit">Shoot</button>
+                        <form action="{{ url_for('kill', username=character.name) }}" method="POST" style="display:inline;">
+                            {{ kill_form.hidden_tag() }}
+                            {{ kill_form.submit(class_="btn btn-danger btn-sm") }}
                         </form>
                     {% endif %}
                 </div>

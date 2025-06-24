@@ -206,33 +206,26 @@ input[type="number"]:focus, select:focus {
             <td>
                 {% if table == 'blackjack' %}
                 <form method="post" class="forum-actions">
-                    {{ csrf_token() }}
                     <input type="hidden" name="table" value="blackjack">
-                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
-                    <button type="submit" class="btn-primary"><i class="fas fa-play"></i> Play Blackjack</button>
+                    {{ blackjack_form.hidden_tag() }}
+                    {{ blackjack_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+                    {{ blackjack_form.submit(class_="btn-primary") }}
                 </form>
                 {% elif table == 'coinflip' %}
                 <form method="post" class="forum-actions">
-                    {{ csrf_token() }}
                     <input type="hidden" name="table" value="coinflip">
-                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
-                    <select name="coin_choice" required>
-                        <option value="heads" {% if user_choice == 'heads' %}selected{% endif %}>Heads</option>
-                        <option value="tails" {% if user_choice == 'tails' %}selected{% endif %}>Tails</option>
-                    </select>
-                    <button type="submit" class="btn-primary"><i class="fas fa-coins"></i> Flip Coin</button>
+                    {{ coinflip_form.hidden_tag() }}
+                    {{ coinflip_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+                    {{ coinflip_form.coin_choice(class_="form-control") }}
+                    {{ coinflip_form.submit(class_="btn-primary") }}
                 </form>
                 {% elif table == 'roulette' %}
                 <form method="post" class="forum-actions">
-                    {{ csrf_token() }}
                     <input type="hidden" name="table" value="roulette">
-                    <input type="number" name="bet" min="1" max="{{ character.money }}" required placeholder="Enter your bet">
-                    <select name="roulette_choice" required>
-                        <option value="red" {% if user_choice == 'red' %}selected{% endif %}>Red</option>
-                        <option value="black" {% if user_choice == 'black' %}selected{% endif %}>Black</option>
-                        <option value="green" {% if user_choice == 'green' %}selected{% endif %}>Green (14x)</option>
-                    </select>
-                    <button type="submit" class="btn-primary"><i class="fas fa-dot-circle"></i> Spin Roulette</button>
+                    {{ roulette_form.hidden_tag() }}
+                    {{ roulette_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+                    {{ roulette_form.roulette_choice(class_="form-control") }}
+                    {{ roulette_form.submit(class_="btn-primary") }}
                 </form>
                 {% endif %}
             </td>

@@ -76,20 +76,27 @@
 </div>
 <div class="forums-list">
     <form method="POST" class="edit-form">
-        <label>Name:</label>
-        <input type="text" name="name" value="{{ character.name }}" required>
-        <label>Health:</label>
-        <input type="number" name="health" value="{{ character.health }}" required>
-        <label>Money:</label>
-        <input type="number" name="money" value="{{ character.money }}" required>
-        <label>Level:</label>
-        <input type="number" name="level" value="{{ character.level }}" required>
-        <label>XP:</label>
-        <input type="number" name="xp" value="{{ character.xp }}" required>
-        <label>Alive:
-            <input type="checkbox" name="is_alive" value="1" {% if character.is_alive %}checked{% endif %}>
+        {{ form.hidden_tag() }}
+        <label for="name">Name:</label>
+        {{ form.name(class_="form-control", id="name") }}
+
+        <label for="health">Health:</label>
+        {{ form.health(class_="form-control", id="health") }}
+
+        <label for="money">Money:</label>
+        {{ form.money(class_="form-control", id="money") }}
+
+        <label for="level">Level:</label>
+        {{ form.level(class_="form-control", id="level") }}
+
+        <label for="xp">XP:</label>
+        {{ form.xp(class_="form-control", id="xp") }}
+
+        <label for="is_alive">Alive:
+            {{ form.is_alive(id="is_alive") }}
         </label>
-        <button type="submit" class="btn btn-primary">Save</button>
+
+        {{ form.submit(class_="btn btn-primary") }}
     </form>
 </div>
 {% endblock %}

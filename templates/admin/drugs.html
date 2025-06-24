@@ -76,6 +76,10 @@
     background: #ff2222;
     color: #fff;
 }
+.drug-actions {
+    display: flex;
+    gap: 8px;
+}
 </style>
 <div class="drugs-header">
     <h1>All Drugs</h1>
@@ -93,9 +97,11 @@
             <td>{{ drug.id }}</td>
             <td>{{ drug.name }}</td>
             <td>
-                <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" style="display:inline;">
-                    <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this drug?');">Delete</button>
-                </form>
+                <div class="drug-actions">
+                    <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" style="display:inline;">
+                        <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this drug?');">Delete</button>
+                    </form>
+                </div>
             </td>
         </tr>
         {% else %}

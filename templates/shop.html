@@ -143,8 +143,9 @@
                 <div class="shop-item-actions">
                 {% if item.stock > 0 %}
                 <form method="post" style="display:inline;">
+                    {{ buy_form.hidden_tag() }}
                     <input type="hidden" name="item_id" value="{{ item.id }}">
-                    <button type="submit" class="btn btn-primary">Buy</button>
+                    {{ buy_form.submit(class_="btn btn-primary") }}
                 </form>
                 {% else %}
                 <span class="shop-out">Out of stock</span>

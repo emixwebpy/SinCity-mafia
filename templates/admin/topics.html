@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Admin - Topics{% endblock %}
+{% block content %}
+<style>
+.admin-topics-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.admin-topics-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.admin-topics-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem 2.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 900px;
+    margin: 0 auto 2rem auto;
+}
+.admin-topic-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.admin-topic-table th, .admin-topic-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.admin-topic-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.admin-topic-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.admin-topic-table tr:hover {
+    background: #34355b;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+</style>
+<div class="admin-topics-header">
+    <h1>All Forum Topics</h1>
+</div>
+<div class="admin-topics-list">
+    <table class="admin-topic-table">
+        <tr>
+            <th>ID</th>
+            <th>Forum</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+        {% for topic in topics %}
+        <tr>
+            <td>{{ topic.id }}</td>
+            <td>{{ topic.forum.title if topic.forum else 'N/A' }}</td>
+            <td>{{ topic.title }}</td>
+            <td>
+                {% set author = users_map.get(topic.author_id) %}
+                {{ author.character.name if author else 'User #' ~ topic.author_id }}
+            </td>
+            <td>{{ topic.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+                <form method="post" action="{{ url_for('admin.admin_delete_topic', topic_id=topic.id) }}" style="display:inline;">
+                    {{ delete_form.hidden_tag() }}
+                    {{ delete_form.submit(class_="btn btn-danger btn-sm", onclick="return confirm('Delete this topic?');") }}
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" style="color:#b8b8ff;">No topics found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -315,9 +315,32 @@
         font-size: 1.1em;
     }
 }
+.earn-form {
+    display: inline;
+}
+.earn-form .btn {
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 12px 32px;
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    font-size: 1.1em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0px 0px 10px 0px #ffd700;
+    margin-bottom: 2px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.earn-form .btn:hover, .earn-form .btn:focus {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+    box-shadow: 0 0px 5px #ffd700;
+}
 </style>
-
-
 
 <div class="forums-header">
     <h1>Dashboard</h1>
@@ -365,10 +388,12 @@
                         <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
                         <a href="{{ url_for('join_crew') }}" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
                     {% endif %}
-                    <form action="{{ url_for('earn') }}" method="post" style="display:inline;">
+                    <form action="{{ url_for('earn') }}" method="post" class="earn-form">
+                        
                         {{ earn_form.hidden_tag() }}
-                        {{ earn_form.submit(class_="btn btn-primary", id="earn-btn") }}
-                        <span id="earn-timer"></span>
+                        
+                        {{ earn_form.submit(class_="btn", id="earn-btn earn-timer") }}
+                        
                     </form>
                 </div>
             </td>
@@ -393,7 +418,7 @@
         <i class="fas fa-users"></i> Online Users
     </div>
     <ul style="list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:18px;">
-        {% for char in online_users %}
+        {% for char in online_characters %}
         <li style="background:#282a36;border-radius:8px;box-shadow:0 1px 5px #8be9fd22;padding:10px 16px;display:flex;align-items:center;gap:12px;min-width:180px;font-size:1.08em;position:relative;">
             {% if char.profile_image %}
                 <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="dashboard-user-avatar" alt="avatar">

@@ -12,9 +12,9 @@ from flask_admin import expose, Admin, AdminIndexView, BaseView
 from flask_admin.form import SecureForm, BaseForm
 from flask_wtf import CSRFProtect, FlaskForm
 from flask_migrate import Migrate
-from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField
+from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField,FileField,RadioField,TextAreaField
 from wtforms.fields import DateTimeField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired,NumberRange, Optional
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -39,6 +39,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
+app.config['LOGIN_MESSAGE'] = None
+app.config['LOGIN_MESSAGE_CATEGORY'] = "info"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -118,7 +120,8 @@ def admin_edit_character(char_id):
         db.session.commit()
         flash("Character updated.", "success")
         return redirect(url_for('admin.admin_characters'))
-    return render_template('admin/edit_character.html', character=character)
+    return render_template('admin/edit_character.html', character=character,
+    form=EditCharacterForm(obj=character))
 
 # --- Admin Edit Forum ---
 @admin_bp.route('/forums/<int:forum_id>/edit', methods=['GET', 'POST'])
@@ -175,7 +178,8 @@ def admin_edit_user(user_id):
         db.session.commit()
         flash("User updated.", "success")
         return redirect(url_for('admin.admin_users'))
-    return render_template('admin/edit_user.html', user=user)
+    return render_template('admin/edit_user.html', user=user,
+    form=EditUserForm(obj=user))
 
 # --- Admin shop management ---
 @admin_bp.route('/shop')
@@ -328,16 +332,28 @@ def admin_add_drug():
         db.session.commit()
         flash("Drug added!", "success")
         return redirect(url_for('admin.admin_drugs'))
-    return render_template('admin/add_drug.html')
+    return render_template('admin/add_drug.html',
+    form=AddDrugForm())
 
-@admin_bp.route('/drugs/<int:drug_id>/delete', methods=['POST'])
+@admin_bp.route('/topics/<int:topic_id>/delete', methods=['POST'])
 @admin_required
-def admin_delete_drug(drug_id):
-    drug = Drug.query.get_or_404(drug_id)
-    db.session.delete(drug)
+def admin_delete_topic(topic_id):
+    topic = ForumTopic.query.get_or_404(topic_id)
+    # Delete all posts in the topic
+    ForumPost.query.filter_by(topic_id=topic.id).delete()
+    db.session.delete(topic)
     db.session.commit()
-    flash("Drug deleted.", "success")
-    return redirect(url_for('admin.admin_drugs'))
+    flash("Topic deleted.", "success")
+    return redirect(url_for('admin.admin_topics'))
+
+@admin_bp.route('/topics')
+@admin_required
+def admin_topics():
+    topics = ForumTopic.query.order_by(ForumTopic.created_at.desc()).all()
+    user_ids = {t.author_id for t in topics}
+    users_map = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()}
+    delete_form = DeleteForm()
+    return render_template('admin/topics.html', topics=topics, users_map=users_map, delete_form=delete_form)
 
 # --- Admin Drug Dealers ---
 @admin_bp.route('/dealers')
@@ -349,30 +365,24 @@ def admin_dealers():
 @admin_bp.route('/dealers/add', methods=['GET', 'POST'])
 @admin_required
 def admin_add_dealer():
-    drugs = Drug.query.all()
-    if request.method == 'POST':
-        city = request.form.get('city')
-        drug_id = int(request.form.get('drug_id'))
-        price = request.form.get('price')
-        stock = request.form.get('stock', 10)
-
-        # Validate price
-        try:
-            price = int(price)
-        except (TypeError, ValueError):
-            flash("Price is required and must be a number.", "danger")
-            return redirect(url_for('admin.admin_add_dealer'))
-
-        try:
-            stock = int(stock)
-        except (TypeError, ValueError):
-            stock = 10
+    form = AddDealerForm()
+    # Dynamically set drug choices from the database
+    form.drug_id.choices = [(drug.id, drug.name) for drug in Drug.query.all()]
+    if form.validate_on_submit():
+        city = form.city.data
+        drug_id = form.drug_id.data
+        price = form.price.data
+        stock = form.stock.data
 
         db.session.add(DrugDealer(city=city, drug_id=drug_id, price=price, stock=stock))
         db.session.commit()
         flash("Dealer added!", "success")
         return redirect(url_for('admin.admin_drugs_dashboard'))
-    return render_template('admin/add_dealer.html', drugs=drugs, cities=CITIES)
+    return render_template('admin/add_dealer.html',
+        form=form,
+        drugs=Drug.query.all(),
+        cities=CITIES
+    )
 
 @admin_bp.route('/dealers/<int:dealer_id>/delete', methods=['POST'])
 @admin_required
@@ -438,7 +448,50 @@ def check_character_alive():
             if request.endpoint not in ('create_character', 'logout', 'static'):
                 return redirect(url_for('create_character'))
 
-#Models -------------------------------
+#flask-login user loader
+class DeleteForm(FlaskForm):
+    submit = SubmitField('Delete')
+class NewTopicForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    content = TextAreaField('Content', validators=[DataRequired()])
+    submit = SubmitField('Create Topic')
+class InviteToCrewForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    submit = SubmitField('Send Invite')
+class AddDrugForm(FlaskForm):
+    name = StringField('Drug Name', validators=[DataRequired()])
+    type = SelectField('Drug Type', choices=[
+        ('Stimulant', 'Stimulant'),
+        ('Opiate', 'Opiate'),
+        ('Hallucinogen', 'Hallucinogen'),
+        ('Depressant', 'Depressant'),
+        ('Other', 'Other')
+    ], validators=[DataRequired()])
+    submit = SubmitField('Add')
+class AddDealerForm(FlaskForm):
+    city = SelectField('City', choices=[(c, c) for c in CITIES], validators=[DataRequired()])
+    drug_id = SelectField('Drug', coerce=int, validators=[DataRequired()])
+    price = IntegerField('Price', validators=[DataRequired(), NumberRange(min=1)])
+    stock = IntegerField('Stock', default=10, validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Add Dealer')
+class TravelForm(FlaskForm):
+    city = RadioField('City', choices=[(c, c) for c in CITIES], validators=[DataRequired()])
+    submit = SubmitField('Travel')
+class EditUserForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[Optional()])
+    crew_id = IntegerField('Crew ID', validators=[Optional()])
+    is_admin = BooleanField('Is Admin')
+    premium = BooleanField('Premium')
+    submit = SubmitField('Save')
+class EditCharacterForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    health = IntegerField('Health', validators=[DataRequired()])
+    money = IntegerField('Money', validators=[DataRequired()])
+    level = IntegerField('Level', validators=[DataRequired()])
+    xp = IntegerField('XP', validators=[DataRequired()])
+    is_alive = BooleanField('Alive')
+    submit = SubmitField('Save')
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
@@ -447,9 +500,35 @@ class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Register')
+class BreakoutForm(FlaskForm):
+    submit = SubmitField('Break Out')
+class BuyForm(FlaskForm):
+    submit = SubmitField('Buy')
+class UploadImageForm(FlaskForm):
+    profile_image = FileField('Profile Image', validators=[DataRequired()])
+    submit = SubmitField('Change Profile Image')
+class PlayerSearchForm(FlaskForm):
+    query = StringField('Search', validators=[DataRequired()])
+    submit = SubmitField('Search')
+class KillForm(FlaskForm):
+    submit = SubmitField('Shoot')
+class KillForm(FlaskForm):
+    submit = SubmitField('Shoot')
+class LeaveCrimeForm(FlaskForm):
+    submit = SubmitField('Leave Group')
+class DisbandCrimeForm(FlaskForm):
+    submit = SubmitField('Disband Group')
+class AttemptCrimeForm(FlaskForm):
+    submit = SubmitField('Attempt')
+class JoinCrimeForm(FlaskForm):
+    invite_code = StringField('Invite Code', validators=[DataRequired()])
+    submit = SubmitField('Join')
+class CreateCrimeForm(FlaskForm):
+    submit = SubmitField('Create Group')
 
 
 
+# Models -------------------------------
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -539,7 +618,8 @@ class Character(db.Model):
             return True
         return False
     
-
+class UpgradeForm(FlaskForm):
+    submit = SubmitField('Upgrade')
 
 class EarnForm(FlaskForm):
     submit = SubmitField('Earn')
@@ -724,7 +804,19 @@ class RoleForm(FlaskForm):
     submit = SubmitField('Update')
 
 
+class BlackjackForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Play Blackjack')
 
+class CoinflipForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    coin_choice = SelectField('Coin Side', choices=[('heads', 'Heads'), ('tails', 'Tails')], validators=[DataRequired()])
+    submit = SubmitField('Flip Coin')
+
+class RouletteForm(FlaskForm):
+    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
+    roulette_choice = SelectField('Roulette Choice', choices=[('red', 'Red'), ('black', 'Black'), ('green', 'Green (14x)')], validators=[DataRequired()])
+    submit = SubmitField('Spin Roulette')
 
 class CrewMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -836,12 +928,10 @@ def forum_view(forum_id):
 @login_required
 def new_topic(forum_id):
     forum = Forum.query.get_or_404(forum_id)
-    if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
-        if not title or not content:
-            flash("Title and content are required.", "danger")
-            return redirect(url_for('new_topic', forum_id=forum_id))
+    form = NewTopicForm()
+    if form.validate_on_submit():
+        title = form.title.data.strip()
+        content = form.content.data.strip()
         topic = ForumTopic(forum_id=forum.id, title=title, author_id=current_user.id)
         db.session.add(topic)
         db.session.commit()
@@ -850,7 +940,7 @@ def new_topic(forum_id):
         db.session.commit()
         flash("Topic created!", "success")
         return redirect(url_for('topic_view', topic_id=topic.id))
-    return render_template('new_topic.html', forum=forum)
+    return render_template('new_topic.html', forum=forum, form=form)
 
 @app.route('/topic/<int:topic_id>', methods=['GET', 'POST'])
 def topic_view(topic_id):
@@ -1124,11 +1214,18 @@ def sell_drugs():
 def kill(username):
     # Get the attacker's character
     attacker = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    # ... find target ...
-    gun = attacker.equipped_gun
+    if not attacker:
+        flash("You must have a living character to attack.", "danger")
+        return redirect(url_for('dashboard'))
+
+    gun = attacker.equipped_gun or current_user.gun
     if not gun:
         flash("You don't have a gun equipped!", "danger")
-        return redirect(url_for('profile', username=username))
+        # Try to find the target character to redirect to their profile
+        target_char = Character.query.filter_by(name=username).first()
+        if target_char:
+            return redirect(url_for('profile_by_id', char_id=target_char.id))
+        return redirect(url_for('dashboard'))
 
     # Find the target character (real user or NPC)
     user = User.query.filter_by(username=username).first()
@@ -1168,16 +1265,10 @@ def kill(username):
         flash(f"{target.name} is already dead!", "danger")
         return redirect(url_for('dashboard'))
 
-    # Ensure the attacker has a gun equipped (prefer equipped_gun, fallback to user.gun)
-    gun = attacker.equipped_gun or current_user.gun
-    if not gun:
-        flash("You don't have a gun equipped!", "danger")
-        return redirect(url_for('profile', username=username))
-
     # Gun accuracy check (if using accuracy stat)
     if hasattr(gun, "accuracy") and random.random() > gun.accuracy:
         flash(f"You missed your shot with {gun.name}!", "warning")
-        return redirect(url_for('profile', username=username))
+        return redirect(url_for('profile_by_id', char_id=target.id))
 
     # Apply damage
     target.health -= gun.damage
@@ -1197,7 +1288,7 @@ def kill(username):
         current_user.kills = (current_user.kills or 0) + 1
         db.session.commit()
 
-    return redirect(url_for('profile', username=username))
+    return redirect(url_for('profile_by_id', char_id=target.id))
 
 
 @app.route('/shop', methods=['GET', 'POST'])
@@ -1229,7 +1320,13 @@ def shop():
             message = "Sorry, this item is out of stock."
         else:
             message = "Not enough money or item not found."
-    return render_template('shop.html', items=items, message=message, character=character)
+    return render_template(
+    "shop.html",
+    character=character,
+    items=items,
+    message=message,
+    buy_form=BuyForm()
+)
 
 @app.route('/travel', methods=['GET', 'POST'])
 @login_required
@@ -1272,7 +1369,8 @@ def travel():
             db.session.commit()
             flash(f"You traveled to {new_city}!", "success")
             return redirect(url_for('dashboard'))
-    return render_template('travel.html', character=character, cities=CITIES, time_left=time_left)
+    return render_template('travel.html', character=character, cities=CITIES, time_left=time_left,
+    travel_form=TravelForm())
 
 @app.route('/inventory', methods=['GET', 'POST'])
 @login_required
@@ -1318,10 +1416,8 @@ def inventory():
 @app.route("/users_online")
 @login_required
 def users_online():
-    cutoff = datetime.utcnow() - timedelta(minutes=1)
+    cutoff = datetime.utcnow() - timedelta(minutes=5)
     users = User.query.filter(User.last_seen >= cutoff).all()
-
-    # For each user, find their *first alive character* (you can tweak this logic as needed)
     user_character_map = {}
     for user in users:
         character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
@@ -1329,7 +1425,6 @@ def users_online():
             user_character_map[character.id] = character.name
         else:
             user_character_map[user.id] = user.username  # fallback
-
     return render_template("users_online.html", users=users, char_map=user_character_map)
 
 @app.route('/player_search', methods=['GET', 'POST'])
@@ -1345,7 +1440,13 @@ def player_search():
                 Character.name.ilike(f"%{query}%"),
                 Character.name != current_user.id
             ).all()
-    return render_template('player_search.html', results=results, query=query)
+    return render_template(
+    "player_search.html",
+    search_form=PlayerSearchForm(),
+    kill_form=KillForm(),
+    results=results,
+    query=query
+)
 
 @app.route('/npc/<int:id>')
 def npc_profile(id):
@@ -1376,16 +1477,26 @@ def send_crew_message():
     if not character or not character.crew_id:
         return jsonify({'error': 'Not in a crew'}), 403
 
+    # Defensive: Check that crew exists
+    crew = Crew.query.get(character.crew_id)
+    if not crew:
+        return jsonify({'error': 'Crew does not exist.'}), 400
+
     message = request.form.get('message', '').strip()
     if not message:
         return jsonify({"error": "Empty message"}), 400
+
+    # Defensive: Check that character exists
+    db_character = Character.query.get(character.id)
+    if not db_character:
+        return jsonify({'error': 'Character does not exist.'}), 400
 
     chat_msg = ChatMessage(
         username=character.name,
         message=message,
         channel='crew',
-        user_id=character.id,
-        crew_id=character.crew_id  # <-- Save crew ID
+        user_id=current_user.id,      # Must be a valid Character.id
+        crew_id=character.crew_id  # Must be a valid Crew.id
     )
     db.session.add(chat_msg)
     db.session.commit()
@@ -1499,7 +1610,14 @@ def jail():
         Character.jail_until != None,
         Character.jail_until > now
     ).order_by(Character.jail_until.asc()).all()
-    return render_template('jail.html', jailed_characters=jailed_characters, now=now)
+    current_character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    return render_template(
+    "jail.html",
+    jailed_characters=jailed_characters,
+    current_character=current_character,
+    now=datetime.utcnow(),
+    breakout_form=BreakoutForm()
+)
 
 @app.route('/breakout/<int:char_id>', methods=['POST'])
 @login_required
@@ -1522,7 +1640,7 @@ def breakout(char_id):
         return redirect(url_for('jail'))
 
     # Breakout logic
-    success_chance = 0.35  # 35% chance to succeed
+    success_chance = 0.25  # 25% chance to succeed
     if random.random() < success_chance:
         target.in_jail = False
         target.jail_until = None
@@ -1612,6 +1730,7 @@ def dashboard():
         'dashboard.html',
         character=character,
         online_users=online_users,
+        online_characters=online_characters,
         earn_form=earn_form,  # now a list of Character objects
         npcs=npcs)
 
@@ -1624,6 +1743,13 @@ def casino():
     dealer_hand = []
     bet = 0
     table = request.args.get('table', 'blackjack')  # Default to blackjack
+    flip = None
+    roulette_result = None
+    user_choice = None # Default to blackjack
+
+    blackjack_form = BlackjackForm()
+    coinflip_form = CoinflipForm()
+    roulette_form = RouletteForm()
 
     if request.method == 'POST':
         table = request.form.get('table', 'blackjack')
@@ -1658,14 +1784,18 @@ def casino():
             if player_val > 21:
                 result = f"You busted! Lost ${bet}."
                 character.money -= bet
+                flash(result, "danger")
             elif dealer_val > 21 or player_val > dealer_val:
                 result = f"You win! Won ${bet}."
                 character.money += bet
+                flash(result, "success")
             elif player_val == dealer_val:
                 result = "Push! It's a tie."
+                flash(result, "info")
             else:
                 result = f"You lose! Lost ${bet}."
                 character.money -= bet
+                flash(result, "danger")
 
         elif table == 'coinflip':
             import secrets
@@ -1674,9 +1804,11 @@ def casino():
             if user_choice == flip:
                 result = f"You won the coin flip! Won ${bet}."
                 character.money += bet
+                flash(result, "success")
             else:
                 result = f"You lost the coin flip! Lost ${bet}."
                 character.money -= bet
+                flash(result, "danger")
 
         elif table == 'roulette':
             import secrets
@@ -1687,27 +1819,19 @@ def casino():
                     win_amount = bet * 14
                     result = f"Green! You won ${win_amount}!"
                     character.money += win_amount
+                    flash(result, "success")
                 else:
                     win_amount = bet * 2
                     result = f"You won on {roulette_result}! Won ${win_amount}."
                     character.money += win_amount
+                    flash(result, "success")
             else:
                 result = f"You lost on {roulette_result}! Lost ${bet}."
                 character.money -= bet
+                flash(result, "danger")
 
         db.session.commit()
-        return render_template(
-            'casino.html',
-            result=result,
-            hand=hand,
-            dealer_hand=dealer_hand,
-            bet=bet,
-            character=character,
-            table=table,
-            flip=flip if table == 'coinflip' else None,
-            roulette_result=roulette_result if table == 'roulette' else None,
-            user_choice=user_choice if table in ['coinflip', 'roulette'] else None
-        )
+        return redirect(url_for('casino', table=table)) 
 
     return render_template(
         'casino.html',
@@ -1716,7 +1840,11 @@ def casino():
         dealer_hand=dealer_hand,
         bet=bet,
         character=character,
-        table=table
+        table=table,
+        blackjack_form=blackjack_form,
+        coinflip_form=coinflip_form,
+        roulette_form=roulette_form,
+        user_choice=user_choice
     )
 
 @app.route('/refresh_shop')
@@ -1745,13 +1873,10 @@ def invite_to_crew():
         return redirect(url_for('dashboard'))
 
     crew = Crew.query.get(character.crew_id)
+    form = InviteToCrewForm()
 
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        if not username:
-            flash("Username is required.")
-            return redirect(url_for('invite_to_crew'))
-
+    if form.validate_on_submit():
+        username = form.username.data.strip()
         invitee = Character.query.filter_by(name=username, is_alive=True).first()
         if not invitee:
             flash("Character not found.")
@@ -1777,44 +1902,41 @@ def invite_to_crew():
         flash(f"Invite sent to {invitee.name}!", "success")
         return redirect(url_for('dashboard'))
 
-    return render_template('invite_to_crew.html', crew=crew)
+    return render_template('invite_to_crew.html', crew=crew, form=form)
 
-# ...existing code...
+
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
 def create_crime():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("You must have an active character to create a crime group.", "danger")
-        return redirect(url_for('dashboard'))
-    
-    if character.crime_group:
-        return redirect(url_for('crime_group'))
+    form = CreateCrimeForm()
+    if form.validate_on_submit():
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if not character:
+            flash("You must have an active character to create a crime group.", "danger")
+            return redirect(url_for('dashboard'))
 
-    cooldown_minutes = 360  # 6 hours for leaders
-    if is_on_crime_cooldown(character, cooldown_minutes):
-        wait_time = (character.last_crime_time + timedelta(minutes=cooldown_minutes)) - datetime.utcnow()
-        flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
-        return redirect(url_for('dashboard'))
+        # Ensure character is in DB and has a valid id
+        db_character = Character.query.get(character.id)
+        if not db_character:
+            flash("Your character does not exist in the database.", "danger")
+            return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
+        if character.crime_group:
+            return redirect(url_for('crime_group'))
+
+        cooldown_minutes = 360  # 6 hours for leaders
+        if is_on_crime_cooldown(character, cooldown_minutes):
+            wait_time = (character.last_crime_time + timedelta(minutes=cooldown_minutes)) - datetime.utcnow()
+            flash(f"You must wait {wait_time.seconds // 3600}h {((wait_time.seconds // 60) % 60)}m before starting a new crime group.", "warning")
+            return redirect(url_for('dashboard'))
+
         crime_name = request.form.get('crime_name', '').strip()
         if not crime_name:
             crime_name = f"{character.name}'s Crew"
 
-        # Use the new unique invite code generator
         invite_code = generate_unique_invite_code()
 
-        # --- Double-check character existence in DB ---
-        if not character.id:
-            db.session.add(character)
-            db.session.commit()
-        else:
-            char_in_db = db.session.get(Character, character.id)
-            if not char_in_db:
-                flash("Character does not exist in the database.", "danger")
-                return redirect(url_for('dashboard'))
-
+        # --- Only use character.id as leader_id ---
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
@@ -1826,12 +1948,13 @@ def create_crime():
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
 
-    return render_template('create_crime.html')
+    return render_template('create_crime.html', create_crime_form=form)
 # ...existing code...
 
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
 def join_crime():
+    form = JoinCrimeForm()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         flash("No active character found. Please create one first.", "danger")
@@ -1847,8 +1970,8 @@ def join_crime():
         flash(f"You must wait {wait_time.seconds // 60}m before joining a new crime group.", "warning")
         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
-        code = request.form.get('invite_code', '').strip().upper()
+    if form.validate_on_submit():
+        code = form.invite_code.data.strip().upper()
         crime = OrganizedCrime.query.filter_by(invite_code=code).first()
         if not crime:
             flash("Invalid invite code.", 'danger')
@@ -1860,7 +1983,7 @@ def join_crime():
             db.session.commit()
             flash("You joined the crime group!", 'success')
             return redirect(url_for('crime_group'))
-    return render_template('join_crime.html')
+    return render_template('join_crime.html', join_crime_form=form)
 
 @app.route('/crime_group')
 @login_required
@@ -1885,7 +2008,14 @@ def crime_group():
     # Query all members in the group from the Character table using the foreign key
     members = Character.query.filter_by(crime_group_id=crime.id).all()
     
-    return render_template('crime_group.html', crime=crime, members=members)
+    return render_template(
+    "crime_group.html",
+    crime=crime,
+    members=members,
+    leave_crime_form=LeaveCrimeForm(),
+    disband_crime_form=DisbandCrimeForm(),
+    attempt_crime_form=AttemptCrimeForm()
+)
 
 @app.route('/disband_crime', methods=['POST'])
 @login_required
@@ -1909,35 +2039,31 @@ def disband_crime():
     flash("Crime group has been disbanded.", "success")
     return redirect(url_for('dashboard'))
 
-@app.route('/upload_profile_image', methods=['GET', 'POST'])
+@app.route('/upload_profile_image', methods=['POST'])
 @login_required
 def upload_profile_image():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("You don't have permission to upload a profile image.", "danger")
-        return redirect(url_for('dashboard'))
-
-    # Only allow the owner of the character to upload
-    if character.master_id != current_user.id:
-        flash("You can only upload a profile image for your own character.", "danger")
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        file = request.files.get('profile_image')
-        if file and allowed_file(file.filename):
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            filename = secure_filename(f"{current_user.id}_{file.filename}")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-
-            character.profile_image = f'uploads/{filename}'
+    if 'profile_image' not in request.files:
+        flash('No file part', 'danger')
+        return redirect(request.referrer or url_for('dashboard'))
+    file = request.files['profile_image']
+    if file.filename == '':
+        flash('No selected file', 'danger')
+        return redirect(request.referrer or url_for('dashboard'))
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"{current_user.id}_{file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        # Update character's profile image
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if character:
+            character.profile_image = f"uploads/{filename}"
             db.session.commit()
-
             flash('Profile image updated!', 'success')
-            return redirect(url_for('profile_by_id', char_id=character.id))
-        else:
-            flash('Invalid file type.', 'danger')
-    return render_template('upload_profile_image.html')
+        return redirect(url_for('profile_by_id', char_id=character.id))
+    else:
+        flash('Invalid file type.', 'danger')
+        return redirect(request.referrer or url_for('dashboard'))
+
 
 @app.route('/crew_messages')
 @login_required
@@ -1946,17 +2072,15 @@ def crew_messages():
     if not character or not character.crew_id:
         return jsonify([])
 
-    messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id)\
-                                .order_by(ChatMessage.timestamp.asc())\
-                                .limit(50).all()
-
-    return jsonify([
-        {
-            'character_name': Character.query.filter_by(master_id=m.user_id).first().name if Character.query.filter_by(master_id=m.user_id).first() else m.username,
+    messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id).order_by(ChatMessage.timestamp.asc()).limit(50).all()
+    result = []
+    for m in messages:
+        char = Character.query.get(m.user_id)  # Use get(id)
+        result.append({
+            'character_name': char.name if char else m.username,
             'message': m.message
-        }
-        for m in messages
-    ])
+        })
+    return jsonify(result)
 
 @app.route('/crew_invitations')
 @login_required
@@ -2048,7 +2172,7 @@ def earn():
 
     now = datetime.utcnow()
     if hasattr(character, 'last_earned') and character.last_earned:
-        cooldown = timedelta(seconds=random.randint(60, 240)) # Random cooldown between 30 and 120 seconds
+        cooldown = timedelta(seconds=160) # Random cooldown between 30 and 120 seconds
         if now - character.last_earned < cooldown:
             seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
             flash(f'Cooldown active. Please wait {seconds_remaining} seconds.', 'warning')
@@ -2072,7 +2196,7 @@ def earn():
     if current_user.premium and current_user.premium_until and current_user.premium_until > now:
         money_min, money_max = int(money_min * 1.5), int(money_max * 1.5)
         xp_min, xp_max = int(xp_min * 1.5), int(xp_max * 1.5)
-        cooldown = timedelta(seconds=random.randint(30, 120))  # Random cooldown between 30 and 120 seconds
+        cooldown = timedelta(seconds=35)  # Random cooldown between 30 and 120 seconds
 
     earned_money = random.randint(money_min, money_max)
     earned_xp = random.randint(xp_min, xp_max)
@@ -2170,7 +2294,9 @@ def profile_by_id(char_id):
     user = User.query.filter_by(id=character.master_id).first()
     crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
     
-    return render_template('profile.html', user=user, character=character, crew=crew)
+    return render_template('profile.html', user=user, character=character,
+    upload_image_form=UploadImageForm(),
+    kill_form=KillForm(), crew=crew)
     
 
 
@@ -2229,7 +2355,9 @@ def public_messages():
 # admin.add_view(ModelView(CrewInvitation, db.session))
 
 
-
+@app.context_processor
+def inject_upgrade_form():
+    return dict(upgrade_form=UpgradeForm())
 
 @app.context_processor
 def inject_current_character():
@@ -2276,7 +2404,7 @@ def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_st
 def randomize_drug_prices(interval_minutes=random.randint(5, 10)):
     with app.app_context():
         while True:
-            randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=50)
+            randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=5000)
             time.sleep(interval_minutes * 60)
 
 # Start the background thread when the app starts

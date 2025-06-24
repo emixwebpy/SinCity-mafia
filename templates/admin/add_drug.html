@@ -74,18 +74,15 @@
 </div>
 <div class="add-drug-form-container">
     <form method="post" class="add-drug-form">
-        <label for="drug-name">Drug Name:</label>
-        <input id="drug-name" type="text" name="name" placeholder="Drug Name" required>
-        <label for="drug-type">Drug Type:</label>
-        <select id="drug-type" name="type" required>
-            <option value="" disabled selected>Select type</option>
-            <option value="Stimulant">Stimulant</option>
-            <option value="Opiate">Opiate</option>
-            <option value="Hallucinogen">Hallucinogen</option>
-            <option value="Depressant">Depressant</option>
-            <option value="Other">Other</option>
-        </select>
-        <button type="submit" class="btn btn-success">Add</button>
+        {{ form.hidden_tag() }}
+
+        <label for="name">Drug Name:</label>
+        {{ form.name(class_="form-control", id="name", placeholder="Drug Name") }}
+
+        <label for="type">Drug Type:</label>
+        {{ form.type(class_="form-control", id="type") }}
+
+        {{ form.submit(class_="btn btn-success") }}
     </form>
 </div>
 {% endblock %}
