@@ -1,68 +1,68 @@
 {% extends "base.html" %}
-{% block title %}Manage Organized Crimes{% endblock %}
+{% block title %}Godfathers by City{% endblock %}
 {% block content %}
 <style>
-.forums-header {
+.godfathers-header {
     background: linear-gradient(90deg, #232526 0%, #414345 100%);
     padding: 2rem 2rem 1rem 2rem;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     margin-bottom: 0;
 }
-.forums-header h1 {
+.godfathers-header h1 {
     color: #ffd700;
     font-size: 2.5rem;
     text-align: center;
     margin-bottom: 0.5rem;
     letter-spacing: 2px;
 }
-.forums-list {
+.godfathers-list {
     background: #23243a;
     border-radius: 0 0 12px 12px;
     padding: 1.5rem 2rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
-.forum-table {
+.godfather-table {
     width: 100%;
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
 }
-.forum-table th, .forum-table td {
+.godfather-table th, .godfather-table td {
     padding: 1rem 1rem;
     text-align: left;
     vertical-align: middle;
 }
-.forum-table th {
+.godfather-table th {
     background: #181824;
     color: #ffd700;
     font-size: 1.1rem;
     font-weight: bold;
     border-bottom: 2px solid #8be9fd55;
 }
-.forum-table tr {
+.godfather-table tr {
     background: #282a36;
     transition: background 0.2s;
 }
-.forum-table tr:hover {
+.godfather-table tr:hover {
     background: #34355b;
 }
-.forum-link {
+.godfather-link {
     color: #ffd700;
     font-size: 1.1rem;
     font-weight: bold;
     text-decoration: none;
     transition: color 0.2s;
 }
-.forum-link:hover {
+.godfather-link:hover {
     color: #ffb86c;
     text-decoration: underline;
 }
-.forum-desc {
+.godfather-desc {
     color: #b8b8ff;
     font-size: 1rem;
 }
-.forum-actions {
+.godfather-actions {
     display: flex;
     gap: 8px;
 }
@@ -81,53 +81,44 @@
     background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
     color: #232526;
 }
-.btn-danger {
-    background: #ff5555;
-    color: #fff;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
+.you-godfather {
+    color: #ffd700;
     font-weight: bold;
-    transition: background 0.2s;
-    text-decoration: none;
 }
-.btn-danger:hover {
-    background: #ff2222;
-    color: #fff;
+.none {
+    color: #aaa;
 }
 </style>
-<div class="forums-header">
-    <h1>Organized Crimes</h1>
+<div class="godfathers-header">
+    <h1>Godfathers by City</h1>
 </div>
-<div class="forums-list">
-    <table class="forum-table">
+<div class="godfathers-list">
+    <table class="godfather-table">
         <tr>
-            <th style="width:7%;">ID</th>
-            <th style="width:20%;">Name</th>
-            <th style="width:18%;">Invite Code</th>
-            <th style="width:20%;">Leader</th>
-            <th style="width:10%;">Members</th>
-            <th style="width:25%;">Actions</th>
+            <th style="width:30%;">City</th>
+            <th style="width:40%;">Godfather</th>
+            <th style="width:30%;">Action</th>
         </tr>
-        {% for crime, delete_form in crime_forms %}
+        {% for city in cities %}
         <tr>
-            <td>{{ crime.id }}</td>
-            <td>{{ crime.name }}</td>
-            <td>{{ crime.invite_code }}</td>
-            <td>{{ crime.leader.name if crime.leader else 'N/A' }}</td>
-            <td>{{ crime.members|length }}</td>
+            <td>{{ city }}</td>
             <td>
-                <div class="forum-actions">
-                    <form action="{{ url_for('admin.admin_delete_organized_crime', crime_id=crime.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this crime group?');">
-                        {{ delete_form.hidden_tag() }}
-                        {{ delete_form.submit(class_="btn btn-danger") }}
-                    </form>
-                </div>
+                {% if godfathers[city] %}
+                    {{ godfathers[city].name }}
+                {% else %}
+                    <span class="none">None</span>
+                {% endif %}
             </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6" class="forum-desc">No organized crimes found.</td>
+            <td>
+                {% if not godfathers[city] %}
+                    <form method="post" action="{{ url_for('claim_godfather', city=city) }}">
+                        {{ claim_forms[city].hidden_tag() }}
+                        {{ claim_forms[city].submit(class_="btn btn-primary btn-sm") }}
+                    </form>
+                {% elif godfathers[city].id == character.id %}
+                    <span class="you-godfather">You are the Godfather</span>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>

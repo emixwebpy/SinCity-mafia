@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Manage Organized Crimes{% endblock %}
+{% block title %}Crews{% endblock %}
 {% block content %}
 <style>
 .forums-header {
@@ -97,37 +97,40 @@
 }
 </style>
 <div class="forums-header">
-    <h1>Organized Crimes</h1>
+    <h1>Crews</h1>
 </div>
 <div class="forums-list">
     <table class="forum-table">
         <tr>
-            <th style="width:7%;">ID</th>
-            <th style="width:20%;">Name</th>
-            <th style="width:18%;">Invite Code</th>
-            <th style="width:20%;">Leader</th>
-            <th style="width:10%;">Members</th>
-            <th style="width:25%;">Actions</th>
+            <th>Crew Name</th>
+            <th>Leader</th>
+            <th>Left Hand</th>
+            <th>Right Hand</th>
         </tr>
-        {% for crime, delete_form in crime_forms %}
+        {% for crew in crews %}
         <tr>
-            <td>{{ crime.id }}</td>
-            <td>{{ crime.name }}</td>
-            <td>{{ crime.invite_code }}</td>
-            <td>{{ crime.leader.name if crime.leader else 'N/A' }}</td>
-            <td>{{ crime.members|length }}</td>
+            <td>{{ crew.name }}</td>
             <td>
-                <div class="forum-actions">
-                    <form action="{{ url_for('admin.admin_delete_organized_crime', crime_id=crime.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this crime group?');">
-                        {{ delete_form.hidden_tag() }}
-                        {{ delete_form.submit(class_="btn btn-danger") }}
-                    </form>
-                </div>
+                {% if crew_roles[crew.id].leader %}
+                    {{ crew_roles[crew.id].leader }}
+                {% else %}
+                    <span style="color:#aaa;">None</span>
+                {% endif %}
             </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6" class="forum-desc">No organized crimes found.</td>
+            <td>
+                {% if crew_roles[crew.id].left_hand %}
+                    {{ crew_roles[crew.id].left_hand }}
+                {% else %}
+                    <span style="color:#aaa;">None</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if crew_roles[crew.id].right_hand %}
+                    {{ crew_roles[crew.id].right_hand }}
+                {% else %}
+                    <span style="color:#aaa;">None</span>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>

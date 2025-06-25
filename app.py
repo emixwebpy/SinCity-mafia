@@ -14,7 +14,7 @@ from flask_wtf import CSRFProtect, FlaskForm
 from flask_migrate import Migrate
 from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField,FileField,RadioField,TextAreaField
 from wtforms.fields import DateTimeField
-from wtforms.validators import DataRequired,NumberRange, Optional
+from wtforms.validators import DataRequired,NumberRange, Optional,Length
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -310,7 +310,8 @@ def admin_delete_shop_item(item_id):
 @admin_required
 def admin_organized_crimes():
     crimes = OrganizedCrime.query.order_by(OrganizedCrime.id.desc()).all()
-    return render_template('admin/organized_crimes.html', crimes=crimes)
+    crime_forms = [(crime, DeleteCrimeForm(prefix=str(crime.id))) for crime in crimes]
+    return render_template('admin/organized_crimes.html', crime_forms=crime_forms)
 
 # --- Admin Add Organized Crime ---
 @admin_bp.route('/organized_crimes/<int:crime_id>/edit', methods=['GET', 'POST'])
@@ -485,7 +486,21 @@ def admin_drugs_dashboard():
         delete_drug_forms=delete_drug_forms,
         delete_dealer_forms=delete_dealer_forms
     )
-
+@admin_bp.route('/reset_crime_cooldown', methods=['GET', 'POST'])
+@login_required
+def reset_crime_cooldown():
+    form = ResetCrimeCooldownForm()
+    if form.validate_on_submit():
+        char_id = form.character_id.data
+        character = Character.query.get(char_id)
+        if character:
+            character.last_crime_time = None
+            db.session.commit()
+            flash(f"Crime cooldown reset for {character.name}.", "success")
+        else:
+            flash("Character not found.", "danger")
+        return redirect(url_for('admin.reset_crime_cooldown'))
+    return render_template('admin/reset_crime_cooldown.html', form=form)
 @admin_bp.route('/crews')
 @admin_required
 def admin_crews():
@@ -536,6 +551,26 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Flask Forms -------------------------------
+class CreateCrewForm(FlaskForm):
+    crew_name = StringField('Crew Name', validators=[DataRequired(), Length(max=64)])
+    submit = SubmitField('Create')
+class CreateCharacterForm(FlaskForm):
+    character_name = StringField('Character Name', validators=[DataRequired(), Length(max=32)])
+    submit = SubmitField('Create Character')
+class ResetCrimeCooldownForm(FlaskForm):
+    character_id = IntegerField('Character ID', validators=[DataRequired()])
+    submit = SubmitField('Reset Cooldown')
+class DeleteCrimeForm(FlaskForm):
+    submit = SubmitField('Delete')
+class CrewRoleForm(FlaskForm):
+    new_role = SelectField('Role', choices=[
+        ('member', 'Member'),
+        ('left hand', 'Left Hand'),
+        ('right hand', 'Right Hand')
+    ])
+    submit = SubmitField('Update')
+class ClaimGodfatherForm(FlaskForm):
+        submit = SubmitField('Claim Godfather')
 class DeleteDrugForm(FlaskForm):
     submit = SubmitField('Delete')
 class EditForumForm(FlaskForm):
@@ -646,10 +681,8 @@ class PlayerSearchForm(FlaskForm):
     submit = SubmitField('Search')
 class KillForm(FlaskForm):
     submit = SubmitField('Shoot')
-
 class EquipGunForm(FlaskForm):
     submit = SubmitField('Equip')
-
 class KillForm(FlaskForm):
     submit = SubmitField('Shoot')
 class LeaveCrimeForm(FlaskForm):
@@ -710,13 +743,12 @@ class RouletteForm(FlaskForm):
 class SendMessageForm(FlaskForm):
     content = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send')
-
 class ComposeMessageForm(FlaskForm):
     recipient_name = StringField('Recipient Name', validators=[DataRequired()])
     content = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send')
 
-# Models -------------------------------
+# Player Models -------------------------------
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -793,7 +825,7 @@ class Character(db.Model):
     
     
     profile_image = db.Column(db.String(255), nullable=True)
-    crew = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
+    
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
     
     linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
@@ -805,7 +837,11 @@ class Character(db.Model):
         if self.master and getattr(self.master, "is_admin", False):
             return True
         return False
-    
+class Godfather(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    city = db.Column(db.String(64), unique=True, nullable=False)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), unique=True, nullable=False)
+    character = db.relationship('Character', backref='godfather_of')    
 class CrewMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
@@ -827,10 +863,10 @@ class OrganizedCrime(db.Model):
     leader = db.relationship("Character", backref="led_crime_groups", foreign_keys=[leader_id])
     
     members = db.relationship(
-        "Character",
-        back_populates="crime_group",
-        foreign_keys="Character.crime_group_id"
-    )
+    "Character",
+    back_populates="crime_group",
+    foreign_keys="Character.crime_group_id"
+)
 
 
     def is_full(self):
@@ -1003,19 +1039,19 @@ class ForumPost(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
+# def generation of unique invite codes for OrganizedCrime
 def generate_unique_invite_code(length=6):
     """Generate a unique invite code for OrganizedCrime."""
     while True:
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
         if not OrganizedCrime.query.filter_by(invite_code=code).first():
             return code
-
+# Function to check if a character is on crime cooldown
 def is_on_crime_cooldown(character, cooldown_minutes=360):
     if character.last_crime_time:
         return datetime.utcnow() < character.last_crime_time + timedelta(minutes=cooldown_minutes)
     return False
-
+# Function to release characters from jail if their jail time has expired
 def release_expired_jail():
         now = datetime.utcnow()
         expired = Character.query.filter(
@@ -1031,9 +1067,9 @@ def release_expired_jail():
 
 
 # Admin Interface -------------------------------
-class MyAdminIndexView(AdminIndexView):
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
+# class MyAdminIndexView(AdminIndexView):
+#     def is_accessible(self):
+#         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
     
 @login_manager.user_loader
 def load_user(user_id):
@@ -1177,7 +1213,26 @@ def send_message(user_id):
         flash("Message sent!", "success")
         return redirect(url_for('inbox'))
     return render_template("send_message.html", form=form, recipient=recipient)
-
+@app.route('/leave_crime', methods=['POST', 'GET'])
+@login_required
+def leave_crime():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crime_group:
+        flash("You're not in any crime group.", "warning")
+        return redirect(url_for('dashboard'))
+    
+    crime = character.crime_group
+    # If the character is the leader, prevent leaving and advise disbanding
+    if crime.leader_id == character.id:
+        flash("You are the leader of this crime group. To leave, you must disband the group.", "danger")
+        return redirect(url_for('crime_group'))
+    
+    # Remove the character from the crime group
+    character.crime_group_id = None
+    db.session.commit()
+    
+    flash("You have left the crime group.", "success")
+    return redirect(url_for('dashboard'))
 @app.route('/messages/view/<int:msg_id>', methods=['GET', 'POST'])
 @login_required
 def view_message(msg_id):
@@ -1230,6 +1285,7 @@ def attempt_organized_crime():
 
     for member in members:
         if member:
+            member.last_crime_time = datetime.utcnow()
             if success:
                 member.money += reward_money
                 member.xp += reward_xp
@@ -1263,10 +1319,15 @@ def crew_page(crew_id):
     member_forms = [(member, RoleForm(new_role=member.role)) for member in members]
     # Determine current user's role in the crew
     current_user_role = None
+    for m in members:
+        if m.user_id == current_user.id:
+            current_user_role = m.role
+
+    member_forms = []
     for member in members:
-        if member.user_id == current_user.id:
-            current_user_role = member.role
-            break
+        form = CrewRoleForm(prefix=str(member.id))
+        form.new_role.data = member.role  # Set default
+        member_forms.append((member, form))
     return render_template(
         'crew_page.html',
         crew=crew,
@@ -1281,36 +1342,36 @@ def crew_page(crew_id):
 @login_required
 def update_crew_role(crew_member_id):
     crew_member = CrewMember.query.get_or_404(crew_member_id)
-    target_user_id = crew_member.user_id
-    target_crew_id = crew_member.crew_id
+    crew_id = crew_member.crew_id
 
-    # Get current user's own crew role
-    my_role = CrewMember.query.filter_by(user_id=current_user.id, crew_id=target_crew_id).first()
-    if not my_role or my_role.role not in ['leader', 'right_hand', 'left_hand']:
-        flash(f"You don't have permission to change roles.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
+    # Only leader can change roles
+    my_member = CrewMember.query.filter_by(user_id=current_user.id, crew_id=crew_id).first()
+    if not my_member or my_member.role != 'leader':
+        flash("Only the leader can change roles.", "danger")
+        return redirect(url_for('crew_page', crew_id=crew_id))
 
-    new_role = request.form.get('new_role')
+    form = CrewRoleForm(prefix=str(crew_member.id))
+    if form.validate_on_submit():
+        new_role = form.new_role.data
 
-    # Prevent self-demotion or role change
-    if target_user_id == current_user.id:
-        flash(f"You can't change your own role.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
+        # Prevent self-demotion
+        if crew_member.user_id == current_user.id:
+            flash("You can't change your own role.", "danger")
+            return redirect(url_for('crew_page', crew_id=crew_id))
 
-    # Prevent anyone but the Leader from changing the Leader's role
-    if crew_member.role == 'leader' and my_role.role != 'leader':
-        flash(f"Only the leader can change the leader's role.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
+        # Only one left hand/right hand per crew
+        if new_role in ['left hand', 'right hand']:
+            existing = CrewMember.query.filter_by(crew_id=crew_id, role=new_role).first()
+            if existing and existing.id != crew_member.id:
+                flash(f"There is already a {new_role} in this crew.", "danger")
+                return redirect(url_for('crew_page', crew_id=crew_id))
 
-    # Prevent Right/Left Hands from assigning the leader role
-    if my_role.role != 'leader' and new_role == 'leader':
-        flash(f"Only the leader can assign the leader role.", "danger")
-        return redirect(url_for('crew_page', crew_id=target_crew_id))
-
-    crew_member.role = new_role
-    db.session.commit()
-    flash(f"Role updated.", "success")
-    return redirect(url_for('crew_page', crew_id=target_crew_id))
+        crew_member.role = new_role
+        db.session.commit()
+        flash("Role updated.", "success")
+    else:
+        flash("Invalid form submission.", "danger")
+    return redirect(url_for('crew_page', crew_id=crew_id))
 
 
 
@@ -1613,11 +1674,12 @@ def login():
 @app.route('/create_character', methods=['GET', 'POST'])
 @login_required
 def create_character():
-    if request.method == 'POST':
+    form = CreateCharacterForm()
+    if form.validate_on_submit():
         char_name = request.form.get('character_name', '').strip()
         if not char_name:
             flash("Character name is required.", "danger")
-            return render_template('create_character.html')
+            return render_template('create_character.html', form=form)
         # Optionally check for duplicate names or add more validation here
         new_char = Character(
             master_id=current_user.id,
@@ -1631,7 +1693,7 @@ def create_character():
         db.session.commit()
         flash("New character created!", "success")
         return redirect(url_for('dashboard'))
-    return render_template('create_character.html')
+    return render_template('create_character.html', form=form)
 @app.route('/messages/compose', methods=['GET', 'POST'])
 @login_required
 def compose_message():
@@ -1659,27 +1721,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/leave_crime', methods=['POST', 'GET'])
-@login_required
-def leave_crime():
-    # Get the active character for the logged-in user
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character or not character.crime_group:
-        flash("You're not in any crime group.", "warning")
-        return redirect(url_for('dashboard'))
-    
-    crime = character.crime_group
-    # If the character is the leader, prevent leaving and advise disbanding
-    if crime.leader_id == character.id:
-        flash("You are the leader of this crime group. To leave, you must disband the group.", "danger")
-        return redirect(url_for('crime_group'))
-    
-    # Remove the character from the crime group
-    character.crime_group_id = None
-    db.session.commit()
-    
-    flash("You have left the crime group.", "success")
-    return redirect(url_for('dashboard'))
+
 
 @app.route('/equip_gun/<int:gun_id>', methods=['POST'])
 @login_required
@@ -1827,6 +1869,7 @@ def leave_crew():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    godfathers = {g.city: g.character for g in Godfather.query.all()}
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     # Get all users online
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
@@ -1839,13 +1882,17 @@ def dashboard():
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     earn_form = EarnForm()
+    cities = CITIES  # Make sure CITIES is defined globally
+    claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
     return render_template(
         'dashboard.html',
         character=character,
         online_users=online_users,
         online_characters=online_characters,
         earn_form=earn_form,  # now a list of Character objects
-        npcs=npcs)
+        npcs=npcs, godfathers=godfathers,
+        cities=cities,                # <-- Pass cities
+        claim_forms=claim_forms)
 
 @app.route('/casino', methods=['GET', 'POST'])
 @login_required
@@ -2035,6 +2082,37 @@ def invite_to_crew():
 
     return render_template('invite_to_crew.html', crew=crew, form=form)
 
+@app.route('/claim_godfather/<city>', methods=['POST'])
+@login_required
+def claim_godfather(city):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    form = ClaimGodfatherForm(prefix=city.replace(" ", "_"))
+    if not form.validate_on_submit():
+        flash("Invalid form submission.", "danger")
+        return redirect(url_for('dashboard'))
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Check if city already has a Godfather
+    existing = Godfather.query.filter_by(city=city).first()
+    if existing:
+        flash(f"{city} already has a Godfather!", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Check if this character is already Godfather somewhere
+    if Godfather.query.filter_by(character_id=character.id).first():
+        flash("You are already a Godfather of another city!", "danger")
+        return redirect(url_for('dashboard'))
+    # Define ClaimGodfatherForm if not already defined
+    
+
+    claim_forms = {city: ClaimGodfatherForm() for city in CITIES}
+    godfather = Godfather(city=city, character_id=character.id)
+    db.session.add(godfather)
+    db.session.commit()
+    flash(f"You are now the Godfather of {city}!", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
@@ -2042,16 +2120,18 @@ def create_crime():
     form = CreateCrimeForm()
     if form.validate_on_submit():
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-        if not character:
-            flash("You must have an active character to create a crime group.", "danger")
-            return redirect(url_for('dashboard'))
-
-        # Ensure character is in DB and has a valid id
         db_character = Character.query.get(character.id)
         if not db_character:
             flash("Your character does not exist in the database.", "danger")
             return redirect(url_for('dashboard'))
+        if not character:
+            flash("You must have an active character to create a crime group.", "danger")
+            return redirect(url_for('dashboard'))
 
+        print("All character IDs:", [c.id for c in Character.query.all()])
+        print("Current character ID:", character.id)
+        print("Creating crime with leader_id:", character.id)
+        print("DB path:", os.path.abspath('users.db'))
         if character.crime_group:
             return redirect(url_for('crime_group'))
 
@@ -2073,14 +2153,16 @@ def create_crime():
         db.session.commit()
 
         character.crime_group_id = crime.id
-        character.last_crime_time = datetime.utcnow()
+        
         db.session.commit()
-
+        print("DEBUG: character.id =", character.id)
+        print("DEBUG: Character in DB?", db.session.get(Character, character.id) is not None)
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
 
     return render_template('create_crime.html', create_crime_form=form)
-# ...existing code...
+
+
 
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
@@ -2110,7 +2192,7 @@ def join_crime():
             flash("That crime group is full!", 'warning')
         else:
             character.crime_group_id = crime.id
-            character.last_crime_time = datetime.utcnow()
+            
             db.session.commit()
             flash("You joined the crime group!", 'success')
             return redirect(url_for('crime_group'))
@@ -2219,6 +2301,56 @@ def crew_invitations():
     invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
     return render_template('crew_invitations.html', invitations=invitations)
 
+@app.route('/crews')
+@login_required
+def crews():
+    all_crews = Crew.query.all()
+    # For each crew, find the leader, left hand, and right hand
+    crew_roles = {}
+    for crew in all_crews:
+        leader = left_hand = right_hand = None
+
+        leader_member = CrewMember.query.filter_by(crew_id=crew.id, role='leader').first()
+        if leader_member:
+            leader_user = User.query.get(leader_member.user_id)
+            if leader_user:
+                leader_char = Character.query.filter_by(master_id=leader_user.id).first()
+                leader = leader_char.name if leader_char else leader_user.username
+
+        left_member = CrewMember.query.filter_by(crew_id=crew.id, role='left hand').first()
+        if left_member:
+            left_user = User.query.get(left_member.user_id)
+            if left_user:
+                left_char = Character.query.filter_by(master_id=left_user.id).first()
+                left_hand = left_char.name if left_char else left_user.username
+
+        right_member = CrewMember.query.filter_by(crew_id=crew.id, role='right hand').first()
+        if right_member:
+            right_user = User.query.get(right_member.user_id)
+            if right_user:
+                right_char = Character.query.filter_by(master_id=right_user.id).first()
+                right_hand = right_char.name if right_char else right_user.username
+
+        crew_roles[crew.id] = {
+            'leader': leader,
+            'left_hand': left_hand,
+            'right_hand': right_hand
+        }
+    return render_template('crews.html', crews=all_crews, crew_roles=crew_roles)
+@app.route('/godfathers', methods=['GET', 'POST'])
+@login_required
+def godfathers_page():
+    godfathers = {g.city: g.character for g in Godfather.query.all()}
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    cities = CITIES
+    claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
+    return render_template(
+        'godfathers.html',
+        character=character,
+        godfathers=godfathers,
+        cities=cities,
+        claim_forms=claim_forms
+    )
 @app.route('/accept_invite/<int:invite_id>')
 @login_required
 def accept_invite(invite_id):
@@ -2261,7 +2393,8 @@ def create_crew():
         flash("You must have a character to create a crew.", "danger")
         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
+    form = CreateCrewForm()
+    if form.validate_on_submit():
         crew_name = request.form.get('crew_name', '').strip()
         if Crew.query.filter_by(name=crew_name).first():
             flash("Crew name already exists.")
@@ -2290,7 +2423,7 @@ def create_crew():
         flash(f"Crew created and joined! You spent ${CREW_COST}.", "success")
         return redirect(url_for('dashboard'))
 
-    return render_template('create_crew.html')
+    return render_template('create_crew.html', form=form)
 
 @app.route('/earn', methods=['POST', 'GET'])
 @login_required

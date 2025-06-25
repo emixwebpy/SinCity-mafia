@@ -198,16 +198,16 @@
             <td>
                 {% if member.role == 'leader' %}
                   <span class="badge-role badge-leader">Leader</span>
-                {% elif member.role == 'right_hand' %}
+                {% elif member.role == 'right hand' %}
                   <span class="badge-role badge-right">Right-Hand</span>
-                {% elif member.role == 'left_hand' %}
+                {% elif member.role == 'left hand' %}
                   <span class="badge-role badge-left">Left-Hand</span>
                 {% else %}
                   <span class="badge-role badge-member">Member</span>
                 {% endif %}
             </td>
             <td>
-                {% if member.user and current_user.id != member.user.id and current_user_role in ['leader', 'right_hand', 'left_hand'] %}
+                {% if member.user and current_user.id != member.user.id and current_user_role == 'leader' %}
                 <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
                     {{ role_form.hidden_tag() }}
                     {{ role_form.new_role(class_="form-control", style="border-radius:6px;border:none;padding:4px 10px;margin-left:4px;font-size:0.98em;background:#23243a;color:#8be9fd;") }}

@@ -12,11 +12,15 @@
   </div>
 
   <form method="post" class="w-100" style="max-width: 400px;">
+      {{ form.hidden_tag() }}
       <div class="form-group">
-          <label for="crew_name">Crew Name:</label>
-          <input type="text" id="crew_name" name="crew_name" class="form-control" required>
+          {{ form.crew_name.label(class="form-label") }}
+          {{ form.crew_name(class="form-control", id="crew_name", required=True) }}
+          {% for error in form.crew_name.errors %}
+              <div class="text-danger">{{ error }}</div>
+          {% endfor %}
       </div>
-      <button type="submit" class="btn btn-primary w-100 mt-2">Create</button>
+      {{ form.submit(class="btn btn-primary w-100 mt-2") }}
   </form>
 </div>
 

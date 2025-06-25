@@ -65,8 +65,12 @@
 <div class="create-char-container">
     <div class="create-char-title"><i class="fas fa-user-plus"></i> Create New Character</div>
     <form method="POST">
-        <input type="text" name="character_name" placeholder="Character Name" maxlength="32" required>
-        <button type="submit">Create Character</button>
+        {{ form.hidden_tag() }}
+        {{ form.character_name(class_="form-control", placeholder="Character Name", maxlength=32, required=True) }}
+        {% for error in form.character_name.errors %}
+            <div class="text-danger" style="margin-bottom:10px;">{{ error }}</div>
+        {% endfor %}
+        {{ form.submit(class_="btn btn-primary") }}
     </form>
 </div>
 {% endblock %}
