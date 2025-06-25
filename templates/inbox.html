@@ -62,8 +62,9 @@
     margin-left: 0.7em;
 }
 </style>
-<div class="inbox-header">
-    <h1>Your Messages</h1>
+<div class="inbox-header" style="display: flex; align-items: center; justify-content: space-between;">
+    <h1 style="margin-bottom: 0;">Your Messages</h1>
+    <a href="{{ url_for('compose_message') }}" class="btn btn-primary" style="margin-bottom:0;">Compose New Message</a>
 </div>
 <div class="inbox-list">
     <ul class="message-list">

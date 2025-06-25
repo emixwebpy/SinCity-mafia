@@ -112,7 +112,8 @@
                 <td>{{ drug.type }}</td>
                 <td>
                     <form method="post" action="{{ url_for('admin.admin_delete_drug', drug_id=drug.id) }}" class="admin-drugs-actions-form" onsubmit="return confirm('Delete this drug?');">
-                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                        {{ delete_drug_forms[drug.id].hidden_tag() }}
+                        {{ delete_drug_forms[drug.id].submit(class_="btn btn-danger btn-sm") }}
                     </form>
                 </td>
             </tr>
@@ -142,7 +143,8 @@
                 <td>{{ dealer.stock }}</td>
                 <td>
                     <form method="post" action="{{ url_for('admin.admin_delete_dealer', dealer_id=dealer.id) }}" class="admin-drugs-actions-form" onsubmit="return confirm('Delete this dealer?');">
-                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                        {{ delete_dealer_forms[dealer.id].hidden_tag() }}
+                        {{ delete_dealer_forms[dealer.id].submit(class_="btn btn-danger btn-sm") }}
                     </form>
                 </td>
             </tr>

@@ -105,12 +105,14 @@
         <tr>
             <th style="width:5%;">ID</th>
             <th style="width:15%;">Name</th>
-            <th style="width:30%;">Description</th>
-            <th style="width:10%;">Price</th>
-            <th style="width:10%;">Stock</th>
-            <th style="width:10%;">Is Gun</th>
-            <th style="width:10%;">Damage</th>
-            <th style="width:10%;">Actions</th>
+            <th style="width:20%;">Description</th>
+            <th style="width:8%;">Price</th>
+            <th style="width:8%;">Stock</th>
+            <th style="width:7%;">Is Gun</th>
+            <th style="width:7%;">Damage</th>
+            <th style="width:7%;">Accuracy</th>
+            <th style="width:8%;">Rarity</th>
+            <th style="width:15%;">Actions</th>
         </tr>
         {% for item in items %}
         <tr>
@@ -120,7 +122,27 @@
             <td>{{ item.price }}</td>
             <td>{{ item.stock }}</td>
             <td>{{ 'Yes' if item.is_gun else 'No' }}</td>
-            <td>{{ item.damage if item.is_gun else '-' }}</td>
+            <td>
+                {% if item.is_gun and item.gun %}
+                    {{ item.gun.damage }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if item.is_gun and item.gun %}
+                    {{ (item.gun.accuracy * 100)|round(1) }}%
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if item.is_gun and item.gun %}
+                    {{ item.gun.rarity }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
             <td>
                 <div class="forum-actions">
                     <a href="{{ url_for('admin.admin_edit_shop_item', item_id=item.id) }}" class="btn btn-primary">Edit</a>
@@ -132,7 +154,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="8" class="forum-desc">No shop items available.</td>
+            <td colspan="10" class="forum-desc">No shop items available.</td>
         </tr>
         {% endfor %}
     </table>

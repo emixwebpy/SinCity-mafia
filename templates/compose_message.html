@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Compose Message{% endblock %}
+{% block content %}
+<style>
+.compose-form {
+    background: #23243a;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin: 2rem auto 0 auto;
+    box-shadow: 0 2px 8px #ffd70022;
+    max-width: 600px;
+}
+.compose-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 0.5em;
+}
+.compose-form input, .compose-form textarea {
+    width: 100%;
+    margin-bottom: 1em;
+    border-radius: 6px;
+    border: 1.5px solid #8be9fd44;
+    background: rgba(139,233,253,0.08);
+    color: #f5f6fa;
+    font-size: 1.08em;
+    font-family: "geo", sans-serif;
+    outline: none;
+    padding: 10px;
+    transition: border 0.18s, background 0.18s;
+}
+.compose-form input:focus, .compose-form textarea:focus {
+    border: 1.5px solid #8be9fd;
+    background: rgba(139,233,253,0.13);
+}
+.compose-form .btn-primary {
+    margin-top: 0.5em;
+}
+</style>
+<div class="compose-form">
+    <h2 style="color:#ffd700;">Compose New Message</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <label for="recipient_name">To (player name):</label>
+        {{ form.recipient_name(class_="form-control", placeholder="Enter player name...", required=True) }}
+        <label for="content">Message:</label>
+        {{ form.content(class_="form-control", placeholder="Type your message...", rows="4", required=True) }}
+        {{ form.submit(class_="btn btn-primary", value="Send Message") }}
+    </form>
+    <div style="margin-top:1.5em;">
+        <a href="{{ url_for('inbox') }}" class="btn btn-primary">Back to Inbox</a>
+    </div>
+</div>
+{% endblock %}

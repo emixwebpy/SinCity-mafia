@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-/* Modern Mafia Dashboard UI */
+
 .dashboard-hero {
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
     border-radius: 12px;
@@ -215,11 +215,9 @@
     font-weight: bold;
     text-decoration: none;
     transition: color 0.2s;
-}
-.forum-link:hover {
-    color: #ffb86c;
     text-decoration: underline;
 }
+
 .forum-desc {
     color: #b8b8ff;
     font-size: 1rem;
@@ -350,7 +348,7 @@
         <tr>
             <th style="width:35%;">Profile</th>
             <th style="width:23%;">Stats</th>
-            <th style="width:35%;">Actions</th>
+            <th style="width:0;">Actions</th>
             <th style="width:20%;">Equipped Gun</th>
         </tr>
         <tr>
@@ -386,7 +384,7 @@
                         </a>
                     {% else %}
                         <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
-                        <a href="{{ url_for('join_crew') }}" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Join Crew</a>
+                        
                     {% endif %}
                     <form action="{{ url_for('earn') }}" method="post" class="earn-form">
                         
@@ -400,10 +398,18 @@
             <td>
                 {% if character.equipped_gun %}
                     <div class="forum-desc">
-                        <b>{{ character.equipped_gun.name }}</b><br>
+                        <b>
+                            <h1 class="forum-link">
+                                {{ character.equipped_gun.name }}
+                            </h1>
+                        </b><br>
+                        {% if character.equipped_gun.image %}
+                            <img src="{{ url_for('static', filename=character.equipped_gun.image) }}" alt="{{ character.equipped_gun.name }}" style="max-width:80px;max-height:60px;margin:4px 0;">
+                        {% endif %}
                         Damage: {{ character.equipped_gun.damage }}<br>
-                        Accuracy: {{ character.equipped_gun.accuracy * 100 }}%<br>
-                        Rarity: {{ character.equipped_gun.rarity }}
+                        
+                        Rarity: {{ character.equipped_gun.rarity }}<br>
+                        Price: ${{ character.equipped_gun.price }}
                     </div>
                 {% else %}
                     <span class="forum-desc" style="color:#b8b8ff;">No gun equipped.</span>

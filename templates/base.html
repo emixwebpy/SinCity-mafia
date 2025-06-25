@@ -340,16 +340,21 @@
         overflow: hidden;
         font-size: 1em;
         transition: box-shadow 0.18s, width 0.18s, height 0.18s;
-        min-width: 220px;
+        min-width: 300px;
         min-height: 180px;
         max-width: 98vw;
         max-height: 60vh;
         backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px #ffd70033, 0 1.5px 0 #ffd70022 inset;
+        resize: both ;
+        direction: rtl;
+      }
+      #floating-chat > * {
+        direction: ltr;
       }
       .chat-header {
-        background: linear-gradient(90deg, #ffd70022 0%, #23243a 100%);
-        color: #ffd700;
+        background: linear-gradient(90deg, #ffd700 0%, #23243a 95%);
+        color: #23243a;
         font-weight: 700;
         padding: 12px 18px;
         display: flex;
@@ -559,6 +564,9 @@
         .sidebar .sidebar-user {
           display: none;
         }
+        .chat-header .chat-close:hover {
+          color: #ff5555;
+        }
         .sidebar-footer {
           display: none;
         }
@@ -699,9 +707,7 @@
               <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
                 <i class="fas fa-home"></i> <span>Dashboard</span>
               </a>
-              <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Player Search</span>
-              </a>
+              
               <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Forums</span>
               </a>
@@ -711,6 +717,30 @@
               </a>
               
               {% endif %}
+            </div>
+          </div>
+          <!-- Dealings -->
+          <div class="sidebar-category">
+            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+              <i class="fas fa-user-alt"></i> Dealings
+              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            
+            <div class="sidebar-subnav">
+              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
+                <i class="fas fa-concierge-bell"></i> <span>Notifications</span>
+              </a>
+              
+              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
+                <i class="fas fa-inbox"></i> <span>Inbox</span>
+              </a>
+              <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Player Search</span>
+              </a>
+              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Travel</span>
+              </a>
+              
             </div>
           </div>
           <!-- Crime -->
@@ -735,24 +765,7 @@
               
             </div>
           </div>
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-mask"></i> Commuincations
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Notifications</span>
-              </a>
-              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Inbox</span>
-              </a>
-              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Travel</span>
-              </a>
-              
-            </div>
-          </div>
+          
           <!-- Inventory -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">

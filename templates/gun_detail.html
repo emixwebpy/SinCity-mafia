@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ gun.name }} Details{% endblock %}
+{% block content %}
+<h2>{{ gun.name }}</h2>
+<p><b>Damage:</b> {{ gun.damage }}</p>
+<p><b>Accuracy:</b> {{ (gun.accuracy * 100)|round(1) }}%</p>
+<p><b>Rarity:</b> {{ gun.rarity }}</p>
+<p><b>Price:</b> ${{ gun.price }}</p>
+<p><b>Description:</b> {{ gun.description }}</p>
+{% if gun.image %}
+    <img src="{{ url_for('static', filename=gun.image) }}" alt="{{ gun.name }}" style="max-width:300px;">
+{% endif %}
+{% endblock %}

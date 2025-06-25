@@ -1,32 +1,111 @@
 {% extends "base.html" %}
 {% block title %}Add Shop Item{% endblock %}
 {% block content %}
-<div class="dashboard-hero">
-    <h2 style="color:#ffd700;">Add Item to Shop</h2>
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: 0 auto;
+}
+.form-label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 1em;
+}
+.form-check-input {
+    width: auto;
+}
+.form-control {
+    background: #282a36;
+    color: #f5f6fa;
+    border: 1px solid #44475a;
+    border-radius: 6px;
+    padding: 0.5em 1em;
+    margin-bottom: 0.5em;
+    width: 100%;
+
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-top: 1em;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="forums-header">
+    <h1>Add Item to Shop</h1>
+</div>
+<div class="forums-list">
     <form method="POST">
         {{ form.hidden_tag() }}
-        <label>Name:</label>
-        {{ form.name(class_="form-control", required=True) }}<br>
-        <label>Description:</label>
-        {{ form.description(class_="form-control") }}<br>
-        <label>Price:</label>
-        {{ form.price(class_="form-control", min=1, required=True) }}<br>
-        <label>Stock:</label>
-        {{ form.stock(class_="form-control", min=0, required=True) }}<br>
-        <label>Is Gun:</label>
-        {{ form.is_gun(class_="form-check-input", id="is_gun_cb", onchange="document.getElementById('damage_row').style.display=this.checked?'block':'none';") }}<br>
-        <div id="damage_row" style="display:none;">
-            <label>Damage:</label>
-            {{ form.damage(class_="form-control", min=0, value=0) }}<br>
+        <label class="form-label">Name:</label>
+        {{ form.name(class_="form-control", required=True) }}
+        <label class="form-label">Description:</label>
+        {{ form.description(class_="form-control") }}
+        <label class="form-label">Price:</label>
+        {{ form.price(class_="form-control", min=1, required=True) }}
+        <label class="form-label">Stock:</label>
+        {{ form.stock(class_="form-control", min=0, required=True) }}
+        <label class="form-label-input">Is Gun:</label>
+        <div class="form-check" style="margin-bottom:1em;">
+            {{ form.is_gun(class_="form-check-input", id="is_gun_cb") }}
         </div>
-        {{ form.submit(class_="btn btn-primary") }}
+        <div id="gun-fields" style="display:none; margin-top:1em;">
+            <label class="form-label">Gun Name:</label>
+            {{ form.gun_name(class_="form-control") }}
+            <label class="form-label">Damage:</label>
+            {{ form.gun_damage(class_="form-control", min=0, value=0) }}
+            <label class="form-label">Accuracy:</label>
+            {{ form.gun_accuracy(class_="form-control", value="0.7") }}
+            <label class="form-label">Rarity:</label>
+            {{ form.gun_rarity(class_="form-control", value="Common") }}
+            <label class="form-label">Gun Price:</label>
+            {{ form.gun_price(class_="form-control") }}
+            <label class="form-label">Image URL:</label>
+            {{ form.gun_image(class_="form-control") }}
+            <label class="form-label">Description:</label>
+            {{ form.gun_description(class_="form-control") }}
+        </div>
+        <div style="margin-top:1.5em;">
+            {{ form.submit(class_="btn btn-primary") }}
+        </div>
     </form>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var cb = document.getElementById('is_gun_cb');
-    var row = document.getElementById('damage_row');
-    if(cb.checked) row.style.display = 'block';
+    var gunFields = document.getElementById('gun-fields');
+    function toggleGunFields() {
+        gunFields.style.display = cb.checked ? 'block' : 'none';
+    }
+    cb.addEventListener('change', toggleGunFields);
+    toggleGunFields();
 });
 </script>
 {% endblock %}

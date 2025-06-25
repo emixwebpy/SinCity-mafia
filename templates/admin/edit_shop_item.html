@@ -3,30 +3,63 @@
 {% block content %}
 <div class="dashboard-hero">
     <h2 style="color:#ffd700;">Edit Shop Item: {{ item.name }}</h2>
-    <form method="POST">
+    <form method="post">
         {{ form.hidden_tag() }}
-        <label>Name:</label>
-        {{ form.name(class_="form-control", required=True) }}<br>
-        <label>Description:</label>
-        {{ form.description(class_="form-control") }}<br>
-        <label>Price:</label>
-        {{ form.price(class_="form-control", min=1, required=True) }}<br>
-        <label>Stock:</label>
-        {{ form.stock(class_="form-control", min=0, required=True) }}<br>
-        <label>Is Gun:</label>
-        {{ form.is_gun(class_="form-check-input", id="is_gun_cb", onchange="document.getElementById('damage_row').style.display=this.checked?'block':'none';") }}<br>
-        <div id="damage_row" style="display:none;">
-            <label>Damage:</label>
-            {{ form.damage(class_="form-control", min=0) }}<br>
+        <div>
+            {{ form.name.label }} {{ form.name(class_="form-control") }}
         </div>
-        {{ form.submit(class_="btn btn-primary") }}
+        <div>
+            {{ form.description.label }} {{ form.description(class_="form-control") }}
+        </div>
+        <div>
+            {{ form.price.label }} {{ form.price(class_="form-control") }}
+        </div>
+        <div>
+            {{ form.stock.label }} {{ form.stock(class_="form-control") }}
+        </div>
+        <div>
+            {{ form.is_gun.label }} {{ form.is_gun(id="is_gun_cb") }}
+        </div>
+        <div id="gun-fields" style="display: none; margin-top:1em;">
+            <div>
+                {{ form.gun_name.label }} {{ form.gun_name(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_damage.label }} {{ form.gun_damage(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_accuracy.label }} {{ form.gun_accuracy(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_rarity.label }} {{ form.gun_rarity(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_price.label }} {{ form.gun_price(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_image.label }} {{ form.gun_image(class_="form-control") }}
+            </div>
+            <div>
+                {{ form.gun_description.label }} {{ form.gun_description(class_="form-control") }}
+            </div>
+        </div>
+        <div style="margin-top:1em;">
+            {{ form.submit(class_="btn btn-primary") }}
+        </div>
     </form>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function toggleGunFields() {
+        var cb = document.getElementById('is_gun_cb');
+        var gunFields = document.getElementById('gun-fields');
+        gunFields.style.display = cb.checked ? 'block' : 'none';
+    }
     var cb = document.getElementById('is_gun_cb');
-    var row = document.getElementById('damage_row');
-    if(cb.checked) row.style.display = 'block';
+    if(cb) {
+        cb.addEventListener('change', toggleGunFields);
+        toggleGunFields();
+    }
 });
 </script>
 {% endblock %}

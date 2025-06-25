@@ -128,13 +128,14 @@ def admin_edit_character(char_id):
 @admin_required
 def admin_edit_forum(forum_id):
     forum = Forum.query.get_or_404(forum_id)
-    if request.method == 'POST':
-        forum.title = request.form.get('title', forum.title)
-        forum.description = request.form.get('description', forum.description)
+    form = EditForumForm(obj=forum)
+    if form.validate_on_submit():
+        forum.title = form.title.data
+        forum.description = form.description.data
         db.session.commit()
         flash("Forum updated.", "success")
         return redirect(url_for('admin.admin_forums'))
-    return render_template('admin/edit_forum.html', forum=forum)
+    return render_template('admin/edit_forum.html', form=form, forum=forum)
 
 # --- Admin Delete Forum ---
 @admin_bp.route('/forums/<int:forum_id>/delete', methods=['POST'])
@@ -194,16 +195,26 @@ def admin_shop():
 def admin_add_shop_item():
     form = AddShopItemForm()
     if form.validate_on_submit():
-        name = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
-        price = int(request.form.get('price', 0))
-        stock = int(request.form.get('stock', 0))
-        is_gun = bool(request.form.get('is_gun'))
-        damage = int(request.form.get('damage', 0)) if is_gun else 0
+        name = form.name.data.strip()
+        description = form.description.data.strip()
+        price = form.price.data
+        stock = form.stock.data
+        is_gun = form.is_gun.data
 
-        if not name or price <= 0 or stock < 0:
-            flash("Name, price, and stock are required. Price must be > 0.", "danger")
-            return redirect(url_for('admin.admin_add_shop_item'))
+        gun = None
+        if is_gun:
+            # Create a new Gun entry
+            gun = Gun(
+                name=form.gun_name.data.strip() or name,
+                damage=form.gun_damage.data or 0,
+                accuracy=float(form.gun_accuracy.data or 0.7),
+                rarity=form.gun_rarity.data or "Common",
+                price=form.gun_price.data or price,
+                image=form.gun_image.data or "",
+                description=form.gun_description.data or ""
+            )
+            db.session.add(gun)
+            db.session.commit()
 
         item = ShopItem(
             name=name,
@@ -211,7 +222,7 @@ def admin_add_shop_item():
             price=price,
             stock=stock,
             is_gun=is_gun,
-            damage=damage
+            gun=gun
         )
         db.session.add(item)
         db.session.commit()
@@ -224,14 +235,47 @@ def admin_add_shop_item():
 @admin_required
 def admin_edit_shop_item(item_id):
     item = ShopItem.query.get_or_404(item_id)
-    form = EditShopItemForm(obj=item)
+    gun = item.gun if item.is_gun else None
+    form = EditShopItemForm(
+        name=item.name,
+        description=item.description,
+        price=item.price,
+        stock=item.stock,
+        is_gun=item.is_gun,
+        gun_name=gun.name if gun else "",
+        gun_damage=gun.damage if gun else 0,
+        gun_accuracy=str(gun.accuracy) if gun else "0.7",
+        gun_rarity=gun.rarity if gun else "Common",
+        gun_price=gun.price if gun else item.price,
+        gun_image=gun.image if gun else "",
+        gun_description=gun.description if gun else ""
+    )
     if form.validate_on_submit():
-        item.name = request.form.get('name', item.name)
-        item.description = request.form.get('description', item.description)
-        item.price = int(request.form.get('price', item.price))
-        item.stock = int(request.form.get('stock', item.stock))
-        item.is_gun = bool(request.form.get('is_gun', item.is_gun))
-        item.damage = int(request.form.get('damage', item.damage)) if item.is_gun else 0
+        item.name = form.name.data.strip()
+        item.description = form.description.data.strip()
+        item.price = form.price.data
+        item.stock = form.stock.data
+        item.is_gun = form.is_gun.data
+
+        if item.is_gun:
+            if not item.gun:
+                # Create new Gun if not exists
+                gun = Gun()
+                db.session.add(gun)
+                db.session.commit()
+                item.gun = gun
+            gun = item.gun
+            gun.name = form.gun_name.data.strip() or item.name
+            gun.damage = form.gun_damage.data or 0
+            gun.accuracy = float(form.gun_accuracy.data or 0.7)
+            gun.rarity = form.gun_rarity.data or "Common"
+            gun.price = form.gun_price.data or item.price
+            gun.image = form.gun_image.data or ""
+            gun.description = form.gun_description.data or ""
+            db.session.commit()
+        else:
+            item.gun = None
+
         db.session.commit()
         flash("Shop item updated.", "success")
         return redirect(url_for('admin.admin_shop'))
@@ -380,7 +424,7 @@ def admin_add_dealer():
         db.session.commit()
         flash("Dealer added!", "success")
         return redirect(url_for('admin.admin_drugs_dashboard'))
-    return render_template('admin/add_dealer.html',
+    return render_template('admin/drugs_dashboard.html',
         form=form,
         drugs=Drug.query.all(),
         cities=CITIES
@@ -405,13 +449,42 @@ def admin_delete_dealer(dealer_id):
     db.session.delete(dealer)
     db.session.commit()
     flash("Dealer deleted.", "success")
-    return redirect(url_for('admin.admin_dealers'))
-@admin_bp.route('/drugs/dashboard')
+    return redirect(url_for('admin.admin_drugs_dashboard'))
+@admin_bp.route('/drugs_dashboard', methods=['GET', 'POST'])
 @admin_required
 def admin_drugs_dashboard():
     drugs = Drug.query.order_by(Drug.id.desc()).all()
     dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
-    return render_template('admin/drugs_dashboard.html', drugs=drugs, dealers=dealers)
+    delete_drug_forms = {drug.id: DeleteDrugForm(prefix=f"drug_{drug.id}") for drug in drugs}
+    delete_dealer_forms = {dealer.id: DeleteDealerForm(prefix=f"dealer_{dealer.id}") for dealer in dealers}
+
+    # Handle POSTs for delete actions
+    for drug in drugs:
+        form = delete_drug_forms[drug.id]
+        if form.validate_on_submit() and form.submit.data and f"drug_{drug.id}-submit" in request.form:
+            # Delete all dealers and inventories for this drug
+            DrugDealer.query.filter_by(drug_id=drug.id).delete()
+            CharacterDrugInventory.query.filter_by(drug_id=drug.id).delete()
+            db.session.delete(drug)
+            db.session.commit()
+            flash("Drug deleted.", "success")
+            return redirect(url_for('admin.admin_drugs_dashboard'))
+
+    for dealer in dealers:
+        form = delete_dealer_forms[dealer.id]
+        if form.validate_on_submit() and form.submit.data and f"dealer_{dealer.id}-submit" in request.form:
+            db.session.delete(dealer)
+            db.session.commit()
+            flash("Dealer deleted.", "success")
+            return redirect(url_for('admin.admin_drugs_dashboard'))
+
+    return render_template(
+        'admin/drugs_dashboard.html',
+        drugs=drugs,
+        dealers=dealers,
+        delete_drug_forms=delete_drug_forms,
+        delete_dealer_forms=delete_dealer_forms
+    )
 
 @admin_bp.route('/crews')
 @admin_required
@@ -463,21 +536,43 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Flask Forms -------------------------------
+class DeleteDrugForm(FlaskForm):
+    submit = SubmitField('Delete')
+class EditForumForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    submit = SubmitField('Save')
+class DeleteDealerForm(FlaskForm):
+    submit = SubmitField('Delete')
 class EditShopItemForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     description = StringField('Description', validators=[Optional()])
     price = IntegerField('Price', validators=[DataRequired()])
     stock = IntegerField('Stock', validators=[DataRequired()])
     is_gun = BooleanField('Is Gun')
-    damage = IntegerField('Damage', default=0, validators=[Optional()])
-    submit = SubmitField('Save Changes')
+    # Gun fields
+    gun_name = StringField('Gun Name')
+    gun_damage = IntegerField('Gun Damage', default=0)
+    gun_accuracy = StringField('Gun Accuracy', default="0.7")
+    gun_rarity = StringField('Gun Rarity', default="Common")
+    gun_price = IntegerField('Gun Price', default=100)
+    gun_image = StringField('Gun Image URL')
+    gun_description = StringField('Gun Description')
+    submit = SubmitField('Add Item')
 class AddShopItemForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     description = StringField('Description', validators=[Optional()])
     price = IntegerField('Price', validators=[DataRequired()])
     stock = IntegerField('Stock', validators=[DataRequired()])
     is_gun = BooleanField('Is Gun')
-    damage = IntegerField('Damage', default=0, validators=[Optional()])
+    # Gun fields
+    gun_name = StringField('Gun Name')
+    gun_damage = IntegerField('Gun Damage', default=0)
+    gun_accuracy = StringField('Gun Accuracy', default="0.7")
+    gun_rarity = StringField('Gun Rarity', default="Common")
+    gun_price = IntegerField('Gun Price', default=100)
+    gun_image = StringField('Gun Image URL')
+    gun_description = StringField('Gun Description')
     submit = SubmitField('Add Item')
 class ReplyForm(FlaskForm):
     content = TextAreaField('Reply', validators=[DataRequired()])
@@ -551,6 +646,10 @@ class PlayerSearchForm(FlaskForm):
     submit = SubmitField('Search')
 class KillForm(FlaskForm):
     submit = SubmitField('Shoot')
+
+class EquipGunForm(FlaskForm):
+    submit = SubmitField('Equip')
+
 class KillForm(FlaskForm):
     submit = SubmitField('Shoot')
 class LeaveCrimeForm(FlaskForm):
@@ -609,6 +708,11 @@ class RouletteForm(FlaskForm):
     roulette_choice = SelectField('Roulette Choice', choices=[('red', 'Red'), ('black', 'Black'), ('green', 'Green (14x)')], validators=[DataRequired()])
     submit = SubmitField('Spin Roulette')
 class SendMessageForm(FlaskForm):
+    content = TextAreaField('Message', validators=[DataRequired()])
+    submit = SubmitField('Send')
+
+class ComposeMessageForm(FlaskForm):
+    recipient_name = StringField('Recipient Name', validators=[DataRequired()])
     content = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send')
 
@@ -955,6 +1059,12 @@ def forum_view(forum_id):
         char_map[uid] = char.name if char else f'User #{uid}'
     return render_template('forum_view.html', forum=forum, topics=topics, char_map=char_map)
 
+@app.route('/gun/<int:gun_id>')
+def gun_detail(gun_id):
+    gun = Gun.query.get_or_404(gun_id)
+    return render_template('gun_detail.html', gun=gun)
+
+
 @app.route('/forum/<int:forum_id>/new_topic', methods=['GET', 'POST'])
 @login_required
 def new_topic(forum_id):
@@ -1043,10 +1153,13 @@ def notifications():
             "msg_id": msg.id
         })
 
+    # Fetch crew invitations for the current user
+    invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
+
     # Sort notifications by timestamp descending
     notifications.sort(key=lambda n: n["timestamp"], reverse=True)
 
-    return render_template('notifications.html', notifications=notifications)
+    return render_template('notifications.html', notifications=notifications, invitations=invitations)
 
 @app.route('/messages/send/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -1201,9 +1314,9 @@ def update_crew_role(crew_member_id):
 
 
 
-@app.route('/kill/<username>', methods=['POST'])
+@app.route('/kill/character/<character_name>', methods=['POST'])
 @login_required
-def kill(username):
+def kill(character_name):
     # Get the attacker's character
     attacker = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not attacker:
@@ -1213,30 +1326,13 @@ def kill(username):
     gun = attacker.equipped_gun or current_user.gun
     if not gun:
         flash("You don't have a gun equipped!", "danger")
-        # Try to find the target character to redirect to their profile
-        target_char = Character.query.filter_by(name=username).first()
+        target_char = Character.query.filter_by(name=character_name).first()
         if target_char:
             return redirect(url_for('profile_by_id', char_id=target_char.id))
         return redirect(url_for('dashboard'))
 
-    # Find the target character (real user or NPC)
-    user = User.query.filter_by(username=username).first()
-    if user:
-        target = Character.query.filter_by(master_id=user.id, is_alive=True).first()
-    else:
-        npc_master = User.query.filter_by(username="NPC").first()
-        if not npc_master:
-            npc_master = User(
-                username="NPC",
-                is_admin=False,
-                premium=False,
-                password_hash="npc"
-            )
-            db.session.add(npc_master)
-            db.session.commit()
-        target = Character.query.filter_by(name=username, master_id=npc_master.id, is_alive=True).first()
-        if not target:
-            target = Character.query.filter_by(name=username, master_id=0, is_alive=True).first()
+    # Always target by character name
+    target = Character.query.filter_by(name=character_name, is_alive=True).first()
 
     if not target:
         flash("Target not found or already dead.", "danger")
@@ -1306,19 +1402,24 @@ def shop():
                 inventory_item = UserInventory(user_id=current_user.id, item_id=item.id, quantity=1)
                 db.session.add(inventory_item)
 
-            message = f"You bought {item.name} for ${item.price}!"
+            # Auto-equip if the item is a gun
+            if item.is_gun:
+                message = f"You bought {item.name} for ${item.price}! Go to your inventory to equip it."
+            else:
+                message = f"You bought {item.name} for ${item.price}!"
+
             db.session.commit()
         elif item and item.stock <= 0:
             message = "Sorry, this item is out of stock."
         else:
             message = "Not enough money or item not found."
     return render_template(
-    "shop.html",
-    character=character,
-    items=items,
-    message=message,
-    buy_form=BuyForm()
-)
+        "shop.html",
+        character=character,
+        items=items,
+        message=message,
+        buy_form=BuyForm()
+    )
 
 @app.route('/travel', methods=['GET', 'POST'])
 @login_required
@@ -1402,8 +1503,8 @@ def inventory():
 
     
     inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
-
-    return render_template('inventory.html', inventory_items=inventory_items, character=character)
+    equip_forms = {inv.item.gun.id: EquipGunForm() for inv in inventory_items if inv.item.is_gun and inv.item.gun}
+    return render_template('inventory.html', inventory_items=inventory_items, character=character,equip_forms=equip_forms)
 
 @app.route("/users_online")
 @login_required
@@ -1531,7 +1632,27 @@ def create_character():
         flash("New character created!", "success")
         return redirect(url_for('dashboard'))
     return render_template('create_character.html')
-
+@app.route('/messages/compose', methods=['GET', 'POST'])
+@login_required
+def compose_message():
+    form = ComposeMessageForm()
+    if form.validate_on_submit():
+        recipient_name = form.recipient_name.data.strip()
+        content = form.content.data.strip()
+        character = Character.query.filter_by(name=recipient_name, is_alive=True).first()
+        if not character:
+            flash("No player with that character name.", "danger")
+            return render_template("compose_message.html", form=form)
+        recipient = User.query.get(character.master_id)
+        if not recipient:
+            flash("No user found for that character.", "danger")
+            return render_template("compose_message.html", form=form)
+        msg = PrivateMessage(sender_id=current_user.id, recipient_id=recipient.id, content=content)
+        db.session.add(msg)
+        db.session.commit()
+        flash("Message sent!", "success")
+        return redirect(url_for('inbox'))
+    return render_template("compose_message.html", form=form)
 @app.route('/logout')
 @login_required
 def logout():
@@ -2182,7 +2303,7 @@ def earn():
 
     now = datetime.utcnow()
     if hasattr(character, 'last_earned') and character.last_earned:
-        cooldown = timedelta(seconds=160) # Random cooldown between 30 and 120 seconds
+        cooldown = timedelta(seconds=120) # Random cooldown between 30 and 120 seconds
         if now - character.last_earned < cooldown:
             seconds_remaining = int((cooldown - (now - character.last_earned)).total_seconds())
             flash(f'Cooldown active. Please wait {seconds_remaining} seconds.', 'warning')
@@ -2201,12 +2322,12 @@ def earn():
     
     # Premium bonus
     
-    money_min, money_max = 5000, 150000
-    xp_min, xp_max = 100, 500
+    money_min, money_max = 5000, 10000
+    xp_min, xp_max = 50, 100
     if current_user.premium and current_user.premium_until and current_user.premium_until > now:
         money_min, money_max = int(money_min * 1.5), int(money_max * 1.5)
         xp_min, xp_max = int(xp_min * 1.5), int(xp_max * 1.5)
-        cooldown = timedelta(seconds=35)  # Random cooldown between 30 and 120 seconds
+        cooldown = timedelta(seconds=35)
 
     earned_money = random.randint(money_min, money_max)
     earned_xp = random.randint(xp_min, xp_max)

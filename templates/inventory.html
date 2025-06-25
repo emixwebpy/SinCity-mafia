@@ -151,15 +151,17 @@
           <td class="inventory-item-qty">x{{ inv.quantity }}</td>
           <td>
             <div class="inventory-item-actions">
-              {% if inv.item.is_gun and inv.item.gun_id %}
-                <form action="{{ url_for('equip_gun', gun_id=inv.item.gun_id) }}" method="post" style="display:inline;">
-                  <button type="submit" class="btn btn-primary btn-sm"
-                    {% if character.equipped_gun_id == inv.item.gun_id %}disabled{% endif %}>
-                    {% if character.equipped_gun_id == inv.item.gun_id %}Equipped{% else %}Equip{% endif %}
-                  </button>
+              {% if inv.item.is_gun and inv.item.gun %}
+                <form method="post" action="{{ url_for('equip_gun', gun_id=inv.item.gun.id) }}" style="display:inline;">
+                  {{ equip_forms[inv.item.gun.id].hidden_tag() }}
+                  {{ equip_forms[inv.item.gun.id].submit(
+                        class_="btn btn-primary btn-sm",
+                        disabled=(character.equipped_gun_id == inv.item.gun.id)
+                  ) }}
                 </form>
               {% endif %}
               <!-- Add other item actions here if needed -->
+            
             </div>
           </td>
         </tr>
