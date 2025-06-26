@@ -1,15 +1,10 @@
-
-from ast import And
-from calendar import c
-from doctest import master
-from email import message
-from sys import maxsize
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, g, Blueprint, session
+# -*- coding: utf-8 -*-
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session
+from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import expose, Admin, AdminIndexView, BaseView
-from flask_admin.form import SecureForm, BaseForm
+from flask_admin.form import SecureForm
 from flask_wtf import CSRFProtect, FlaskForm
 from flask_migrate import Migrate
 from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField,FileField,RadioField,TextAreaField
@@ -18,29 +13,41 @@ from wtforms.validators import DataRequired,NumberRange, Optional,Length
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from sqlalchemy import Null, true
+from sqlalchemy import  true
 from operator import is_
-from email.mime import base
-import sqlite3, string, logging, random,threading, os, time
+import  string, logging, random,threading, os, time
 from markupsafe import Markup, escape
-CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
+from itsdangerous import URLSafeTimedSerializer
+from PIL import Image
+
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-
-
-
+# Constants -------------------------------
+CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_MIME_TYPES = {'image/png', 'image/jpeg', 'image/gif'}
 
 # Database -------------------------------
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['MAIL_SERVER'] = 'localhost'
+app.config['MAIL_PORT'] = 1025
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = None
+app.config['MAIL_PASSWORD'] = None
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
+mail = Mail(app)
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
 app.config['LOGIN_MESSAGE'] = None
 app.config['LOGIN_MESSAGE_CATEGORY'] = "info"
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -551,6 +558,13 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Flask Forms -------------------------------
+class PasswordResetRequestForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired()])
+    submit = SubmitField('Request Password Reset')
+
+class PasswordResetForm(FlaskForm):
+    password = PasswordField('New Password', validators=[DataRequired()])
+    submit = SubmitField('Reset Password')
 class CreateCrewForm(FlaskForm):
     crew_name = StringField('Crew Name', validators=[DataRequired(), Length(max=64)])
     submit = SubmitField('Create')
@@ -667,6 +681,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Register')
 class BreakoutForm(FlaskForm):
@@ -755,7 +770,11 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(12), unique=True, nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
-    
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    email_verified = db.Column(db.Boolean, default=False)
+    email_verification_token = db.Column(db.String(128), nullable=True)
+    reset_token = db.Column(db.String(128), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_earned = db.Column(db.DateTime, default=None, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
@@ -767,13 +786,28 @@ class User(db.Model, UserMixin):
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
     character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
+    characters = db.relationship(
+    'Character',
+    backref=db.backref('owner', overlaps="character,master"),
+    lazy=True,
+    foreign_keys='Character.master_id',
+    overlaps="character,master"
+)
     kills = db.Column(db.Integer, default=0)
     # Characters owned by this user
-    characters = db.relationship('Character', backref='owner', lazy=True,    foreign_keys='Character.master_id')
+    
     
     # Optional: characters linked for crew, etc.
     linked_characters = db.relationship('Character', foreign_keys='Character.user_id')
-
+    def set_password(self, password):
+        # Explicitly use pbkdf2:sha256 with 260,000 iterations (Werkzeug 2.3+ default)
+        self.password_hash = generate_password_hash(
+            password,
+            method='pbkdf2:sha256',
+            salt_length=16
+        )
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
     def __repr__(self):
         return f'<User {self.username}>'
     
@@ -794,7 +828,7 @@ class Character(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    user = db.relationship('User', backref='linked_character', foreign_keys=[user_id])
+    user = db.relationship('User', backref=db.backref('linked_character', overlaps="linked_characters"), foreign_keys=[user_id], overlaps="linked_characters")
     name = db.Column(db.String(64), unique=True, nullable=False)
 
     health = db.Column(db.Integer, default=100)
@@ -1612,17 +1646,86 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         username = form.username.data.strip()
+        email = form.email.data.strip().lower()
         password = form.password.data
         if User.query.filter_by(username=username).first():
-            flash('Username already exists.')
+            flash('Username already exists.', 'danger')
             return redirect(url_for('register'))
-        new_user = User(username=username)
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered.', 'danger')
+            return redirect(url_for('register'))
+        new_user = User(username=username, email=email)
         new_user.set_password(password)
+        # Generate verification token
+        token = serializer.dumps(email, salt='email-verify')
+        new_user.email_verification_token = token
         db.session.add(new_user)
         db.session.commit()
-        flash('Registered successfully. Please log in.')
+        # Send verification email
+        verify_url = url_for('verify_email', token=token, _external=True)
+        msg = Message('Verify your email', recipients=[email])
+        msg.body = f'Click to verify your email: {verify_url}'
+        mail.send(msg)
+        flash('Registered! Please check your email to verify your account.', 'info')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+
+@app.route('/verify_email/<token>')
+def verify_email(token):
+    try:
+        email = serializer.loads(token, salt='email-verify', max_age=3600)
+    except Exception:
+        flash('Verification link is invalid or expired.', 'danger')
+        return redirect(url_for('login'))
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.email_verified = True
+        user.email_verification_token = None
+        db.session.commit()
+        flash('Email verified! You can now log in.', 'success')
+    else:
+        flash('User not found.', 'danger')
+    return redirect(url_for('login'))
+
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    form = PasswordResetRequestForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            token = serializer.dumps(email, salt='reset-password')
+            user.reset_token = token
+            user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+            db.session.commit()
+            reset_url = url_for('reset_password', token=token, _external=True)
+            msg = Message('Password Reset', recipients=[email])
+            msg.body = f'Click to reset your password: {reset_url}'
+            mail.send(msg)
+        flash('If your email is registered, you will receive a password reset link.', 'info')
+        return redirect(url_for('login'))
+    return render_template('reset_password_request.html', form=form)
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        email = serializer.loads(token, salt='reset-password', max_age=3600)
+    except Exception:
+        flash('Reset link is invalid or expired.', 'danger')
+        return redirect(url_for('login'))
+    user = User.query.filter_by(email=email).first()
+    if not user or user.reset_token != token or user.reset_token_expiry < datetime.utcnow():
+        flash('Invalid or expired reset link.', 'danger')
+        return redirect(url_for('login'))
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        flash('Password reset successful. You can now log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', form=form)
 
 @app.route('/send_crew_message', methods=['POST'])
 @login_required
@@ -1663,12 +1766,15 @@ def login():
         username = form.username.data.strip()
         password = form.password.data
         user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
+        if user and user.check_password(password):
+            if not user.email_verified:
+                flash('Please verify your email before logging in.', 'warning')
+                return redirect(url_for('login'))
             login_user(user)
             user.last_known_ip = request.remote_addr
             db.session.commit()
             return redirect(url_for('dashboard'))
-        flash('Invalid credentials.')
+        flash('Invalid username or password.', 'danger')
     return render_template('login.html', form=form)
 
 @app.route('/create_character', methods=['GET', 'POST'])
@@ -2255,23 +2361,39 @@ def disband_crime():
 @app.route('/upload_profile_image', methods=['POST'])
 @login_required
 def upload_profile_image():
-    if 'profile_image' not in request.files:
-        flash('No file part', 'danger')
+    form = UploadImageForm()
+    if not form.validate_on_submit():
+        flash('Invalid form submission.', 'danger')
         return redirect(request.referrer or url_for('dashboard'))
-    file = request.files['profile_image']
-    if file.filename == '':
-        flash('No selected file', 'danger')
-        return redirect(request.referrer or url_for('dashboard'))
+    file = form.profile_image.data
     if file and allowed_file(file.filename):
-        filename = secure_filename(f"{current_user.id}_{file.filename}")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        # Update character's profile image
-        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        # Check MIME type
+        file.seek(0)
+        try:
+            img = Image.open(file)
+            img.verify()
+            file.seek(0)
+        except Exception:
+            flash('Uploaded file is not a valid image.', 'danger')
+            return redirect(request.referrer or url_for('dashboard'))
+        if file.mimetype not in ALLOWED_MIME_TYPES:
+            flash('Invalid image type.', 'danger')
+            return redirect(request.referrer or url_for('dashboard'))
+        file.seek(0, os.SEEK_END)
+        file_length = file.tell()
+        file.seek(0)
+        if file_length > app.config['MAX_CONTENT_LENGTH']:
+            flash('File is too large.', 'danger')
+            return redirect(request.referrer or url_for('dashboard'))
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(save_path)
+        # Save the path to the user's character
+        character = Character.query.filter_by(master_id=current_user.id).first()
         if character:
-            character.profile_image = f"uploads/{filename}"
+            character.profile_image = f'uploads/{filename}'
             db.session.commit()
-            flash('Profile image updated!', 'success')
+        flash('Profile image uploaded successfully.', 'success')
         return redirect(url_for('profile_by_id', char_id=character.id))
     else:
         flash('Invalid file type.', 'danger')
@@ -2715,12 +2837,6 @@ def inject_current_character():
 def inject_now():
     from datetime import datetime
     return {'now': datetime.utcnow}
-
-@app.cli.command("init-db")
-def init_db():
-    db.create_all()
-    print("Database tables created.")
-    
 @app.cli.command('create-admin')
 def create_admin():
     user = User.query.filter_by(username='admin').first()
@@ -2735,7 +2851,6 @@ def create_admin():
         user.is_admin = False
         db.session.commit()
         print("Admin user updated.")
-
 def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=500):
     """Randomize prices and stock for all DrugDealers."""
     dealers = DrugDealer.query.all()
@@ -2743,7 +2858,6 @@ def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_st
         dealer.price = random.randint(min_price, max_price)
         dealer.stock = random.randint(min_stock, max_stock)
     db.session.commit()
-
 def randomize_drug_prices(interval_minutes=random.randint(5, 10)):
     with app.app_context():
         while True:

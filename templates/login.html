@@ -103,6 +103,11 @@
 
 <div class="login-container">
   <div class="login-title"><i class="fas fa-sign-in-alt"></i> Login</div>
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ message[0] }}" style="color: #ff6b6b; font-weight: bold; margin-bottom: 12px;">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
   <form method="POST" class="login-form">
     {{ form.hidden_tag() }}
     <div class="form-group">
@@ -121,6 +126,9 @@
     </div>
     {{ form.submit(class_="btn btn-primary") }}
   </form>
-  <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+  <p>
+    Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.<br>
+    <a href="{{ url_for('reset_password_request') }}">Forgot your password?</a>
+  </p>
 </div>
 {% endblock %}
