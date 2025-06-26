@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session, request
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
-from flask_wtf import CSRFProtect, FlaskForm
+from flask_wtf import CSRFProtect, FlaskForm,RecaptchaField
 from flask_migrate import Migrate
-from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField,FileField,RadioField,TextAreaField
+from wtforms import PasswordField, StringField, BooleanField, IntegerField,SubmitField, SelectField,FileField,RadioField,TextAreaField,HiddenField
 from wtforms.fields import DateTimeField
 from wtforms.validators import DataRequired,NumberRange, Optional,Length
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,10 +15,13 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import  true
 from operator import is_
-import  string, logging, random,threading, os, time
+import  string, logging, random,threading, os, time, logging
 from markupsafe import Markup, escape
 from itsdangerous import URLSafeTimedSerializer
 from PIL import Image
+from urllib.parse import urlparse, urljoin
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 log = logging.getLogger('werkzeug')
@@ -46,13 +49,29 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
 app.config['LOGIN_MESSAGE'] = None
 app.config['LOGIN_MESSAGE_CATEGORY'] = "info"
-serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+admin_logger = logging.getLogger('admin_actions')
+admin_logger.setLevel(logging.INFO)
+fh = logging.FileHandler('admin_actions.log')
+admin_logger.addHandler(fh)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return (
+        test_url.scheme in ('http', 'https') and
+        ref_url.netloc == test_url.netloc
+    )
+def limiter_key_func():
+    # Disable limiting for localhost
+    if request.remote_addr in ('127.0.0.1', '::1'):
+        return None  # disables limiting for this request
+    return get_remote_address()
 db = SQLAlchemy(app)
 with app.app_context():
     db.create_all()
@@ -63,6 +82,7 @@ login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
+limiter = Limiter(key_func=limiter_key_func, app=app, default_limits=["200 per day", "50 per hour"])
 # Admin Authentication -------------------------------
 def admin_required(f):
     from functools import wraps
@@ -79,10 +99,12 @@ def admin_required(f):
 @admin_bp.route('/')
 @admin_required
 def admin_dashboard():
+    
     user_count = User.query.count()
     forum_count = Forum.query.count()
     topic_count = ForumTopic.query.count()
     jailed_count = Character.query.filter_by(in_jail=True).count()
+    
     return render_template('admin/dashboard.html',
                            user_count=user_count,
                            forum_count=forum_count,
@@ -125,6 +147,7 @@ def admin_edit_character(char_id):
         character.xp = int(request.form.get('xp', character.xp))
         character.is_alive = bool(request.form.get('is_alive', character.is_alive))
         db.session.commit()
+        
         flash("Character updated.", "success")
         return redirect(url_for('admin.admin_characters'))
     return render_template('admin/edit_character.html', character=character,
@@ -161,6 +184,7 @@ def admin_delete_character(char_id):
     character = Character.query.get_or_404(char_id)
     db.session.delete(character)
     db.session.commit()
+    admin_logger.info(f"Admin {current_user.username} deleted user {character.name} at {datetime.utcnow()}")
     flash("Character deleted.", "success")
     return redirect(url_for('admin.admin_characters'))
 
@@ -170,24 +194,30 @@ def admin_delete_character(char_id):
 def admin_edit_user(user_id):
     user = User.query.get_or_404(user_id)
     if request.method == 'POST':
+        # Only assign fields you explicitly allow
         username = request.form.get('username', user.username)
-        is_admin = bool(request.form.get('is_admin', user.is_admin))
-        premium = bool(request.form.get('premium', user.premium))
-        crew_id = request.form.get('crew_id', user.crew_id)
-        if crew_id == '':
-            crew_id = None
-        user.username = username
-        user.is_admin = is_admin
-        user.premium = premium
-        user.crew_id = crew_id
+        premium = request.form.get('premium')
+        crew_id = request.form.get('crew_id')
         password = request.form.get('password', '')
+
+        # Only allow admins to set is_admin, and never allow self-promotion
+        if current_user.id == user.id and not current_user.is_admin:
+            flash("You cannot promote yourself to admin.", "danger")
+            return redirect(url_for('admin.admin_users'))
+        if current_user.id != user.id:
+            is_admin = request.form.get('is_admin')
+            user.is_admin = bool(is_admin) if is_admin is not None else user.is_admin
+
+        user.username = username
+        user.premium = bool(premium) if premium is not None else user.premium
+        user.crew_id = int(crew_id) if crew_id and crew_id.isdigit() else None
+
         if password:
             user.set_password(password)
         db.session.commit()
         flash("User updated.", "success")
         return redirect(url_for('admin.admin_users'))
-    return render_template('admin/edit_user.html', user=user,
-    form=EditUserForm(obj=user))
+    return render_template('admin/edit_user.html', user=user, form=EditUserForm(obj=user))
 
 # --- Admin shop management ---
 @admin_bp.route('/shop')
@@ -220,9 +250,14 @@ def admin_add_shop_item():
                 image=form.gun_image.data or "",
                 description=form.gun_description.data or ""
             )
+
             db.session.add(gun)
             db.session.commit()
-
+        if gun:
+            admin_logger.info(f"Admin {current_user.username} added gun {gun.name} at {datetime.utcnow()}")
+        else:
+            admin_logger.info(f"Admin {current_user.username} added shop item {name} at {datetime.utcnow()}")
+            
         item = ShopItem(
             name=name,
             description=description,
@@ -235,6 +270,7 @@ def admin_add_shop_item():
         db.session.commit()
         flash("Shop item added!", "success")
         return redirect(url_for('admin.admin_shop'))
+    
     return render_template('admin/add_shop_item.html', form=form)
 
 # --- Admin Edit Shop Item ---
@@ -558,10 +594,27 @@ def check_character_alive():
                 return redirect(url_for('create_character'))
 
 #Flask Forms -------------------------------
+class ApproveCrewRequestForm(FlaskForm):
+    pass
+class StepDownGodfatherForm(FlaskForm):
+    submit = SubmitField("Step Down")
+class DenyCrewRequestForm(FlaskForm):
+    pass
+class ChatForm(FlaskForm):
+    message = StringField('Message', validators=[DataRequired()])
+    submit = SubmitField('Send')
 class PasswordResetRequestForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired()])
     submit = SubmitField('Request Password Reset')
-
+class SimpleCaptchaForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    captcha_question = StringField('Captcha Question', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    
+    
+    captcha_answer = StringField('What is {{captcha_question}}?', validators=[DataRequired()])
+    captcha_solution = HiddenField()  # Store the answer in a hidden field
+    submit = SubmitField('Register')
 class PasswordResetForm(FlaskForm):
     password = PasswordField('New Password', validators=[DataRequired()])
     submit = SubmitField('Reset Password')
@@ -678,11 +731,14 @@ class EditCharacterForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+    
     submit = SubmitField('Login')
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+    captcha_answer = StringField('Captcha Answer', validators=[DataRequired()])
+    captcha_question = StringField('Captcha Question', validators=[DataRequired()])
     submit = SubmitField('Register')
 class BreakoutForm(FlaskForm):
     submit = SubmitField('Break Out')
@@ -823,6 +879,14 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+class CrewRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    crew_name = db.Column(db.String(150), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    city = db.Column(db.String(64), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, denied
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User')
 class Character(db.Model):
     __tablename__ = 'character'
 
@@ -830,7 +894,7 @@ class Character(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', backref=db.backref('linked_character', overlaps="linked_characters"), foreign_keys=[user_id], overlaps="linked_characters")
     name = db.Column(db.String(64), unique=True, nullable=False)
-
+    bodyguards = db.Column(db.Integer, default=0)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=250)
     level = db.Column(db.Integer, default=1)
@@ -984,36 +1048,7 @@ class CharacterModelView(ModelView):
     form_columns = ('name', 'master_id', 'health', 'money', 'level', 'is_alive')
 
 
-class UserModelView(ModelView):
-    column_searchable_list = ('username',)
-    can_create = True
-    can_edit = True
-    can_delete = False
-    can_view_details = True
-    form = UserEditForm
 
-    form_excluded_columns = ['password_hash', 'last_seen', 'last_earned']
-    form_columns = ['username', 'crew_id', 'is_admin', 'premium', 'xp', 'level', 'money', 'health', 'gun_id']  # <-- Add 'level'
-    column_list = ('id', 'username', 'crew_id', 'last_seen', 'is_admin','premium', 'premium_until', 'last_known_ip')
-
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
-
-    def on_model_change(self, form, model, is_created):
-        if form.password.data:
-            model.set_password(form.password.data)
-        if form.xp.data is not None:
-            model.xp = form.xp.data
-            # Reset level and recalculate based on XP
-            model.level = 1
-            while model.xp >= model.level * 250:
-                model.xp -= model.level * 250
-                model.level += 1
-        if form.level.data is not None:
-            model.level = form.level.data  # <-- Allow manual level set
-
-    def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login'))
 
 class Crew(db.Model):
     __tablename__ = 'crew'
@@ -1185,12 +1220,13 @@ def create_forum():
         flash("Only admins can create forums.", "danger")
         return redirect(url_for('forums'))
     if request.method == 'POST':
+        forum = Forum(title=title, description=description)
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         if not title:
             flash("Forum title is required.", "danger")
             return redirect(url_for('create_forum'))
-        forum = Forum(title=title, description=description)
+        
         db.session.add(forum)
         db.session.commit()
         flash("Forum created!", "success")
@@ -1407,7 +1443,30 @@ def update_crew_role(crew_member_id):
         flash("Invalid form submission.", "danger")
     return redirect(url_for('crew_page', crew_id=crew_id))
 
-
+@app.route('/hire_bodyguard', methods=['POST'])
+@login_required
+def hire_bodyguard():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+    COST_PER_BODYGUARD = 50000
+    MAX_BODYGUARDS = 5
+    num = int(request.form.get('num', 1))
+    if num < 1 or num > (MAX_BODYGUARDS - character.bodyguards):
+        flash(f"You can only hire up to {MAX_BODYGUARDS - character.bodyguards} more bodyguards.", "danger")
+        return redirect(url_for('dashboard'))
+    total_cost = COST_PER_BODYGUARD * num
+    if character.money < total_cost:
+        flash("Not enough money to hire bodyguards.", "danger")
+        return redirect(url_for('dashboard'))
+    character.money -= total_cost
+    character.bodyguards += num
+    # Optional: set expiry
+    # character.bodyguard_until = datetime.utcnow() + timedelta(hours=24)
+    db.session.commit()
+    flash(f"Hired {num} bodyguard(s)! You now have {character.bodyguards}.", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/kill/character/<character_name>', methods=['POST'])
 @login_required
@@ -1417,7 +1476,8 @@ def kill(character_name):
     if not attacker:
         flash("You must have a living character to attack.", "danger")
         return redirect(url_for('dashboard'))
-
+    
+        return redirect(url_for('profile_by_id', char_id=target.id))
     gun = attacker.equipped_gun or current_user.gun
     if not gun:
         flash("You don't have a gun equipped!", "danger")
@@ -1425,7 +1485,6 @@ def kill(character_name):
         if target_char:
             return redirect(url_for('profile_by_id', char_id=target_char.id))
         return redirect(url_for('dashboard'))
-
     # Always target by character name
     target = Character.query.filter_by(name=character_name, is_alive=True).first()
 
@@ -1437,6 +1496,13 @@ def kill(character_name):
     if target.master_id == current_user.id:
         flash("You can't kill your own character!", "danger")
         return redirect(url_for('dashboard'))
+    
+    if target.bodyguards and target.bodyguards > 0:
+        target.bodyguards -= gun.damage + gun.accuracy * 10  # Bodyguards take some damage
+        
+        db.session.commit()
+        flash(f"{target.name}'s bodyguard protected them! One bodyguard was lost.", "warning")
+        return redirect(url_for('profile_by_id', char_id=target.id))
 
     # Prevent killing admin characters
     if hasattr(target, "immortal") and target.immortal:
@@ -1572,26 +1638,21 @@ def inventory():
         item_id = int(request.form.get('item_id'))
         inventory_item = UserInventory.query.filter_by(user_id=current_user.id, item_id=item_id).first()
         item = ShopItem.query.get(item_id)
-
+        # Check if the item is a gun and if the user has it in their inventory
         if not inventory_item or not item:
             flash("Item not found in your inventory.", 'danger')
             return redirect(url_for('inventory'))
-
-        sell_price = item.price // 2
-        character.money += sell_price
-        inventory_item.quantity -= 1
-
-        # If it's the equipped gun, unequip it
+        # Check if gun is equipped and sell it
         if current_user.gun_id == item.id:
             current_user.gun_id = None
             flash(f"You sold your equipped gun: {item.name}.", "info")
-
+        # Deletes item from inventory
         if inventory_item.quantity <= 0:
             db.session.delete(inventory_item)
-
-        # ✅ Add back to shop (increase stock)
+        sell_price = item.price // 2
+        character.money += sell_price
+        inventory_item.quantity -= 1
         item.stock += 1
-
         db.session.commit()
         flash(f"Sold 1x {item.name} for ${sell_price}.", "success")
         return redirect(url_for('inventory'))
@@ -1642,36 +1703,52 @@ def npc_profile(id):
     return render_template('npc_profile.html', npc=npc)
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def register():
+    # Only generate a new CAPTCHA if it's a GET request or not present in session
+    if 'captcha_question' not in session or request.method == 'GET':
+        a, b = random.randint(1, 10), random.randint(1, 10)
+        session['captcha_question'] = f"{a} + {b}"
+        session['captcha_solution'] = str(a + b)
     form = RegisterForm()
+    # Set the captcha fields for the form (so they are rendered in the template)
+    form.captcha_question.data = session['captcha_question']
+    
+    next_page = request.args.get('next')
+
     if form.validate_on_submit():
+        # Check the answer against the solution in the session
+        if form.captcha_answer.data.strip() != session.get('captcha_solution', ''):
+            flash(f"Incorrect CAPTCHA answer.", "danger")
+            return render_template('register.html', form=form, captcha_question=session['captcha_question'])
+
         username = form.username.data.strip()
         email = form.email.data.strip().lower()
         password = form.password.data
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists.', 'danger')
-            return redirect(url_for('register'))
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered.', 'danger')
-            return redirect(url_for('register'))
-        new_user = User(username=username, email=email)
-        new_user.set_password(password)
-        # Generate verification token
-        token = serializer.dumps(email, salt='email-verify')
-        new_user.email_verification_token = token
-        db.session.add(new_user)
-        db.session.commit()
-        # Send verification email
-        verify_url = url_for('verify_email', token=token, _external=True)
-        msg = Message('Verify your email', recipients=[email])
-        msg.body = f'Click to verify your email: {verify_url}'
-        mail.send(msg)
-        flash('Registered! Please check your email to verify your account.', 'info')
+        user_exists = User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        if not user_exists:
+            new_user = User(username=username, email=email)
+            new_user.set_password(password)
+            token = serializer.dumps(email, salt='email-verify')
+            new_user.email_verification_token = token
+            db.session.add(new_user)
+            db.session.commit()
+            verify_url = url_for('verify_email', token=token, _external=True)
+            msg = Message('Verify your email', recipients=[email])
+            msg.body = f'Click to verify your email: {verify_url}'
+            mail.send(msg)
+        # Always show the same message, even if user/email exists
+        if next_page and is_safe_url(next_page):
+            return redirect(next_page)
+        flash('If your credentials are correct, you will receive an email.', 'info')
         return redirect(url_for('login'))
-    return render_template('register.html', form=form)
+    return render_template('register.html', form=form, captcha_question=session['captcha_question'])
 
 @app.route('/verify_email/<token>')
 def verify_email(token):
+    next_page = request.args.get('next')
     try:
         email = serializer.loads(token, salt='email-verify', max_age=3600)
     except Exception:
@@ -1685,11 +1762,15 @@ def verify_email(token):
         flash('Email verified! You can now log in.', 'success')
     else:
         flash('User not found.', 'danger')
+    if next_page and is_safe_url(next_page):
+        return redirect(next_page)
+    
     return redirect(url_for('login'))
 
 @app.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
     form = PasswordResetRequestForm()
+    next_page = request.args.get('next')
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
         user = User.query.filter_by(email=email).first()
@@ -1702,7 +1783,10 @@ def reset_password_request():
             msg = Message('Password Reset', recipients=[email])
             msg.body = f'Click to reset your password: {reset_url}'
             mail.send(msg)
-        flash('If your email is registered, you will receive a password reset link.', 'info')
+        # Always show the same message
+        flash('If your credentials are correct, you will receive an email.', 'info')
+        if next_page and is_safe_url(next_page):
+                return redirect(next_page)
         return redirect(url_for('login'))
     return render_template('reset_password_request.html', form=form)
 
@@ -1718,12 +1802,15 @@ def reset_password(token):
         flash('Invalid or expired reset link.', 'danger')
         return redirect(url_for('login'))
     form = PasswordResetForm()
+    next_page = request.args.get('next')
     if form.validate_on_submit():
         user.set_password(form.password.data)
         user.reset_token = None
         user.reset_token_expiry = None
         db.session.commit()
         flash('Password reset successful. You can now log in.', 'success')
+        if next_page and is_safe_url(next_page):
+            return redirect(next_page)
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
@@ -1760,8 +1847,10 @@ def send_crew_message():
     return jsonify(success=True)
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     form = LoginForm()
+    next_page = request.args.get('next')
     if form.validate_on_submit():
         username = form.username.data.strip()
         password = form.password.data
@@ -1771,8 +1860,16 @@ def login():
                 flash('Please verify your email before logging in.', 'warning')
                 return redirect(url_for('login'))
             login_user(user)
+            session.permanent = True
+            # Set session timeout based on premium status
+            if user.premium and user.premium_until and user.premium_until > datetime.utcnow():
+                session.permanent_session_lifetime = timedelta(minutes=15)
+            else:
+                session.permanent_session_lifetime = timedelta(minutes=30)
             user.last_known_ip = request.remote_addr
             db.session.commit()
+            if next_page and is_safe_url(next_page):
+                return redirect(next_page)
             return redirect(url_for('dashboard'))
         flash('Invalid username or password.', 'danger')
     return render_template('login.html', form=form)
@@ -1920,6 +2017,7 @@ def breakout(char_id):
 @login_required
 def join_crew():
     if request.method == 'POST':
+        crew = Crew.query.get(crew_id)
         try:
             crew_id = int(request.form['crew_id'])
         except (ValueError, KeyError):
@@ -1932,7 +2030,6 @@ def join_crew():
             return redirect(url_for('dashboard'))
             
         # Check if the crew exists
-        crew = Crew.query.get(crew_id)
         if not crew:
             flash("Crew not found.", "danger")
             return redirect(url_for('join_crew'))
@@ -2029,7 +2126,8 @@ def casino():
             random.shuffle(deck)
             hand = [deck.pop(), deck.pop()]
             dealer_hand = [deck.pop(), deck.pop()]
-
+            player_val = hand_value(hand)
+            dealer_val = hand_value(dealer_hand)
             def hand_value(cards):
                 value = sum(cards)
                 aces = cards.count(11)
@@ -2037,26 +2135,23 @@ def casino():
                     value -= 10
                     aces -= 1
                 return value
-
-            player_val = hand_value(hand)
-            dealer_val = hand_value(dealer_hand)
-
+            # Player's turn
             while dealer_val < 17:
                 dealer_hand.append(deck.pop())
                 dealer_val = hand_value(dealer_hand)
-
+            # Determine result
             if player_val > 21:
                 result = f"You busted! Lost ${bet}."
                 character.money -= bet
-                
+            # you win if dealer busts or player has higher value    
             elif dealer_val > 21 or player_val > dealer_val:
                 win_amount = bet * 2
                 result = f"You win! Won ${win_amount}."
                 character.money += win_amount
-                
+            # you tie if both have same value    
             elif player_val == dealer_val:
                 result = "Push! It's a tie."
-                
+            # you lose if dealer has higher value    
             else:
                 result = f"You lose! Lost ${bet}."
                 character.money -= bet
@@ -2199,7 +2294,7 @@ def claim_godfather(city):
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
-
+    
     # Check if city already has a Godfather
     existing = Godfather.query.filter_by(city=city).first()
     if existing:
@@ -2212,7 +2307,9 @@ def claim_godfather(city):
         return redirect(url_for('dashboard'))
     # Define ClaimGodfatherForm if not already defined
     
-
+    if character.level < 40:
+        flash("You must be at least level 40 to claim a Godfather position.", "danger")
+        return redirect(url_for('dashboard'))
     claim_forms = {city: ClaimGodfatherForm() for city in CITIES}
     godfather = Godfather(city=city, character_id=character.id)
     db.session.add(godfather)
@@ -2407,13 +2504,18 @@ def crew_messages():
     if not character or not character.crew_id:
         return jsonify([])
 
-    messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id).order_by(ChatMessage.timestamp.asc()).limit(50).all()
+    messages = ChatMessage.query.filter_by(channel='crew', crew_id=character.crew_id)\
+        .order_by(ChatMessage.timestamp.asc())\
+        .limit(50).all()
+
     result = []
     for m in messages:
-        char = Character.query.get(m.user_id)  # Use get(id)
+        char = Character.query.filter_by(master_id=m.user_id).first()
         result.append({
             'character_name': char.name if char else m.username,
-            'message': m.message
+            'character_id': char.id if char else None,
+            'message': m.message,
+            'timestamp': m.timestamp.strftime('%H:%M') if hasattr(m, 'timestamp') and m.timestamp else ''
         })
     return jsonify(result)
 
@@ -2466,12 +2568,14 @@ def godfathers_page():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     cities = CITIES
     claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
+    step_down_form = StepDownGodfatherForm()
     return render_template(
         'godfathers.html',
         character=character,
         godfathers=godfathers,
         cities=cities,
-        claim_forms=claim_forms
+        claim_forms=claim_forms,
+        step_down_form=step_down_form
     )
 @app.route('/accept_invite/<int:invite_id>')
 @login_required
@@ -2508,8 +2612,7 @@ def decline_invite(invite_id):
 @login_required
 def create_crew():
     MIN_LEVEL = 15
-    CREW_COST = 1000000
-
+    CREW_COST = 1500000
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         flash("You must have a character to create a crew.", "danger")
@@ -2518,6 +2621,8 @@ def create_crew():
     form = CreateCrewForm()
     if form.validate_on_submit():
         crew_name = request.form.get('crew_name', '').strip()
+        city = character.city  # Use character's current city
+
         if Crew.query.filter_by(name=crew_name).first():
             flash("Crew name already exists.")
             return redirect(url_for('create_crew'))
@@ -2530,13 +2635,24 @@ def create_crew():
             flash(f"You need at least ${CREW_COST} to create a crew.")
             return redirect(url_for('create_crew'))
 
-        # Deduct money and create crew
+        # If any Godfather exists, submit a request instead of creating
+        if Godfather.query.first():
+            # Check for existing pending request
+            if CrewRequest.query.filter_by(user_id=current_user.id, status='pending').first():
+                flash("You already have a pending crew request.", "warning")
+                return redirect(url_for('dashboard'))
+            req = CrewRequest(crew_name=crew_name, user_id=current_user.id, city=city)
+            db.session.add(req)
+            db.session.commit()
+            flash("Your crew request has been sent to the Godfather for approval.", "info")
+            return redirect(url_for('dashboard'))
+
+        # Otherwise, create the crew immediately
         character.money -= CREW_COST
         new_crew = Crew(name=crew_name)
         db.session.add(new_crew)
         db.session.commit()
 
-        # Insert creator as leader
         crew_member = CrewMember(crew_id=new_crew.id, user_id=current_user.id, role='leader')
         db.session.add(crew_member)
         character.crew_id = new_crew.id
@@ -2546,7 +2662,66 @@ def create_crew():
         return redirect(url_for('dashboard'))
 
     return render_template('create_crew.html', form=form)
+@app.route('/crew_requests')
+@login_required
+def crew_requests():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    godfather = Godfather.query.filter_by(character_id=character.id).first()
+    if not godfather:
+        flash("Only Godfathers can approve crew requests.", "danger")
+        return redirect(url_for('dashboard'))
+    requests = CrewRequest.query.filter_by(city=godfather.city, status='pending').all()
+    approve_forms = {req.id: ApproveCrewRequestForm() for req in requests}
+    deny_forms = {req.id: DenyCrewRequestForm() for req in requests}
+    return render_template(
+        'crew_requests.html',
+        requests=requests,
+        character=character,
+        approve_forms=approve_forms,
+        deny_forms=deny_forms
+    )
+@app.route('/approve_crew_request/<int:req_id>', methods=['POST'])
+@login_required
+def approve_crew_request(req_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    godfather = Godfather.query.filter_by(character_id=character.id).first()
+    req = CrewRequest.query.get_or_404(req_id)
+    if not godfather or godfather.city != req.city:
+        flash("You are not authorized to approve this request.", "danger")
+        return redirect(url_for('dashboard'))
+    # Approve: create crew, assign leader, deduct money
+    user = req.user
+    leader_char = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+    if not leader_char or leader_char.money < 1500000:
+        req.status = 'denied'
+        db.session.commit()
+        flash("User does not have enough money or character is missing.", "danger")
+        return redirect(url_for('crew_requests'))
+    leader_char.money -= 1500000
+    new_crew = Crew(name=req.crew_name)
+    db.session.add(new_crew)
+    db.session.commit()
+    crew_member = CrewMember(crew_id=new_crew.id, user_id=user.id, role='leader')
+    db.session.add(crew_member)
+    leader_char.crew_id = new_crew.id
+    req.status = 'approved'
+    db.session.commit()
+    flash(f"Crew '{req.crew_name}' approved and created.", "success")
+    return redirect(url_for('crew_requests'))
 
+@app.route('/deny_crew_request/<int:req_id>', methods=['POST'])
+@login_required
+def deny_crew_request(req_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    godfather = Godfather.query.filter_by(character_id=character.id).first()
+    req = CrewRequest.query.get_or_404(req_id)
+    if not godfather or godfather.city != req.city:
+        flash("You are not authorized to deny this request.", "danger")
+        return redirect(url_for('dashboard'))
+    req.status = 'denied'
+    db.session.commit()
+    flash("Crew request denied.", "info")
+    return redirect(url_for('crew_requests'))
 @app.route('/earn', methods=['POST', 'GET'])
 @login_required
 def earn():
@@ -2685,7 +2860,18 @@ def profile_by_id(char_id):
     kill_form=KillForm(), crew=crew)
     
 
-
+@app.route('/step_down_godfather', methods=['POST'])
+@login_required
+def step_down_godfather():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    godfather = Godfather.query.filter_by(character_id=character.id).first()
+    if not godfather:
+        flash("You are not a Godfather.", "danger")
+        return redirect(url_for('dashboard'))
+    db.session.delete(godfather)
+    db.session.commit()
+    flash("You have stepped down as Godfather.", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/send_public_message', methods=['POST'])
 @login_required
@@ -2693,20 +2879,21 @@ def send_public_message():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         return jsonify({"error": "No active character found."}), 400
-
-    message = request.form.get('message', '').strip()
-    if not message:
-        return jsonify({"error": "Empty message"}), 400
-
-    chat_msg = ChatMessage(
-        username=character.name,  # Use character name here
-        message=message,
-        channel='public',
-        user_id=current_user.id
-    )
-    db.session.add(chat_msg)
-    db.session.commit()
-    return jsonify(success=True)
+    form = ChatForm()
+    if form.validate_on_submit():
+        message = form.message.data.strip()
+        if not message:
+            return jsonify({"error": "Empty message"}), 400
+        chat_msg = ChatMessage(
+            username=character.name,
+            message=message,
+            channel='public',
+            user_id=current_user.id
+        )
+        db.session.add(chat_msg)
+        db.session.commit()
+        return jsonify(success=True)
+    return jsonify(error="Invalid message or CSRF token."), 400
 
 @app.route('/drug_dashboard', methods=['GET', 'POST'])
 @login_required
@@ -2746,13 +2933,16 @@ def public_messages():
         .order_by(ChatMessage.timestamp.desc())\
         .limit(50).all()
 
-    return jsonify([
-        {
-            'character_name': Character.query.filter_by(master_id=m.user_id).first().name if Character.query.filter_by(master_id=m.user_id).first() else m.username,
-            'message': m.message
-        }
-        for m in reversed(messages)
-    ])
+    result = []
+    for m in reversed(messages):
+        char = Character.query.filter_by(master_id=m.user_id).first()
+        result.append({
+            'character_name': char.name if char else m.username,
+            'character_id': char.id if char else None,
+            'message': m.message,
+            'timestamp': m.timestamp.strftime('%H:%M') if hasattr(m, 'timestamp') and m.timestamp else ''
+        })
+    return jsonify(result)
 
 @app.route('/buy_drug/<int:dealer_id>', methods=['POST'])
 @login_required
@@ -2832,25 +3022,22 @@ def inject_current_character():
         return dict(current_character=character)
     return dict(current_character=None)
 # Create DB (run once, or integrate with a CLI or shell)
-
+@app.context_processor
+def inject_is_godfather():
+    if current_user.is_authenticated:
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if character and Godfather.query.filter_by(character_id=character.id).first():
+            return dict(is_godfather=True)
+    return dict(is_godfather=False)
 @app.context_processor
 def inject_now():
     from datetime import datetime
     return {'now': datetime.utcnow}
-@app.cli.command('create-admin')
-def create_admin():
-    user = User.query.filter_by(username='admin').first()
-    if not user:
-        user = User(username='admin')
-        user.set_password('yep')
-        user.is_admin = True
-        db.session.add(user)
-        db.session.commit()
-        print("Admin user created.")
-    else:
-        user.is_admin = False
-        db.session.commit()
-        print("Admin user updated.")
+
+@app.context_processor
+def inject_chat_form():
+    return dict(chat_form=ChatForm())
+
 def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=500):
     """Randomize prices and stock for all DrugDealers."""
     dealers = DrugDealer.query.all()

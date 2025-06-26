@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Crew Requests for {{ character.city }}</h2>
+<ul>
+  {% for req in requests %}
+    <li>
+      <strong>{{ req.crew_name }}</strong> by {{ req.user.username }} ({{ req.city }})
+      <div style="display:inline;">
+        <form method="post" action="{{ url_for('approve_crew_request', req_id=req.id) }}">
+          {{ approve_forms[req.id].hidden_tag() }}
+          <button type="submit" class="btn btn-success btn-sm">Approve</button>
+        </form>
+        <form method="post" action="{{ url_for('deny_crew_request', req_id=req.id) }}">
+          {{ deny_forms[req.id].hidden_tag() }}
+          <button type="submit" class="btn btn-danger btn-sm">Deny</button>
+        </form>
+      </div>
+    </li>
+  {% else %}
+    <li>No pending requests.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,10 +1,99 @@
 {% extends "base.html" %}
 
 {% block title %}Register{% endblock %}
-
 {% block content %}
 <style>
-.login-container {
+  .mafia-captcha-modern {
+    background: linear-gradient(135deg, #181824 70%, #23243a 100%);
+    border: 1px solid #e63946;
+    border-radius: 12px;
+    padding: 18px 18px 18px 18px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    
+    min-width: 240px;
+    max-width: 420px;
+    position: relative;
+    overflow: hidden;
+    gap: 18px;
+    transition: background 100s, box-shadow 50s, border-color 50s;
+  }
+  .mafia-captcha-modern:hover{
+    
+    background: linear-gradient(135deg, #23243a 70%, #181824 100%);
+    border-color: #ffd700;
+    box-shadow: 0 0px 8px rgba(255, 215, 0, 0.3), 0 2px 0 rgba(255, 215, 0, 0.1) inset;
+  }
+  .mafia-captcha-modern::before {
+    
+    font-size: 2.2em;
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .mafia-captcha-modern-question {
+    font-size: 1.5em;
+    font-family: 'Fira Mono', 'Consolas', monospace;
+    letter-spacing: 2px;
+    color: #ffd700;
+    font-weight: bold;
+    text-shadow: 0 1px 8px #000, 0 0 4px #e63946;
+    margin-right: 10px;
+    z-index: 1;
+    user-select: none;
+  }
+  .mafia-captcha-modern-equals {
+    font-size: 1.7em;
+    color: #e63946;
+    font-weight: bold;
+    user-select: none;
+    text-shadow: 0 1px 6px #000;
+    margin-right: 10px;
+    z-index: 1;
+  }
+  .mafia-captcha-modern-input {
+    width: 90px;
+    background: #23243a;
+    color: #ffd700;
+    border: 2px solid #e63946;
+    border-radius: 6px;
+    font-size: 1.2em;
+    font-family: 'Fira Mono', 'Consolas', monospace;
+    text-align: center;
+    transition: border 0.18s, background 0.18s;
+    box-shadow: 0 1px 8px #e6394633;
+    z-index: 1;
+  }
+  .mafia-captcha-modern-input:focus {
+    border: 2px solid #ffd700;
+    background: #181824;
+    outline: none;
+  }
+  .mafia-captcha-modern-label {
+    display: flex;
+    font-family: "geo", serif;
+    text-shadow: 0 1px 8px #000;
+    gap: 8px;
+  }
+  .mafia-captcha-modern-bg {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    opacity: 0.10;
+    font-size: 4em;
+    pointer-events: none;
+    color: #ffd700;
+    font-family: "geo", serif;
+    font-weight: 900;
+    letter-spacing: 2px;
+    user-select: none;
+    z-index: 0;
+  }
+  .login-container {
     max-width: 420px;
     margin: 64px auto 0 auto;
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
@@ -17,8 +106,8 @@
     text-align: left;
     position: relative;
     overflow: hidden;
-}
-.login-title {
+  }
+  .login-title {
     color: #8be9fd;
     font-size: 2.2em;
     font-weight: 900;
@@ -27,21 +116,21 @@
     font-family: "geo", sans-serif;
     text-shadow: 0 2px 12px #23243a;
     text-align: center;
-}
-.login-form .form-group {
+  }
+  .login-form .form-group {
     margin-bottom: 18px;
-}
-.login-form label {
+  }
+  .login-form label {
     color: #ffd700;
     font-weight: 700;
     font-size: 1.05em;
     margin-bottom: 6px;
     display: block;
     letter-spacing: 0.5px;
-}
-.login-form input[type="text"],
-.login-form input[type="password"],
-.login-form input[type="email"] {
+  }
+  .login-form input[type="text"],
+  .login-form input[type="password"],
+  .login-form input[type="email"] {
     width: 100%;
     padding: 14px 16px;
     margin: 6px 0 0 0;
@@ -53,14 +142,14 @@
     font-family: "geo", sans-serif;
     outline: none;
     transition: border 0.18s, background 0.18s;
-}
-.login-form input[type="text"]:focus,
-.login-form input[type="password"]:focus,
-.login-form input[type="email"]:focus {
+  }
+  .login-form input[type="text"]:focus,
+  .login-form input[type="password"]:focus,
+  .login-form input[type="email"]:focus {
     border: 1.5px solid #8be9fd;
     background: rgba(139,233,253,0.13);
-}
-.login-form button[type="submit"], .login-form input[type="submit"] {
+  }
+  .login-form button[type="submit"], .login-form input[type="submit"] {
     width: 100%;
     padding: 14px 0;
     border-radius: 5px;
@@ -74,33 +163,37 @@
     transition: background 0.18s, color 0.18s;
     cursor: pointer;
     letter-spacing: 1px;
-}
-.login-form button[type="submit"]:hover,
-.login-form input[type="submit"]:hover {
+  }
+  .login-form button[type="submit"]:hover,
+  .login-form input[type="submit"]:hover {
     background: #ffd700;
     color: #23243a;
-}
-.login-container p {
+  }
+  .login-container p {
     margin-top: 18px;
     color: #b8b8ff;
     font-size: 1em;
     text-align: center;
-}
-.login-container a {
+  }
+  .login-container a {
     color: #8be9fd;
     text-decoration: underline;
     font-weight: 600;
-}
-@media (max-width: 600px) {
+  }
+  @media (max-width: 600px) {
     .login-container {
-        padding: 18px 4vw 16px 4vw;
-        margin: 18px 0 0 0;
-        max-width: 98vw;
+      padding: 18px 4vw 16px 4vw;
+      margin: 18px 0 0 0;
+      max-width: 98vw;
     }
     .login-title {
-        font-size: 1.2em;
+      font-size: 1.2em;
     }
-}
+    .mafia-captcha-modern {
+      padding: 12px 6px 12px 12px;
+      max-width: 98vw;
+    }
+  }
 </style>
 <div class="login-container">
   <div class="login-title"><i class="fas fa-user-plus"></i> Register</div>
@@ -124,6 +217,24 @@
       {{ form.password.label }}
       {{ form.password(class_="form-control", placeholder="Password") }}
       {% for error in form.password.errors %}
+        <div class="text-danger" style="color:#ff5555;font-size:0.98em;">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="form-group captcha-group" style="margin-top: 22px;">
+      
+      <label class="mafia-captcha-modern-label">
+        <i class="fas fa-shield-alt"></i> Prove you're not a bot
+      </label>      
+      <div class="mafia-captcha-modern">
+        <span class="mafia-captcha-modern-question">
+          {{ captcha_question }}
+        </span>
+        <span class="mafia-captcha-modern-equals">=</span>
+        {{ form.captcha_answer(class_="form-control mafia-captcha-modern-input", placeholder="??") }}
+        
+        <span class="mafia-captcha-modern-bg">💰</span>
+      </div>
+      {% for error in form.captcha_answer.errors %}
         <div class="text-danger" style="color:#ff5555;font-size:0.98em;">{{ error }}</div>
       {% endfor %}
     </div>

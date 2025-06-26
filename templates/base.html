@@ -725,7 +725,9 @@
               <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crew</span>
               </a>
-              
+              {% endif %}
+              {% if is_godfather %}
+                <li><a href="{{ url_for('crew_requests') }}">Crew Requests</a></li>
               {% endif %}
               <a href="{{ url_for('crews', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crews' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crews</span>
@@ -858,9 +860,9 @@
         </button>
       </div>
       <div id="chat-messages" class="chat-messages"></div>
-      <form id="chat-form" autocomplete="off">
-        <input type="hidden" id="chat-csrf" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="text" id="chat-input" placeholder="Type a message..." maxlength="250" />
+      <form id="chat-form" method="POST" autocomplete="off">
+        {{ chat_form.hidden_tag() }}
+        {{ chat_form.message(id="chat-input", maxlength=250, placeholder="Type a message...") }}
         <button type="submit" id="chat-submit"><i class="fas fa-paper-plane"></i></button>
       </form>
     </div>
@@ -937,12 +939,16 @@
 
     // Floating Chat Tabs and Messaging
   let currentTab = 'public';
+  let chatPollInterval = null;
 
   function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.chat-tab').forEach(btn => btn.classList.remove('active-tab'));
     document.getElementById(`tab-${tab}`).classList.add('active-tab');
     fetchMessages();
+    // Restart polling on tab switch
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(fetchMessages, 1000);
   }
 
   async function fetchMessages() {
@@ -971,12 +977,20 @@
 
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
+    // Find the CSRF token from the FlaskForm hidden field
+    const csrfInput = chatForm.querySelector('input[name="csrf_token"]');
+
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = chatInput.value.trim();
       if (!message) return;
-      const csrfToken = document.getElementById('chat-csrf').value;
-      const url = `/send_${currentTab}_message`;
+      const csrfToken = csrfInput ? csrfInput.value : '';
+      let url = '';
+      if (currentTab === 'public') {
+        url = '/send_public_message';
+      } else if (currentTab === 'crew') {
+        url = '/send_crew_message';
+      }
       try {
         const res = await fetch(url, {
           method: 'POST',
@@ -985,7 +999,7 @@
         });
         if (res.ok) {
           chatInput.value = '';
-          fetchMessages(); // Only refresh after sending a message
+          fetchMessages(); // Refresh after sending a message
         } else {
           let text = await res.text();
           let data;
@@ -1002,6 +1016,10 @@
         console.error("Send error:", err);
       }
     });
+
+    // Start polling for new messages when chat is visible
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(fetchMessages, 1000);
   });
   </script>
 </body>
