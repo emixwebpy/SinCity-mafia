@@ -34,7 +34,7 @@
 
       /* Sidebar */
       .sidebar {
-        width: 180px;
+        width: 215px;
         background: linear-gradient(160deg, #23243a 80%, #181824 100%);
         box-shadow: 2px 0 18px 0 #8be9fd22, 0 1.5px 0 #8be9fd22 inset;
         display: flex;
@@ -101,7 +101,7 @@
       }
       .sidebar-category-title {
         color: #ffd700;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         padding: 15px 26px 10px 26px;
         letter-spacing: 0.5px;
@@ -721,6 +721,20 @@
               <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Forums</span>
               </a>
+              <a href="{{ url_for('graveyard') }}" class="{% if request.endpoint == 'graveyard' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Graveyard</span>
+              </a>
+              <a href="{{ url_for('hire_bodyguard') }}" class="{% if request.endpoint == 'hire_bodyguard' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Hire Bodyguard</span>
+              </a>
+            </div>
+          </div>
+          <div class="sidebar-category">
+            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+              <i class="fas fa-home"></i> Manage Crew
+              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            <div class="sidebar-subnav">
               {% if current_user.is_authenticated and current_character and current_character.crew_id %}
               <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crew</span>
@@ -734,6 +748,11 @@
               <a href="{{ url_for('crews', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crews' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crews</span>
               </a>
+              {% if current_character and current_character.level > 40 %}
+              <a href="{{ url_for('godfathers_page') }}" class="{% if request.endpoint == 'godfathers_page' %}active{% endif %}">
+                  <i class="fas fa-crown"></i> <span>Godfathers</span>
+              </a>
+              {% endif %}
             </div>
           </div>
           <!-- Dealings -->
@@ -754,12 +773,15 @@
               <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Player Search</span>
               </a>
+              {% if character %}
+              <a href="{{ url_for('city_characters', city_name=character.city) }}" class="{% if request.endpoint == 'city_characters' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>City Characters</span>
+              </a>
+              {% endif %}
               <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
                 <i class="fas fa-plane"></i> <span>Travel</span>
               </a>
-              <a href="{{ url_for('godfathers_page') }}" class="{% if request.endpoint == 'godfathers_page' %}active{% endif %}">
-                  <i class="fas fa-crown"></i> <span>Godfathers</span>
-              </a>
+              
             </div>
           </div>
           <!-- Crime -->
@@ -929,7 +951,7 @@
         localStorage.setItem('chatVisible', 'true');
         fetchMessages(); // Fetch immediately
         if (window.chatPollInterval) clearInterval(window.chatPollInterval);
-        window.chatPollInterval = setInterval(fetchMessages, 1000); // Restart polling
+        window.chatPollInterval = setInterval(fetchMessages, 30000); // Restart polling
       }
     }
 

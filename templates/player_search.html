@@ -3,83 +3,143 @@
 
 {% block content %}
 <style>
-    .search-container {
-        max-width: 380px;
-        max-height: 276.4px;
-        width: 380px;
-        height: 276.4px;
-        margin: 50px auto;
-        background: rgba(25, 25, 40, 0.98);
-        border-radius: 5px;
-        box-shadow: 0 1px 5px #8be9fd22;
-        padding: 38px 28px 32px 28px;
-        border: 1.5px solid #8be9fd44;
-        color: #f5f6fa;
-        font-family: "geo", sans-serif;
+    .forums-header {
+        background: linear-gradient(90deg, #232526 0%, #414345 100%);
+        padding: 2rem 2rem 1rem 2rem;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        margin-bottom: 0;
+    }
+    .forums-header h1 {
+        color: #ffd700;
+        font-size: 2.5rem;
         text-align: center;
-        position: relative;
+        margin-bottom: 0.5rem;
+        letter-spacing: 2px;
     }
-    .search-container h2{
-        margin-bottom: 50px;
+    .forums-list {
+        background: #23243a;
+        border-radius: 0 0 12px 12px;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
-    .search-container input{
-        margin-bottom: 25px;
+    .forum-table {
+        width: 100%;
+        color: #f5f6fa;
+        border-collapse: separate;
+        border-spacing: 0;
     }
-    .player-list {
-        list-style: none;
-        padding: 0;
-        margin-top: 20px;
+    .forum-table th, .forum-table td {
+        padding: 1rem 1rem;
+        text-align: left;
+        vertical-align: middle;
     }
-    .player-item {
-        background: #2a2b3d;
-        padding: 14px 20px;
-        margin-bottom: 12px;
-        border-radius: 5px;
-        box-shadow: 0 1px 5px #8be9fd22;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 1.05em;
+    .forum-table th {
+        background: #181824;
+        color: #ffd700;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-bottom: 2px solid #8be9fd55;
     }
-    .player-level {
+    .forum-table tr {
+        background: #282a36;
+        transition: background 0.2s;
+    }
+    .forum-table tr:hover {
+        background: #34355b;
+    }
+    .forum-link {
+        color: #ffd700;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .forum-link:hover {
+        color: #ffb86c;
+        text-decoration: underline;
+    }
+    .forum-desc {
         color: #b8b8ff;
-        font-size: 0.95em;
+        font-size: 1rem;
+    }
+    .forum-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-primary {
+        background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+        color: #232526;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-bottom: 0;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+        color: #232526;
+    }
+    .btn-danger {
+        background: #ff5555;
+        color: #fff;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    .btn-danger:hover {
+        background: #ff2222;
+        color: #fff;
     }
 </style>
-<div class="search-container">
-    <h2>
-        <i class="fas fa-search"></i> Search for Players
-    </h2>
-
-    <form method="post" class="mb-4">
+<div class="forums-header">
+    <h1>Player Search</h1>
+    <form method="post" class="mb-4" style="max-width: 400px; margin: 0 auto;">
         {{ search_form.hidden_tag() }}
         {{ search_form.query(class_="form-control", placeholder="Enter username...", style="padding: 12px; border-radius: 10px; border: none; outline: none; width: 100%; background: #1c1d2f; color: #f5f6fa; font-size: 1.1em;") }}
-        {{ search_form.submit(class_="btn btn-primary mt-3", style="padding: 10px 20px; background: #8be9fd; color: #23243a; border: none; font-weight: 700; border-radius: 10px;") }}
+        {{ search_form.submit(class_="btn btn-primary mt-3", style="padding: 10px 20px; background: #8be9fd; color: #23243a; border: none; font-weight: 700; border-radius: 10px; margin-top: 16px;") }}
     </form>
-
-    {% if results %}
-        <ul class="player-list">
+</div>
+<div class="forums-list">
+    <table class="forum-table">
+        <tr>
+            <th style="width:10%;">Name</th>
+            <th style="width:20%;">Level</th>
+            <th style="width:20%;">Health</th>
+            <th style="width:20%;">Actions</th>
+        </tr>
+        {% if results %}
             {% for character in results %}
-            <li class="player-item">
-                <div style="text-align: left;">
-                    <p>{{ character.name }}</p>
-                    <div class="player-level">
-                        Level {{ character.level }}, Health: {{ character.health }}
+            <tr>
+                <td>
+                    <span class="forum-link">{{ character.name }}</span>
+                </td>
+                <td>{{ character.level }}</td>
+                <td>{{ character.health }}</td>
+                <td>
+                    <div class="forum-actions">
+                        
+                        {% if current_user.is_authenticated and current_character and current_character.master_id != character.master_id and current_character.equipped_gun %}
+                            <form action="{{ url_for('kill', character_name=character.name) }}" method="POST" style="display:inline;">
+                                {{ kill_form.hidden_tag() }}
+                                {{ kill_form.submit(class_="btn btn-danger btn-sm") }}
+                            </form>
+                        {% endif %}
+                        
                     </div>
-                </div>
-                <div>
-                    {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
-                        <form action="{{ url_for('kill', character_name=character.name) }}" method="POST" style="display:inline;">
-                            {{ kill_form.hidden_tag() }}
-                            {{ kill_form.submit(class_="btn btn-danger btn-sm") }}
-                        </form>
-                    {% endif %}
-                </div>
-            </li>
+                </td>
+            </tr>
             {% endfor %}
-        </ul>
-    {% elif query %}
-        <div style="color:#888; margin-top: 16px;">No players found.</div>
-    {% endif %}
+        {% elif query %}
+            <tr>
+                <td colspan="4" style="color:#b8b8ff;">No players found.</td>
+            </tr>
+        {% endif %}
+    </table>
 </div>
 {% endblock %}

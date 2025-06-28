@@ -395,12 +395,11 @@
                         <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
                         
                     {% endif %}
-                    <form action="{{ url_for('earn') }}" method="post" class="earn-form">
-                        
+                    <form action="{{ url_for('earn') }}" method="post" >
                         {{ earn_form.hidden_tag() }}
-                        
-                        {{ earn_form.submit(class_="btn", id="earn-btn earn-timer") }}
-                        
+                        <button type="submit" class="btn btn-primary" id="earn-btn">
+                            {{ earn_form.submit.label }}<span id="earn-timer"></span>
+                        </button>
                     </form>
                 </div>
             </td>

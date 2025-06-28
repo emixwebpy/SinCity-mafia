@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Hire Bodyguards{% endblock %}
+
+{% block content %}
+<style>
+.hire-bg-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+    text-align: center;
+}
+.hire-bg-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+}
+.hire-bg-card {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 420px;
+    margin: 0 auto 2rem auto;
+    text-align: center;
+}
+.hire-bg-info {
+    color: #8be9fd;
+    font-size: 1.1em;
+    margin-bottom: 1.5em;
+}
+.hire-bg-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    display: block;
+}
+.hire-bg-form input[type="number"] {
+    width: 80px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #8be9fd44;
+    background: #282a36;
+    color: #f5f6fa;
+    font-size: 1.08em;
+    outline: none;
+    margin-bottom: 1em;
+    text-align: center;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-top: 0.5rem;
+    width: 100%;
+    transition: background 0.2s;
+    text-decoration: none;
+    box-shadow: 0 1px 8px #ffd70022;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="hire-bg-header">
+    <h1><i class="fas fa-user-shield"></i> Hire Bodyguards</h1>
+</div>
+<div class="hire-bg-card">
+    <div class="hire-bg-info">
+        <strong>Current Bodyguards:</strong> {{ character.bodyguards or 0 }}<br>
+        <strong>Max Bodyguards:</strong> 5<br>
+        <strong>Cost per Bodyguard:</strong> $50,000
+    </div>
+    <form method="post" class="hire-bg-form">
+        {{ form.hidden_tag() }}
+        <label for="{{ form.num.id }}">{{ form.num.label.text }}</label>
+        {{ form.num(class_="form-control", min=1, max=max_hire, value=1, required=True) }}
+        {% for error in form.num.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+        {{ form.submit(class_="btn btn-primary", style="margin-top:1em;") }}
+    </form>
+</div>
+{% endblock %}

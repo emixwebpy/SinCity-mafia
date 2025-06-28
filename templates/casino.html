@@ -2,11 +2,6 @@
 {% block title %}Casino{% endblock %}
 {% block content %}
 <style>
-body, html {
-    /* ...existing code... */
-    font-family: 'Geo', 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #181824 0%, #23243a 100%);
-}
 .forums-header {
     background: linear-gradient(90deg, #232526 0%, #414345 100%);
     padding: 2rem 2rem 1rem 2rem;
@@ -26,33 +21,6 @@ body, html {
     border-radius: 0 0 12px 12px;
     padding: 1.5rem 2rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-}
-.casino-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    margin-bottom: 2rem;
-}
-.casino-tab {
-    background: linear-gradient(90deg, #23243a 0%, #181824 100%);
-    color: #00eaff;
-    border-radius: 12px;
-    padding: 4px 0;
-    font-size: 1.18em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-    text-decoration: none;
-    box-shadow: 0 2px 8px #00eaff33;
-    border: 2px solid #00eaff33;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.casino-tab.active, .casino-tab:hover {
-    background: linear-gradient(90deg, #00eaff 0%, #23243a 100%);
-    color: #181824;
-    border-bottom: 3px solid #00eaff;
-    box-shadow: 0 4px 16px #00eaff55;
 }
 .forum-table {
     width: 100%;
@@ -79,16 +47,25 @@ body, html {
 .forum-table tr:hover {
     background: #34355b;
 }
+.forum-link {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.forum-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
 .forum-desc {
-    color: #00eaff;
-    font-size: 1.18rem;
-    font-weight: 600;
-    text-align: center;
-    text-shadow: 0 1px 0 #23243a;
-    letter-spacing: 1px;
+    color: #b8b8ff;
+    font-size: 1rem;
 }
 .forum-actions {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 8px;
 }
 .btn-primary {
@@ -120,153 +97,63 @@ body, html {
     background: #ff2222;
     color: #fff;
 }
-input[type="number"], select {
-    border-radius: 10px;
-    border: 2px solid #00eaff;
-    background: rgba(24,24,36,0.98);
-    color: #00eaff;
-    font-size: 1.13em;
-    padding: 0.5em 1.2em;
-    width: 140px;
-    margin-bottom: 0.5em;
-    outline: none;
-    transition: border 0.2s, box-shadow 0.2s;
-    text-align: center;
-    box-shadow: 0 1px 4px #00eaff22;
-    font-family: 'Geo', 'Oswald', 'Arial Black', Arial, sans-serif;
+.casino-tabs {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 2em;
+    justify-content: center;
 }
-input[type="number"]:focus, select:focus {
-    border: 2px solid #00eaff;
-    box-shadow: 0 0 8px #00eaff77;
+.casino-tab {
+    color: #ffd700;
+    background: #181824;
+    padding: 0.7em 2em;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    font-size: 1.1em;
+    text-decoration: none;
+    border: 2px solid #ffd70044;
+    border-bottom: none;
+    transition: background 0.2s, color 0.2s;
+}
+.casino-tab.active, .casino-tab:hover {
+    background: #ffd700;
+    color: #232526;
+    border-color: #ffd700;
+    text-decoration: none;
+}
+.casino-result {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+.casino-hand-label {
+    color: #8be9fd;
+    font-weight: bold;
+    margin-top: 0.5em;
 }
 .casino-cards {
     display: flex;
-    gap: 1em;
-    margin: 1.2em 0 0.7em 0;
-    justify-content: center;
+    gap: 8px;
+    margin: 0.5em 0 1em 0;
 }
 .casino-card {
-    background: linear-gradient(135deg, #23243a 0%, #00eaff 100%);
-    color: #fff;
-    border-radius: 12px;
-    border: 3px solid #00eaff;
-    width: 60px;
-    height: 86px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2em;
-    font-family: 'Oswald', 'Geo', 'Arial Black', Arial, sans-serif;
-    box-shadow: 0 4px 16px #00eaff55, 0 1.5px 0 #23243a inset;
-    position: relative;
-    transition: box-shadow 0.2s, transform 0.2s;
-    backdrop-filter: blur(2px);
-    letter-spacing: 2px;
-    text-shadow: 0 2px 8px #00eaff77;
-}
-.casino-card::after {
-    content: "";
-    position: absolute;
-    top: 8px; left: 8px; right: 8px; bottom: 8px;
-    border-radius: 8px;
-    background: linear-gradient(120deg, rgba(0,234,255,0.12) 0%, rgba(0,234,255,0.03) 100%);
-    pointer-events: none;
-}
-.casino-card:hover {
-    box-shadow: 0 8px 32px #00eaff99, 0 1.5px 0 #23243a inset;
-    transform: scale(1.07);
-}
-.casino-result {
-    margin-top: 1.7em;
-    text-align: center;
-    color: #00eaff;
-    font-size: 1.4em;
-    font-weight: bold;
-    text-shadow: 0 2px 16px #00eaff77, 0 1px 0 #23243a;
-    letter-spacing: 1.5px;
-    font-family: 'Oswald', 'Geo', 'Arial Black', Arial, sans-serif;
-}
-.casino-hand-label {
-    color: #fff;
-    font-size: 1.15em;
-    margin-top: 1em;
-    margin-bottom: 0.2em;
-    font-weight: bold;
-    text-align: center;
-    letter-spacing: 1.2px;
-    text-shadow: 0 1px 0 #00eaff;
-    font-family: 'Oswald', 'Geo', 'Arial Black', Arial, sans-serif;
-    text-transform: uppercase;
+    background: #181824;
+    color: #ffd700;
+    border: 2px solid #ffd70055;
+    border-radius: 6px;
+    padding: 0.5em 1em;
+    font-size: 1.2em;
+    font-family: 'Fira Mono', monospace;
+    box-shadow: 0 1px 6px #ffd70022;
 }
 @media (max-width: 900px) {
     .forums-list {
-        padding: 1.2rem 0.5rem 2rem 0.5rem;
-    }
-    .forums-header {
-        padding: 1.2rem 0.5rem 0.7rem 0.5rem;
+        padding: 1rem 0.5rem;
     }
     .forum-table th, .forum-table td {
         padding: 0.7rem 0.3rem;
         font-size: 1em;
     }
-    .casino-card {
-        width: 44px;
-        height: 64px;
-        font-size: 1.2em;
-    }
-}
-.casino-items {
-    margin: 2.5em auto 1.5em auto;
-    max-width: 800px;
-    background: linear-gradient(120deg, #23243a 0%, #00eaff11 100%);
-    border-radius: 18px;
-    box-shadow: 0 8px 32px #00eaff22, 0 1.5px 0 #00eaff11 inset;
-    padding: 2em 2.5em;
-    border: 2px solid #00eaff33;
-}
-.casino-items-title {
-    color: #00eaff;
-    font-size: 1.35em;
-    font-weight: bold;
-    margin-bottom: 1em;
-    text-align: center;
-    letter-spacing: 1.5px;
-    text-shadow: 0 1px 0 #23243a;
-    font-family: 'Oswald', 'Geo', 'Arial Black', Arial, sans-serif;
-    text-transform: uppercase;
-}
-.casino-item-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5em;
-    justify-content: center;
-    margin-bottom: 0.5em;
-}
-.casino-item {
-    background: linear-gradient(120deg, #181824 0%, #00eaff11 100%);
-    border: 2px solid #00eaff55;
-    border-radius: 12px;
-    padding: 16px 18px;
-    color: #00eaff;
-    font-size: 1.18em;
-    text-align: center;
-    min-width: 140px;
-    box-shadow: 0 2px 12px #00eaff22;
-    font-family: 'Oswald', 'Geo', 'Arial Black', Arial, sans-serif;
-    transition: box-shadow 0.2s, background 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.casino-item .emoji {
-    font-size: 2em;
-    display: block;
-    margin-bottom: 0.3em;
-    text-shadow: 0 2px 8px #00eaff77;
-}
-.casino-item:hover {
-    background: linear-gradient(120deg, #00eaff 0%, #23243a 100%);
-    color: #181824;
-    box-shadow: 0 4px 24px #00eaff99;
 }
 </style>
 
@@ -287,7 +174,7 @@ input[type="number"]:focus, select:focus {
         </a>
     </div>
     <div style="display: flex; flex-wrap: wrap; gap: 2em; justify-content: center;">
-        <div style="flex: 1 1 340px; min-width: 1000px; max-width: 420px;">
+        <div style="flex: 1 1 340px; min-width: 340px; max-width: 420px;">
             <table class="forum-table">
                 <tr>
                     <th style="width:20%;">Your Money</th>
@@ -359,7 +246,6 @@ input[type="number"]:focus, select:focus {
                 {% endif %}
             </table>
         </div>
-        
     </div>
 </div>
 {% endblock %}

@@ -10,6 +10,22 @@ from models.constants import CITIES
 from models.character import Character
 
 
+
+
+
+
+
+
+
+
+class HireBodyguardForm(FlaskForm):
+    num = IntegerField('How many bodyguards do you want to hire?', validators=[DataRequired(), NumberRange(min=1, max=5)])
+    submit = SubmitField('Hire')
+
+class EditBioForm(FlaskForm):
+    bio = TextAreaField('Bio', validators=[Length(max=1000)])
+    submit = SubmitField('Save Bio')
+
 class CreateForumForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=100)])
     description = TextAreaField('Description', validators=[DataRequired()])

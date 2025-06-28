@@ -1,20 +1,83 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}Send Drink{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <h2>Send a Drink</h2>
+<style>
+.bar-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+    text-align: center;
+    position: relative;
+}
+.bar-header img {
+    max-width: 320px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.bar-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.send-drink-form {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2.5rem 2rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+.send-drink-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+.send-drink-form .form-control {
+    background: #282a36;
+    color: #f5f6fa;
+    border: 1px solid #8be9fd55;
+    border-radius: 6px;
+    margin-bottom: 1.2rem;
+    font-size: 1rem;
+}
+.send-drink-form .btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+    margin-top: 0.5rem;
+}
+.send-drink-form .btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+</style>
+<div class="bar-header">
+    <img src="{{ url_for('static', filename='uploads/bar_graphic.png') }}" alt="Bar Graphic">
+    <h1>Bar - Send a Drink</h1>
+</div>
+<div class="send-drink-form">
     <form method="post" action="{{ url_for('send_beer') }}">
         {{ form.hidden_tag() }}
-        <div class="form-group">
+        <div>
             {{ form.recipient_name.label(class="form-label") }}
             {{ form.recipient_name(class="form-control", placeholder="Recipient Name") }}
         </div>
-        <div class="form-group">
+        <div>
             {{ form.drink_type.label(class="form-label") }}
             {{ form.drink_type(class="form-control") }}
         </div>
-        <button type="submit" class="btn btn-primary mt-2">Send Drink</button>
+        <button type="submit" class="btn btn-primary">Send Drink</button>
     </form>
 </div>
 {% endblock %}

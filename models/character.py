@@ -33,7 +33,12 @@ class Character(db.Model):
     crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
     linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
     crew = db.relationship('Crew', backref='characters')
+    bio = db.Column(db.Text, default="")
 
+
+
+
+    
     @property
     def immortal(self):
         if self.master and getattr(self.master, "is_admin", False):

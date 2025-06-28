@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Graveyard{% endblock %}
+
+{% block content %}
+<style>
+.graveyard-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+    text-align: center;
+}
+.graveyard-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+}
+.graveyard-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+}
+.graveyard-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.graveyard-table th, .graveyard-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.graveyard-table th {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.graveyard-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.graveyard-table tr.current-user {
+    background: rgba(255,215,0,0.10);
+    color: #ffd700;
+    font-weight: 900;
+}
+.graveyard-table tr:hover {
+    background: #34355b;
+}
+.graveyard-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
+}
+.graveyard-date {
+    color: #ffd700;
+    font-size: 0.98em;
+}
+.graveyard-city {
+    color: #b8b8ff;
+    font-size: 0.98em;
+}
+.graveyard-level {
+    color: #fff;
+    font-size: 1em;
+}
+@media (max-width: 700px) {
+    .graveyard-list {
+        padding: 1rem 0.5rem;
+        max-width: 98vw;
+    }
+    .graveyard-header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+    }
+    .graveyard-header h1 {
+        font-size: 1.2em;
+    }
+}
+</style>
+<div class="forums-header">
+    <h1>Graveyard</h1>
+</div>
+<div class="forums-list">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Level</th>
+                <th>City</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in all_characters %}
+            <tr {% if character and c.id == character.id %}style="background:rgba(255,215,0,0.10);font-weight:bold;"{% endif %}>
+                <td>{{ c.name }}</td>
+                <td>{{ c.level }}</td>
+                <td>{{ c.city }}</td>
+                
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

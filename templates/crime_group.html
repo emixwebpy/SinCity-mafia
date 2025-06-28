@@ -1,97 +1,58 @@
-{% extends 'base.html' %}
-
-{% block title %}OC Group{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}Organized Crime Group{% endblock %}
 {% block content %}
 <style>
-/* Modern Mafia Dashboard UI for Crime Group */
-.crime-hero {
-    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    border-radius: 24px;
-    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
-    padding: 44px 36px 36px 36px;
-    border: 2px solid #8be9fd55;
-    color: #f5f6fa;
-    font-family: "geo", sans-serif;
-    text-align: left;
-    position: relative;
-    margin: 32px auto 0 auto;
-    max-width: 900px;
-    overflow: hidden;
+.crime-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
 }
-.crime-hero-header {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 18px;
-}
-.crime-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.8em;
-    border: 3px solid #ffd700;
-    object-fit: cover;
-    box-shadow: 0 2px 12px #ffd70033;
-}
-.crime-hero-info h1 {
-    color: #8be9fd;
-    font-size: 2.2em;
-    font-weight: 900;
-    margin: 0 0 4px 0;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 12px #23243a;
-}
-.crime-hero-info .hero-meta {
+.crime-header h1 {
     color: #ffd700;
-    font-size: 1.1em;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-.invite-code {
-    color: #8be9fd;
-    font-size: 1.1em;
-    margin-bottom: 18px;
-    margin-top: 18px;
-    letter-spacing: 0.5px;
-    background: #23243a;
-    border-radius: 8px;
-    padding: 10px 0;
-    box-shadow: 0 1px 8px #8be9fd22;
-    font-weight: 700;
+    font-size: 2.5rem;
     text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
 }
-.crime-members-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    list-style: none;
-    padding: 0;
-    margin: 24px 0 18px 0;
-}
-.crime-member-card {
+.crime-list {
     background: #23243a;
-    border-radius: 10px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 180px;
-    font-size: 1.08em;
-    position: relative;
-    border: 2px solid transparent;
-    transition: border 0.18s, box-shadow 0.18s;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    width: 90%;
+    margin: 0 auto 0 auto;
 }
-.crime-member-card.leader {
-    border: 2px solid #ffd700;
+.crime-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.crime-table th, .crime-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.crime-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.crime-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.crime-table tr.leader {
     background: rgba(255,215,0,0.08);
     color: #ffd700;
     font-weight: 900;
+}
+.crime-table tr:hover {
+    background: #34355b;
 }
 .crime-member-avatar {
     width: 38px;
@@ -106,8 +67,6 @@
     object-fit: cover;
 }
 .crime-member-name {
-    flex: 1;
-    text-align: left;
     font-weight: 700;
     color: #8be9fd;
     font-size: 1.08em;
@@ -122,98 +81,133 @@
     border-radius: 6px;
     padding: 2px 10px;
     letter-spacing: 0.5px;
+    display: inline-block;
+}
+.invite-code {
+    color: #8be9fd;
+    font-size: 1.1em;
+    margin-bottom: 18px;
+    margin-top: 18px;
+    letter-spacing: 0.5px;
+    background: #23243a;
+    border-radius: 8px;
+    padding: 10px 0;
+    box-shadow: 0 1px 8px #8be9fd22;
+    font-weight: 700;
+    text-align: center;
+}
+.invite-code strong {
+    color: #ffd700;
+    font-weight: 900;
+    font-size: 1.2em;
+    letter-spacing: 3px;
 }
 .crime-actions {
     display: flex;
-    gap: 18px;
+    gap: 12px;
     margin: 32px 0 0 0;
     flex-wrap: wrap;
     justify-content: flex-start;
 }
-.crime-actions .btn {
-    border-radius: 8px;
-    font-weight: 700;
-    padding: 12px 32px;
-    background: #8be9fd;
-    color: #23243a;
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
     border: none;
-    font-size: 1.1em;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    box-shadow: 0 1px 8px #8be9fd22;
-    margin-bottom: 2px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
-.crime-actions .btn:hover, .crime-actions .btn:focus {
-    background: #ffd700;
-    color: #23243a;
-    box-shadow: 0 2px 10px #ffd70044;
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
 }
-@media (max-width: 900px) {
-    .crime-hero {
-        padding: 18px 2vw 16px 2vw;
-        margin: 18px 0 0 0;
-        max-width: 98vw;
-    }
-    .crime-hero-info h1 {
-        font-size: 1.3em;
-    }
-    .crime-member-card {
-        padding: 10px 8px;
-        font-size: 0.98em;
-    }
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+.btn-warning {
+    background: linear-gradient(90deg, #ffe066 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-warning:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffe066 100%);
+    color: #232526;
 }
 </style>
-
-<div class="crime-hero">
-    <div class="crime-hero-header">
-        <span class="crime-avatar"><i class="fas fa-user-secret"></i></span>
-        <div class="crime-hero-info">
-            <h1>{{ crime.leader.name }}'s Crime Group</h1>
-            <div class="hero-meta">
-                Leader: {{ crime.leader.name }}
-            </div>
-            <div style="color:#b8b8ff;font-size:1em;margin-top:6px;">
-                Welcome to your organized crime group!
-            </div>
-        </div>
-    </div>
+<div class="crime-header">
+    <h1>{{ crime.leader.name }}'s Crime Group</h1>
+</div>
+<div class="crime-list">
     <div class="invite-code">
         <i class="fas fa-key"></i> Invite Code<br>
         <strong>{{ crime.invite_code }}</strong>
     </div>
-    <ul class="crime-members-list">
+    <table class="crime-table">
+        <tr>
+            <th style="width:8%;">Avatar</th>
+            <th style="width:30%;">Name</th>
+            <th style="width:20%;">Role</th>
+        </tr>
         {% for member in members %}
-        <li class="crime-member-card {% if member.id == crime.leader_id %}leader{% endif %}">
-            <span class="crime-member-avatar">
-                <i class="fas fa-user"></i>
-            </span>
-            <span class="crime-member-name">{{ member.name }}</span>
-            {% if member.id == crime.leader_id %}
-            <span class="crime-member-role">Leader</span>
-            {% endif %}
-        </li>
+        <tr class="{% if member.id == crime.leader_id %}leader{% endif %}">
+            <td>
+                <span class="crime-member-avatar">
+                    <i class="fas fa-user"></i>
+                </span>
+            </td>
+            <td>
+                <span class="crime-member-name">{{ member.name }}</span>
+            </td>
+            <td>
+                {% if member.id == crime.leader_id %}
+                    <span class="crime-member-role">Leader</span>
+                {% else %}
+                    <span class="crime-member-role" style="background:#181824;color:#8be9fd;">Member</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" style="color:#b8b8ff;">No members in this group.</td>
+        </tr>
         {% endfor %}
-    </ul>
-    <div class="crime-actions">
+    </table>
+    <div class="crime-actions" style="margin-top:2.5rem;">
         {% if current_user.is_authenticated and current_character and current_character.id != crime.leader_id %}
-            <form class="login-form" method="POST" action="{{ url_for('leave_crime') }}">
+            <form method="POST" action="{{ url_for('leave_crime') }}" style="display:inline;">
                 {{ leave_crime_form.hidden_tag() }}
-                {{ leave_crime_form.submit(class_="btn btn-danger mt-3") }}
+                <button type="submit" class="btn btn-danger">{{ leave_crime_form.submit.label.text if leave_crime_form.submit.label.text else 'Leave Group' }}</button>
             </form>
         {% endif %}
         {% if current_character and current_character.id == crime.leader_id %}
-            <form class="login-form" method="POST" action="{{ url_for('disband_crime') }}">
+            <form method="POST" action="{{ url_for('disband_crime') }}" style="display:inline;">
                 {{ disband_crime_form.hidden_tag() }}
-                {{ disband_crime_form.submit(class_="btn btn-danger") }}
+                <button type="submit" class="btn btn-danger">{{ disband_crime_form.submit.label.text if disband_crime_form.submit.label.text else 'Disband Group' }}</button>
             </form>
         {% endif %}
         {% if current_character and current_character.id == crime.leader_id and members|length >= 2 %}
-            <form class="login-form" method="POST" action="{{ url_for('attempt_organized_crime') }}">
+            <form method="POST" action="{{ url_for('attempt_organized_crime') }}" style="display:inline;">
                 {{ attempt_crime_form.hidden_tag() }}
-                {{ attempt_crime_form.submit(class_="btn btn-warning") }}
+                <button type="submit" class="btn btn-warning">{{ attempt_crime_form.submit.label.text if attempt_crime_form.submit.label.text else 'Attempt OC' }}</button>
             </form>
         {% endif %}
     </div>

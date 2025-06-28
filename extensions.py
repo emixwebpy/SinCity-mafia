@@ -7,7 +7,7 @@ from flask_wtf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379/0")
 db = SQLAlchemy()
 login_manager = LoginManager()
 mail = Mail()
