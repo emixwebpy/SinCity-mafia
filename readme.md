@@ -34,7 +34,7 @@ yarn install
 
 ### Running the Game
 
-3. Start the development server:
+Start the development server:
 
 ```sh
 npm start
