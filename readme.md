@@ -10,39 +10,6 @@ A digital implementation of the classic social deduction game "Mafia". Play with
 - Chat system for player discussion
 - Customizable game settings
 
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v14 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### Installation
-
-1. Clone the repository:
-```sh
-git clone https://github.com/imemix/mafiagame.git
-cd mafiagame
-```
-
-2. Install dependencies:
-```sh
-npm install
-# or
-yarn install
-```
-
-### Running the Game
-
-Start the development server:
-
-```sh
-npm start
-# or
-yarn start
-```
-
-Open your browser and go to [http://localhost:3000](http://localhost:3000).
 
 ## Usage
 
@@ -50,20 +17,6 @@ Open your browser and go to [http://localhost:3000](http://localhost:3000).
 - Share the room code with friends.
 - Assign roles and start the game.
 - Discuss, vote, and try to win as your assigned role!
-
-## Project Structure
-
-```
-mafiagame/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── utils/
-│   └── ...
-├── public/
-├── package.json
-└── ...
-```
 
 ## Contributing
 
@@ -81,6 +34,6 @@ This project is licensed under the MIT License.
 
 ## Acknowledgements
 
-- Inspired by the original Mafia party game
-- Thanks to all contributors and playtesters!
+- Inspired by multiple text webbased mafia
+- Thanks to all playtesters!
 
