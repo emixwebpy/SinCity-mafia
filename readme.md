@@ -4,9 +4,7 @@ A digital implementation of the classic social deduction game "Mafia". Play with
 
 ## Features
 
-- Host and join Mafia games online
-- Assign classic roles (Mafia, Detective, Doctor, etc.)
-- Day/Night cycles with voting and actions
+- Play Text Based Mafia Online
 - Chat system for player discussion
 - Customizable game settings
 
