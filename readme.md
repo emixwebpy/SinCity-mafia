@@ -20,21 +20,21 @@ A digital implementation of the classic social deduction game "Mafia". Play with
 ### Installation
 
 1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/mafiagame.git
-    cd mafiagame
-    ```
+```sh
+git clone https://github.com/imemix/mafiagame.git
+cd mafiagame
+```
 
 2. Install dependencies:
-    ```sh
-    npm install
-    # or
-    yarn install
-    ```
+```sh
+npm install
+# or
+yarn install
+```
 
 ### Running the Game
 
-Start the development server:
+3. Start the development server:
 
 ```sh
 npm start
