@@ -1,23 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Crew Requests for {{ character.city }}</h2>
-<ul>
-  {% for req in requests %}
-    <li>
-      <strong>{{ req.crew_name }}</strong> by {{ req.user.username }} ({{ req.city }})
-      <div style="display:inline;">
-        <form method="post" action="{{ url_for('approve_crew_request', req_id=req.id) }}">
-          {{ approve_forms[req.id].hidden_tag() }}
-          <button type="submit" class="btn btn-success btn-sm">Approve</button>
-        </form>
-        <form method="post" action="{{ url_for('deny_crew_request', req_id=req.id) }}">
-          {{ deny_forms[req.id].hidden_tag() }}
-          <button type="submit" class="btn btn-danger btn-sm">Deny</button>
-        </form>
-      </div>
-    </li>
-  {% else %}
-    <li>No pending requests.</li>
-  {% endfor %}
-</ul>
+<style>
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 1150px;
+    margin: 0 auto 2rem auto;
+}
+.forum-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.forum-table th, .forum-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.forum-table th {
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+}
+.forum-table tr {
+    background: #282a36;
+    transition: background 0.2s;
+}
+.forum-table tr:hover {
+    background: #34355b;
+}
+.forum-actions {
+    display: flex;
+    gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+</style>
+<div class="forums-header">
+    <h1>Crew Requests for {{ character.city }}</h1>
+</div>
+<div class="forums-list">
+    <table class="forum-table">
+        <tr>
+            <th>Crew Name</th>
+            <th>Requested By</th>
+            <th>City</th>
+            <th>Actions</th>
+        </tr>
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.crew_name }}</td>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.city }}</td>
+            <td>
+                <div class="forum-actions">
+                    <form method="post" action="{{ url_for('approve_crew_request', req_id=req.id) }}" style="display:inline;">
+                        {{ approve_forms[req.id].hidden_tag() }}
+                        <button type="submit" class="btn-primary btn-sm">Approve</button>
+                    </form>
+                    <form method="post" action="{{ url_for('deny_crew_request', req_id=req.id) }}" style="display:inline;">
+                        {{ deny_forms[req.id].hidden_tag() }}
+                        <button type="submit" class="btn-danger btn-sm">Deny</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" style="text-align:center; color:#aaa;">No pending requests.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

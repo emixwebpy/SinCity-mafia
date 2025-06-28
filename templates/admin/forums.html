@@ -116,7 +116,10 @@
                 <div class="forum-actions">
                     <a href="{{ url_for('admin.admin_edit_forum', forum_id=forum.id) }}" class="btn btn-primary">Edit</a>
                     <form action="{{ url_for('admin.admin_delete_forum', forum_id=forum.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this forum?');">Delete</button>
+                        {{ delete_forms[forum.id].hidden_tag() }}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this forum?');">
+                            {{ delete_forms[forum.id].submit.label.text if delete_forms[forum.id].submit.label.text else 'Delete' }}
+                        </button>
                     </form>
                 </div>
             </td>

@@ -8,31 +8,24 @@ body, html {
     background: linear-gradient(135deg, #181824 0%, #23243a 100%);
 }
 .forums-header {
-    background: linear-gradient(120deg, #181824 0%, #23243a 100%);
-    padding: 2.5rem 2rem 1.5rem 2rem;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 8px 32px 0 #00eaff22, 0 1.5px 0 #00eaff11 inset;
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     margin-bottom: 0;
-    border-bottom: 3px solid #00eaff55;
 }
 .forums-header h1 {
-    color: #00eaff;
-    font-size: 2.6rem;
+    color: #ffd700;
+    font-size: 2.5rem;
     text-align: center;
     margin-bottom: 0.5rem;
-    letter-spacing: 3px;
-    font-family: 'Geo', 'Oswald', 'Arial Black', Arial, sans-serif;
-    text-shadow: 0 2px 24px #00eaff44, 0 1px 0 #23243a;
-    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 .forums-list {
-    background: rgba(24,24,36,0.98);
-    border-radius: 0 0 18px 18px;
-    padding: 2.5rem 2rem 2.5rem 2rem;
-    box-shadow: 0 8px 32px 0 #00eaff22, 0 1.5px 0 #00eaff11 inset;
-    max-width: 800px;
-    margin: 0 auto 2rem auto;
-    border-top: 2px solid #00eaff33;
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 .casino-tabs {
     display: flex;
@@ -66,32 +59,25 @@ body, html {
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
-    border-radius: 18px;
-    overflow: hidden;
-    background: rgba(24,24,36,0.96);
-    box-shadow: 0 2px 16px #00eaff22;
 }
 .forum-table th, .forum-table td {
-    padding: 1.5rem 1.2rem;
-    text-align: center;
+    padding: 1rem 1rem;
+    text-align: left;
     vertical-align: middle;
 }
 .forum-table th {
-    background: linear-gradient(90deg, #23243a 0%, #00eaff 100%);
-    color: #00eaff;
-    font-size: 1.18rem;
+    background: #181824;
+    color: #ffd700;
+    font-size: 1.1rem;
     font-weight: bold;
-    border-bottom: 2px solid #00eaff77;
-    letter-spacing: 1.5px;
-    text-shadow: 0 1px 0 #181824;
-    text-transform: uppercase;
+    border-bottom: 2px solid #8be9fd55;
 }
 .forum-table tr {
-    background: rgba(30,32,44,0.95);
+    background: #282a36;
     transition: background 0.2s;
 }
 .forum-table tr:hover {
-    background: #23243a;
+    background: #34355b;
 }
 .forum-desc {
     color: #00eaff;
@@ -103,35 +89,36 @@ body, html {
 }
 .forum-actions {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-    justify-content: center;
+    gap: 8px;
 }
 .btn-primary {
-    background: linear-gradient(90deg, #00eaff 0%, #23243a 100%);
-    color: #181824;
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
     border: none;
-    padding: 0.9rem 2rem;
-    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
     font-weight: bold;
     margin-bottom: 0;
-    transition: background 0.2s, box-shadow 0.2s;
+    transition: background 0.2s;
     text-decoration: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.13em;
-    box-shadow: 0 2px 12px #00eaff55;
-    border: 2px solid #00eaff55;
-    text-transform: uppercase;
-    letter-spacing: 1px;
 }
 .btn-primary:hover {
-    background: linear-gradient(90deg, #23243a 0%, #00eaff 100%);
-    color: #00eaff;
-    box-shadow: 0 4px 24px #00eaff99;
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
 }
 input[type="number"], select {
     border-radius: 10px;
@@ -300,12 +287,12 @@ input[type="number"]:focus, select:focus {
         </a>
     </div>
     <div style="display: flex; flex-wrap: wrap; gap: 2em; justify-content: center;">
-        <div style="flex: 1 1 340px; min-width: 320px; max-width: 420px;">
+        <div style="flex: 1 1 340px; min-width: 1000px; max-width: 420px;">
             <table class="forum-table">
                 <tr>
-                    <th style="width:30%;">Your Money</th>
-                    <th style="width:40%;">Play</th>
-                    <th style="width:30%;">Result</th>
+                    <th style="width:20%;">Your Money</th>
+                    <th style="width:20%;">Play</th>
+                    <th style="width:20%;">Result</th>
                 </tr>
                 <tr>
                     <td>
@@ -372,23 +359,7 @@ input[type="number"]:focus, select:focus {
                 {% endif %}
             </table>
         </div>
-        <div class="casino-items" style="flex: 0 1 300px; min-width: 260px; max-width: 340px;">
-            <div class="casino-items-title">Casino Items</div>
-            <div class="casino-item-list">
-                <div class="casino-item">
-                    <span class="emoji">🂡🂱🃁🃑</span>
-                    Blackjack Cards
-                </div>
-                <div class="casino-item">
-                    <span class="emoji">🪙</span>
-                    Coin for Coin Flip
-                </div>
-                <div class="casino-item">
-                    <span class="emoji">🎯</span>
-                    Roulette Wheel
-                </div>
-            </div>
-        </div>
+        
     </div>
 </div>
 {% endblock %}

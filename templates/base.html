@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Geo:wght@400;700&display=swap" rel="stylesheet">
   <style>
       html, body {
-        font-family: 'Geo', 'Segoe UI', Arial, sans-serif;
+        font-family:monospace; font-size:0.95em;
         background: linear-gradient(135deg, #181824 0%, #23243a 100%);
         color: #f8f8ff;
         margin: 0;
@@ -49,7 +49,7 @@
         top: 0;
         font-size: 12px;
         padding: 0;
-        overflow: scroll;
+        
       }
       .sidebar-header {
         color: #ffd700;
@@ -727,7 +727,9 @@
               </a>
               {% endif %}
               {% if is_godfather %}
-                <li><a href="{{ url_for('crew_requests') }}">Crew Requests</a></li>
+                <a href="{{ url_for('crew_requests') }}">
+                  <i class='fas fa-people-arrows'></i><span> Crew Requests</span>
+                </a>
               {% endif %}
               <a href="{{ url_for('crews', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crews' %}active{% endif %}">
                 <i class="fas fa-users"></i> <span>Crews</span>
@@ -795,6 +797,9 @@
               </a>
               <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
                 <i class="fas fa-box"></i> <span>Inventory</span>
+              </a>
+              <a href="{{ url_for('send_beer') }}" class="{% if request.endpoint == 'send_beer' %}active{% endif %}">
+                <i class="fas fa-box"></i> <span>Bar</span>
               </a>
             </div>
           </div>
@@ -917,10 +922,14 @@
         chat.style.display = 'none';
         toggleBtn.style.display = 'flex'; // Show the button when chat is hidden
         localStorage.setItem('chatVisible', 'false');
+        if (window.chatPollInterval) clearInterval(window.chatPollInterval); // Stop polling
       } else {
         chat.style.display = 'flex';
         toggleBtn.style.display = 'none'; // Hide the button when chat is visible
         localStorage.setItem('chatVisible', 'true');
+        fetchMessages(); // Fetch immediately
+        if (window.chatPollInterval) clearInterval(window.chatPollInterval);
+        window.chatPollInterval = setInterval(fetchMessages, 1000); // Restart polling
       }
     }
 
@@ -940,6 +949,8 @@
     // Floating Chat Tabs and Messaging
   let currentTab = 'public';
   let chatPollInterval = null;
+  let chatPollTimeout = null;
+  let chatIsRateLimited = false;
 
   function switchTab(tab) {
     currentTab = tab;
@@ -952,8 +963,36 @@
   }
 
   async function fetchMessages() {
+    if (chatIsRateLimited) return; // Prevent polling during timeout
     try {
       const res = await fetch(`/${currentTab}_messages`);
+      if (res.status === 429) {
+        // Stop polling to avoid spamming the server
+        if (chatPollInterval) clearInterval(chatPollInterval);
+          chatPollInterval = null;
+          chatIsRateLimited = true; // Set rate limit flag
+
+          // Show a user-friendly message in the chat box
+          const messageBox = document.getElementById('chat-messages');
+          messageBox.innerHTML = '<div class="chat-message" style="color:#ff5555;background:#23243a;">You are sending requests too quickly. Please wait 30 seconds before trying again.</div>';
+
+        // Optionally disable chat input during timeout
+        const chatInput = document.getElementById('chat-input');
+        const chatSubmit = document.getElementById('chat-submit');
+        if (chatInput) chatInput.disabled = true;
+        if (chatSubmit) chatSubmit.disabled = true;
+
+        // Set a timeout to resume polling after 30 seconds
+        if (chatPollTimeout) clearTimeout(chatPollTimeout);
+        chatPollTimeout = setTimeout(() => {
+          chatIsRateLimited = false; // Reset flag
+          if (chatInput) chatInput.disabled = false;
+          if (chatSubmit) chatSubmit.disabled = false;
+          fetchMessages();
+          chatPollInterval = setInterval(fetchMessages, 3000);
+        }, 30000); // 30 seconds
+        return;
+      }
       const data = await res.json();
       const messageBox = document.getElementById('chat-messages');
       const isNearBottom = messageBox.scrollHeight - messageBox.scrollTop <= messageBox.clientHeight + 50;
@@ -1019,8 +1058,8 @@
 
     // Start polling for new messages when chat is visible
     if (chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(fetchMessages, 1000);
-  });
+    chatPollInterval = setInterval(fetchMessages, 3000);
+  }, 30000);
   </script>
 </body>
 </html>

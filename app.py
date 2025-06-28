@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session, request
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
@@ -23,17 +23,10 @@ from urllib.parse import urlparse, urljoin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+from extensions import db, login_manager, mail, migrate, csrf
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
-
-# Constants -------------------------------
-CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-ALLOWED_MIME_TYPES = {'image/png', 'image/jpeg', 'image/gif'}
-
-# Database -------------------------------
 app = Flask(__name__)
+
 app.config['MAIL_SERVER'] = 'localhost'
 app.config['MAIL_PORT'] = 1025
 app.config['MAIL_USE_TLS'] = False
@@ -41,7 +34,6 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = None
 app.config['MAIL_PASSWORD'] = None
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
-mail = Mail(app)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -49,30 +41,61 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
 app.config['LOGIN_MESSAGE'] = None
 app.config['LOGIN_MESSAGE_CATEGORY'] = "info"
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+
+db.init_app(app)
+login_manager.init_app(app)
+mail.init_app(app)
+migrate.init_app(app, db)
+csrf.init_app(app)
+
+
+from models.user import User, CrewRequest
+from models.character import Character, Godfather
+from models.crew import Crew, CrewMember, CrewInvitation, CrewMessage
+from models.organized_crime import OrganizedCrime
+from models.private_message import PrivateMessage
+from models.shop import ShopItem, ShopItemModelView, UserInventory, Gun
+from models.drug import Drug, DrugDealer, CharacterDrugInventory
+from models.notification import Notification
+from models.forum import Forum, ForumTopic, ForumPost
+from models.chat import ChatMessage
+from models.admin import admin_bp
+from models.forms import *
+from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from models.loggers import admin_logger
+from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown, release_expired_jail, admin_required
+from models.background_tasks import start_jail_release_thread, start_price_randomizer, randomize_all_drug_prices
+
+
+
+
+
+
+
+
+start_price_randomizer()
+start_jail_release_thread(app)
+app.register_blueprint(admin_bp)
+logging.getLogger('flask_limiter').setLevel(logging.ERROR)
+# Constants -------------------------------
+CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_MIME_TYPES = {'image/png', 'image/jpeg', 'image/gif'}
+
+# Database -------------------------------
+
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+mail = Mail(app)
 admin_logger = logging.getLogger('admin_actions')
 admin_logger.setLevel(logging.INFO)
 fh = logging.FileHandler('admin_actions.log')
 admin_logger.addHandler(fh)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-def is_safe_url(target):
-    ref_url = urlparse(request.host_url)
-    test_url = urlparse(urljoin(request.host_url, target))
-    return (
-        test_url.scheme in ('http', 'https') and
-        ref_url.netloc == test_url.netloc
-    )
-def limiter_key_func():
-    # Disable limiting for localhost
-    if request.remote_addr in ('127.0.0.1', '::1'):
-        return None  # disables limiting for this request
-    return get_remote_address()
-db = SQLAlchemy(app)
+
+
 with app.app_context():
     db.create_all()
 
@@ -82,495 +105,12 @@ login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
-limiter = Limiter(key_func=limiter_key_func, app=app, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(key_func=limiter_key_func, app=app)
 # Admin Authentication -------------------------------
-def admin_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
-            flash("Admin access required.", "danger")
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
 
-# Admin Interface -------------------------------
 
-@admin_bp.route('/')
-@admin_required
-def admin_dashboard():
-    
-    user_count = User.query.count()
-    forum_count = Forum.query.count()
-    topic_count = ForumTopic.query.count()
-    jailed_count = Character.query.filter_by(in_jail=True).count()
-    
-    return render_template('admin/dashboard.html',
-                           user_count=user_count,
-                           forum_count=forum_count,
-                           topic_count=topic_count,
-                           jailed_count=jailed_count)
-# --- Admin users ---
-@admin_bp.route('/users')
-@admin_required
-def admin_users():
-    users = User.query.order_by(User.id.desc()).all()
-    return render_template('admin/users.html', users=users)
-# --- Admin forums ---
-@admin_bp.route('/forums')
-@admin_required
-def admin_forums():
-    forums = Forum.query.order_by(Forum.id.desc()).all()
-    return render_template('admin/forums.html', forums=forums)
-# --- Admin jail ---
-@admin_bp.route('/jail')
-@admin_required
-def admin_jail():
-    jailed = Character.query.filter_by(in_jail=True).all()
-    return render_template('admin/jail.html', jailed=jailed)
-# --- Admin characters ---
-@admin_bp.route('/characters')
-@admin_required
-def admin_characters():
-    characters = Character.query.order_by(Character.id.desc()).all()
-    return render_template('admin/characters.html', characters=characters)
-# --- Admin character edit ---
-@admin_bp.route('/character/<int:char_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_character(char_id):
-    character = Character.query.get_or_404(char_id)
-    if request.method == 'POST':
-        character.name = request.form.get('name', character.name)
-        character.health = int(request.form.get('health', character.health))
-        character.money = int(request.form.get('money', character.money))
-        character.level = int(request.form.get('level', character.level))
-        character.xp = int(request.form.get('xp', character.xp))
-        character.is_alive = bool(request.form.get('is_alive', character.is_alive))
-        db.session.commit()
-        
-        flash("Character updated.", "success")
-        return redirect(url_for('admin.admin_characters'))
-    return render_template('admin/edit_character.html', character=character,
-    form=EditCharacterForm(obj=character))
-
-# --- Admin Edit Forum ---
-@admin_bp.route('/forums/<int:forum_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_forum(forum_id):
-    forum = Forum.query.get_or_404(forum_id)
-    form = EditForumForm(obj=forum)
-    if form.validate_on_submit():
-        forum.title = form.title.data
-        forum.description = form.description.data
-        db.session.commit()
-        flash("Forum updated.", "success")
-        return redirect(url_for('admin.admin_forums'))
-    return render_template('admin/edit_forum.html', form=form, forum=forum)
-
-# --- Admin Delete Forum ---
-@admin_bp.route('/forums/<int:forum_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_forum(forum_id):
-    forum = Forum.query.get_or_404(forum_id)
-    db.session.delete(forum)
-    db.session.commit()
-    flash("Forum deleted.", "success")
-    return redirect(url_for('admin.admin_forums'))
-
-# --- Admin Delete Character ---
-@admin_bp.route('/character/<int:char_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_character(char_id):
-    character = Character.query.get_or_404(char_id)
-    db.session.delete(character)
-    db.session.commit()
-    admin_logger.info(f"Admin {current_user.username} deleted user {character.name} at {datetime.utcnow()}")
-    flash("Character deleted.", "success")
-    return redirect(url_for('admin.admin_characters'))
-
-# --- Admin Edit User ---
-@admin_bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_user(user_id):
-    user = User.query.get_or_404(user_id)
-    if request.method == 'POST':
-        # Only assign fields you explicitly allow
-        username = request.form.get('username', user.username)
-        premium = request.form.get('premium')
-        crew_id = request.form.get('crew_id')
-        password = request.form.get('password', '')
-
-        # Only allow admins to set is_admin, and never allow self-promotion
-        if current_user.id == user.id and not current_user.is_admin:
-            flash("You cannot promote yourself to admin.", "danger")
-            return redirect(url_for('admin.admin_users'))
-        if current_user.id != user.id:
-            is_admin = request.form.get('is_admin')
-            user.is_admin = bool(is_admin) if is_admin is not None else user.is_admin
-
-        user.username = username
-        user.premium = bool(premium) if premium is not None else user.premium
-        user.crew_id = int(crew_id) if crew_id and crew_id.isdigit() else None
-
-        if password:
-            user.set_password(password)
-        db.session.commit()
-        flash("User updated.", "success")
-        return redirect(url_for('admin.admin_users'))
-    return render_template('admin/edit_user.html', user=user, form=EditUserForm(obj=user))
-
-# --- Admin shop management ---
-@admin_bp.route('/shop')
-@admin_required
-def admin_shop():
-    items = ShopItem.query.order_by(ShopItem.id.desc()).all()
-    return render_template('admin/shop.html', items=items)
-
-# --- Admin Add Shop Item ---
-@admin_bp.route('/shop/add', methods=['GET', 'POST'])
-@admin_required
-def admin_add_shop_item():
-    form = AddShopItemForm()
-    if form.validate_on_submit():
-        name = form.name.data.strip()
-        description = form.description.data.strip()
-        price = form.price.data
-        stock = form.stock.data
-        is_gun = form.is_gun.data
-
-        gun = None
-        if is_gun:
-            # Create a new Gun entry
-            gun = Gun(
-                name=form.gun_name.data.strip() or name,
-                damage=form.gun_damage.data or 0,
-                accuracy=float(form.gun_accuracy.data or 0.7),
-                rarity=form.gun_rarity.data or "Common",
-                price=form.gun_price.data or price,
-                image=form.gun_image.data or "",
-                description=form.gun_description.data or ""
-            )
-
-            db.session.add(gun)
-            db.session.commit()
-        if gun:
-            admin_logger.info(f"Admin {current_user.username} added gun {gun.name} at {datetime.utcnow()}")
-        else:
-            admin_logger.info(f"Admin {current_user.username} added shop item {name} at {datetime.utcnow()}")
-            
-        item = ShopItem(
-            name=name,
-            description=description,
-            price=price,
-            stock=stock,
-            is_gun=is_gun,
-            gun=gun
-        )
-        db.session.add(item)
-        db.session.commit()
-        flash("Shop item added!", "success")
-        return redirect(url_for('admin.admin_shop'))
-    
-    return render_template('admin/add_shop_item.html', form=form)
-
-# --- Admin Edit Shop Item ---
-@admin_bp.route('/shop/<int:item_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_shop_item(item_id):
-    item = ShopItem.query.get_or_404(item_id)
-    gun = item.gun if item.is_gun else None
-    form = EditShopItemForm(
-        name=item.name,
-        description=item.description,
-        price=item.price,
-        stock=item.stock,
-        is_gun=item.is_gun,
-        gun_name=gun.name if gun else "",
-        gun_damage=gun.damage if gun else 0,
-        gun_accuracy=str(gun.accuracy) if gun else "0.7",
-        gun_rarity=gun.rarity if gun else "Common",
-        gun_price=gun.price if gun else item.price,
-        gun_image=gun.image if gun else "",
-        gun_description=gun.description if gun else ""
-    )
-    if form.validate_on_submit():
-        item.name = form.name.data.strip()
-        item.description = form.description.data.strip()
-        item.price = form.price.data
-        item.stock = form.stock.data
-        item.is_gun = form.is_gun.data
-
-        if item.is_gun:
-            if not item.gun:
-                # Create new Gun if not exists
-                gun = Gun()
-                db.session.add(gun)
-                db.session.commit()
-                item.gun = gun
-            gun = item.gun
-            gun.name = form.gun_name.data.strip() or item.name
-            gun.damage = form.gun_damage.data or 0
-            gun.accuracy = float(form.gun_accuracy.data or 0.7)
-            gun.rarity = form.gun_rarity.data or "Common"
-            gun.price = form.gun_price.data or item.price
-            gun.image = form.gun_image.data or ""
-            gun.description = form.gun_description.data or ""
-            db.session.commit()
-        else:
-            item.gun = None
-
-        db.session.commit()
-        flash("Shop item updated.", "success")
-        return redirect(url_for('admin.admin_shop'))
-    return render_template('admin/edit_shop_item.html', form=form, item=item)
-
-# --- Admin Delete Shop Item ---
-@admin_bp.route('/shop/<int:item_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_shop_item(item_id):
-    item = ShopItem.query.get_or_404(item_id)
-
-    # Remove references from UserInventory
-    UserInventory.query.filter_by(item_id=item.id).delete()
-
-    # Remove references from User.gun_id
-    users_with_gun = User.query.filter_by(gun_id=item.id).all()
-    for user in users_with_gun:
-        user.gun_id = None
-
-    # Remove references from Character.gun_id
-    characters_with_gun = Character.query.filter_by(gun_id=item.id).all()
-    for char in characters_with_gun:
-        char.gun_id = None
-
-    db.session.delete(item)
-    db.session.commit()
-    flash("Shop item deleted.", "success")
-    return redirect(url_for('admin.admin_shop'))
-
-# --- Admin Organized Crimes ---
-@admin_bp.route('/organized_crimes')
-@admin_required
-def admin_organized_crimes():
-    crimes = OrganizedCrime.query.order_by(OrganizedCrime.id.desc()).all()
-    crime_forms = [(crime, DeleteCrimeForm(prefix=str(crime.id))) for crime in crimes]
-    return render_template('admin/organized_crimes.html', crime_forms=crime_forms)
-
-# --- Admin Add Organized Crime ---
-@admin_bp.route('/organized_crimes/<int:crime_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def admin_edit_organized_crime(crime_id):
-    crime = OrganizedCrime.query.get_or_404(crime_id)
-    if request.method == 'POST':
-        crime.name = request.form.get('name', crime.name)
-        invite_code = request.form.get('invite_code', crime.invite_code)
-        if invite_code and invite_code != crime.invite_code:
-            # Ensure invite code is unique
-            if OrganizedCrime.query.filter_by(invite_code=invite_code).first():
-                flash("Invite code already exists.", "danger")
-                return redirect(url_for('admin.admin_edit_organized_crime', crime_id=crime.id))
-            crime.invite_code = invite_code
-        db.session.commit()
-        flash("Organized crime updated.", "success")
-        return redirect(url_for('admin.admin_organized_crimes'))
-    return render_template('admin/edit_organized_crime.html', crime=crime)
-
-# --- Admin search ---
-@admin_bp.route('/search')
-@admin_required
-def admin_search():
-    q = request.args.get('q', '').strip()
-    users = []
-    characters = []
-    if q:
-        users = User.query.filter(User.username.ilike(f'%{q}%')).all()
-        characters = Character.query.filter(Character.name.ilike(f'%{q}%')).all()
-    return render_template('admin/search_results.html', q=q, users=users, characters=characters)
-
-# --- Admin Delete Organized Crime ---
-@admin_bp.route('/organized_crimes/<int:crime_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_organized_crime(crime_id):
-    crime = OrganizedCrime.query.get_or_404(crime_id)
-    # Remove members' crime_group_id
-    for member in crime.members:
-        member.crime_group_id = None
-    db.session.delete(crime)
-    db.session.commit()
-    flash("Organized crime deleted.", "success")
-    return redirect(url_for('admin.admin_organized_crimes'))
-# --- Admin Drugs ---
-@admin_bp.route('/drugs')
-@admin_required
-def admin_drugs():
-    drugs = Drug.query.order_by(Drug.id.desc()).all()
-    return render_template('admin/drugs.html', drugs=drugs)
-
-@admin_bp.route('/drugs/add', methods=['GET', 'POST'])
-@admin_required
-def admin_add_drug():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        drug_type = request.form.get('type', 'Other')
-        if not name:
-            flash("Drug name is required.", "danger")
-            return redirect(url_for('admin.admin_add_drug'))
-        if Drug.query.filter_by(name=name).first():
-            flash("Drug already exists.", "danger")
-            return redirect(url_for('admin.admin_add_drug'))
-        db.session.add(Drug(name=name, type=drug_type))
-        db.session.commit()
-        flash("Drug added!", "success")
-        return redirect(url_for('admin.admin_drugs'))
-    return render_template('admin/add_drug.html',
-    form=AddDrugForm())
-
-@admin_bp.route('/topics/<int:topic_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_topic(topic_id):
-    topic = ForumTopic.query.get_or_404(topic_id)
-    # Delete all posts in the topic
-    ForumPost.query.filter_by(topic_id=topic.id).delete()
-    db.session.delete(topic)
-    db.session.commit()
-    flash("Topic deleted.", "success")
-    return redirect(url_for('admin.admin_topics'))
-
-@admin_bp.route('/topics')
-@admin_required
-def admin_topics():
-    topics = ForumTopic.query.order_by(ForumTopic.created_at.desc()).all()
-    user_ids = {t.author_id for t in topics}
-    users_map = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()}
-    delete_form = DeleteForm()
-    return render_template('admin/topics.html', topics=topics, users_map=users_map, delete_form=delete_form)
-
-# --- Admin Drug Dealers ---
-@admin_bp.route('/dealers')
-@admin_required
-def admin_dealers():
-    dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
-    return render_template('admin/dealers.html', dealers=dealers)
-
-@admin_bp.route('/dealers/add', methods=['GET', 'POST'])
-@admin_required
-def admin_add_dealer():
-    form = AddDealerForm()
-    # Dynamically set drug choices from the database
-    form.drug_id.choices = [(drug.id, drug.name) for drug in Drug.query.all()]
-    if form.validate_on_submit():
-        city = form.city.data
-        drug_id = form.drug_id.data
-        price = form.price.data
-        stock = form.stock.data
-
-        db.session.add(DrugDealer(city=city, drug_id=drug_id, price=price, stock=stock))
-        db.session.commit()
-        flash("Dealer added!", "success")
-        return redirect(url_for('admin.admin_drugs_dashboard'))
-    return render_template('admin/drugs_dashboard.html',
-        form=form,
-        drugs=Drug.query.all(),
-        cities=CITIES
-    )
-@admin_bp.route('/delete_drug/<int:drug_id>', methods=['POST'])
-@admin_required
-def admin_delete_drug(drug_id):
-    drug = Drug.query.get_or_404(drug_id)
-    # Optionally: delete all dealers for this drug
-    DrugDealer.query.filter_by(drug_id=drug.id).delete()
-    # Optionally: delete all inventory for this drug
-    CharacterDrugInventory.query.filter_by(drug_id=drug.id).delete()
-    db.session.delete(drug)
-    db.session.commit()
-    flash("Drug deleted.", "success")
-    return redirect(url_for('admin.admin_drugs_dashboard'))
-
-@admin_bp.route('/dealers/<int:dealer_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_dealer(dealer_id):
-    dealer = DrugDealer.query.get_or_404(dealer_id)
-    db.session.delete(dealer)
-    db.session.commit()
-    flash("Dealer deleted.", "success")
-    return redirect(url_for('admin.admin_drugs_dashboard'))
-@admin_bp.route('/drugs_dashboard', methods=['GET', 'POST'])
-@admin_required
-def admin_drugs_dashboard():
-    drugs = Drug.query.order_by(Drug.id.desc()).all()
-    dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
-    delete_drug_forms = {drug.id: DeleteDrugForm(prefix=f"drug_{drug.id}") for drug in drugs}
-    delete_dealer_forms = {dealer.id: DeleteDealerForm(prefix=f"dealer_{dealer.id}") for dealer in dealers}
-
-    # Handle POSTs for delete actions
-    for drug in drugs:
-        form = delete_drug_forms[drug.id]
-        if form.validate_on_submit() and form.submit.data and f"drug_{drug.id}-submit" in request.form:
-            # Delete all dealers and inventories for this drug
-            DrugDealer.query.filter_by(drug_id=drug.id).delete()
-            CharacterDrugInventory.query.filter_by(drug_id=drug.id).delete()
-            db.session.delete(drug)
-            db.session.commit()
-            flash("Drug deleted.", "success")
-            return redirect(url_for('admin.admin_drugs_dashboard'))
-
-    for dealer in dealers:
-        form = delete_dealer_forms[dealer.id]
-        if form.validate_on_submit() and form.submit.data and f"dealer_{dealer.id}-submit" in request.form:
-            db.session.delete(dealer)
-            db.session.commit()
-            flash("Dealer deleted.", "success")
-            return redirect(url_for('admin.admin_drugs_dashboard'))
-
-    return render_template(
-        'admin/drugs_dashboard.html',
-        drugs=drugs,
-        dealers=dealers,
-        delete_drug_forms=delete_drug_forms,
-        delete_dealer_forms=delete_dealer_forms
-    )
-@admin_bp.route('/reset_crime_cooldown', methods=['GET', 'POST'])
-@login_required
-def reset_crime_cooldown():
-    form = ResetCrimeCooldownForm()
-    if form.validate_on_submit():
-        char_id = form.character_id.data
-        character = Character.query.get(char_id)
-        if character:
-            character.last_crime_time = None
-            db.session.commit()
-            flash(f"Crime cooldown reset for {character.name}.", "success")
-        else:
-            flash("Character not found.", "danger")
-        return redirect(url_for('admin.reset_crime_cooldown'))
-    return render_template('admin/reset_crime_cooldown.html', form=form)
-@admin_bp.route('/crews')
-@admin_required
-def admin_crews():
-    crews = Crew.query.all()
-    crew_forms = [(crew, DeleteCrewForm()) for crew in crews]
-    return render_template('admin/crews.html', crew_forms=crew_forms)
-
-@admin_bp.route('/crews/<int:crew_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_crew(crew_id):
-    crew = Crew.query.get_or_404(crew_id)
-    # Remove all members' crew_id
-    for user in crew.members:
-        user.crew_id = None
-    # Remove all CrewMember records
-    CrewMember.query.filter_by(crew_id=crew.id).delete()
-    db.session.delete(crew)
-    db.session.commit()
-    flash("Crew deleted.", "success")
-    return redirect(url_for('admin.admin_crews'))
-# Register the admin blueprint
-app.register_blueprint(admin_bp)
-# Admin Interface -------------------------------
-@app.context_processor
-def inject_user():
-    return dict(user=current_user)
 # Middleware -------------------------------
+
 @app.before_request
 def update_last_seen():
     if current_user.is_authenticated:
@@ -587,559 +127,19 @@ def enable_sqlite_fk():
 # Middleware to check if character is alive
 @app.before_request
 def check_character_alive():
+    allowed_endpoints = (
+         'logout', 'static', 'dashboard', 'register', 'login', 'admin','create_character', 'forums', 'forum_view', 'gun_detail', 'send_beer', 'new_topic', 'topic_view', 'create_forum', 'inbox', 'notifications', 'send_message', 'view_message', 'leave_crime', 'attempt_organized_crime', 'crew_page', 'update_crew_role', 'hire_bodyguard', 'kill', 'profile_by_id', 'crew_member_update_role', 'crew_member_leave', 'crew_member_invite', 'crew_member_kick', 'crew_member_accept_invite', 'crew_member_decline_invite', 'crew_member_send_message', 'crew_member_view_messages', 'crew_member_leave_crime_group', 'crew_member_disband_crime_group', 'crew_member_create_crime_group', 'crew_member_join_crime_group', 'crew_member_view_crime_group', 'crew_member_send_invitation', 'crew_member_accept_invitation', 'crew_member_decline_invitation', 'crew_member_view_invitations','crews', 'crew_member_view_profile', 'crew_member_edit_profile', 'crew_member_delete_profile', 'crew_member_view_crew', 'crew_member_create_crew', 'crew_member_edit_crew', 'crew_member_delete_crew', 'crew_member_view_members', 'crew_member_add_member', 'crew_member_remove_member', 'crew_member_view_requests', 'crew_member_accept_request', 'crew_member_decline_request', 'crew_member_view_notifications', 'crew_member_mark_notification_read', 'crew_member_delete_notification', 'crew_member_view_messages', 'crew_member_send_message', 'crew_member_view_message', 'crew_member_delete_message', 'crew_member_view_sent_messages', 'crew_member_view_received_messages', 'crew_member_view_chat', 'crew_member_send_chat_message', 'crew_member_delete_chat_message', 'crew_member_view_chat_history', 'crew_member_clear_chat_history', 'crew_member_view_crime_history', 'crew_member_clear_crime_history', 'crew_member_edit_crime_group', 'crew_member_delete_crime_group', 'crew_member_view_crime_group_members', 'crew_member_add_crime_group_member', 'crew_member_remove_crime_group_member', 'crew_member_view_crime_group_requests', 'crew_member_accept_crime_group_request', 'crew_member_decline_crime_group_request', 'crew_member_view_crime_group_invitations', 'crew_member_accept_crime_group_invitation', 'public_message_view', 'public_message_send','player_search','travel','godfathers_page','send_beer','claim_godfather','create_crime','crime_group','send_public_message', 'public_message','get_messages', 'crew_messages'
+    )
     if current_user.is_authenticated:
         char = Character.query.filter_by(master_id=current_user.id).first()
+        # Always allow admin users to access admin endpoints
+        if getattr(current_user, 'is_admin', False) and request.endpoint and request.endpoint.startswith('admin'):
+            return
         if not char or not char.is_alive:
-            if request.endpoint not in ('create_character', 'logout', 'static'):
+            if request.endpoint not in allowed_endpoints:
                 return redirect(url_for('create_character'))
 
-#Flask Forms -------------------------------
-class ApproveCrewRequestForm(FlaskForm):
-    pass
-class StepDownGodfatherForm(FlaskForm):
-    submit = SubmitField("Step Down")
-class DenyCrewRequestForm(FlaskForm):
-    pass
-class ChatForm(FlaskForm):
-    message = StringField('Message', validators=[DataRequired()])
-    submit = SubmitField('Send')
-class PasswordResetRequestForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired()])
-    submit = SubmitField('Request Password Reset')
-class SimpleCaptchaForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    captcha_question = StringField('Captcha Question', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    
-    
-    captcha_answer = StringField('What is {{captcha_question}}?', validators=[DataRequired()])
-    captcha_solution = HiddenField()  # Store the answer in a hidden field
-    submit = SubmitField('Register')
-class PasswordResetForm(FlaskForm):
-    password = PasswordField('New Password', validators=[DataRequired()])
-    submit = SubmitField('Reset Password')
-class CreateCrewForm(FlaskForm):
-    crew_name = StringField('Crew Name', validators=[DataRequired(), Length(max=64)])
-    submit = SubmitField('Create')
-class CreateCharacterForm(FlaskForm):
-    character_name = StringField('Character Name', validators=[DataRequired(), Length(max=32)])
-    submit = SubmitField('Create Character')
-class ResetCrimeCooldownForm(FlaskForm):
-    character_id = IntegerField('Character ID', validators=[DataRequired()])
-    submit = SubmitField('Reset Cooldown')
-class DeleteCrimeForm(FlaskForm):
-    submit = SubmitField('Delete')
-class CrewRoleForm(FlaskForm):
-    new_role = SelectField('Role', choices=[
-        ('member', 'Member'),
-        ('left hand', 'Left Hand'),
-        ('right hand', 'Right Hand')
-    ])
-    submit = SubmitField('Update')
-class ClaimGodfatherForm(FlaskForm):
-        submit = SubmitField('Claim Godfather')
-class DeleteDrugForm(FlaskForm):
-    submit = SubmitField('Delete')
-class EditForumForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    description = TextAreaField('Description', validators=[DataRequired()])
-    submit = SubmitField('Save')
-class DeleteDealerForm(FlaskForm):
-    submit = SubmitField('Delete')
-class EditShopItemForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    description = StringField('Description', validators=[Optional()])
-    price = IntegerField('Price', validators=[DataRequired()])
-    stock = IntegerField('Stock', validators=[DataRequired()])
-    is_gun = BooleanField('Is Gun')
-    # Gun fields
-    gun_name = StringField('Gun Name')
-    gun_damage = IntegerField('Gun Damage', default=0)
-    gun_accuracy = StringField('Gun Accuracy', default="0.7")
-    gun_rarity = StringField('Gun Rarity', default="Common")
-    gun_price = IntegerField('Gun Price', default=100)
-    gun_image = StringField('Gun Image URL')
-    gun_description = StringField('Gun Description')
-    submit = SubmitField('Add Item')
-class AddShopItemForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    description = StringField('Description', validators=[Optional()])
-    price = IntegerField('Price', validators=[DataRequired()])
-    stock = IntegerField('Stock', validators=[DataRequired()])
-    is_gun = BooleanField('Is Gun')
-    # Gun fields
-    gun_name = StringField('Gun Name')
-    gun_damage = IntegerField('Gun Damage', default=0)
-    gun_accuracy = StringField('Gun Accuracy', default="0.7")
-    gun_rarity = StringField('Gun Rarity', default="Common")
-    gun_price = IntegerField('Gun Price', default=100)
-    gun_image = StringField('Gun Image URL')
-    gun_description = StringField('Gun Description')
-    submit = SubmitField('Add Item')
-class ReplyForm(FlaskForm):
-    content = TextAreaField('Reply', validators=[DataRequired()])
-    submit = SubmitField('Reply')
-class BuyDrugForm(FlaskForm):
-    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Buy')
-class SellDrugForm(FlaskForm):
-    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Sell')
-class DeleteForm(FlaskForm):
-    submit = SubmitField('Delete')
-class NewTopicForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    content = TextAreaField('Content', validators=[DataRequired()])
-    submit = SubmitField('Create Topic')
-class InviteToCrewForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    submit = SubmitField('Send Invite')
-class AddDrugForm(FlaskForm):
-    name = StringField('Drug Name', validators=[DataRequired()])
-    type = SelectField('Drug Type', choices=[
-        ('Stimulant', 'Stimulant'),
-        ('Opiate', 'Opiate'),
-        ('Hallucinogen', 'Hallucinogen'),
-        ('Depressant', 'Depressant'),
-        ('Other', 'Other')
-    ], validators=[DataRequired()])
-    submit = SubmitField('Add')
-class AddDealerForm(FlaskForm):
-    city = SelectField('City', choices=[(c, c) for c in CITIES], validators=[DataRequired()])
-    drug_id = SelectField('Drug', coerce=int, validators=[DataRequired()])
-    price = IntegerField('Price', validators=[DataRequired(), NumberRange(min=1)])
-    stock = IntegerField('Stock', default=10, validators=[DataRequired(), NumberRange(min=0)])
-    submit = SubmitField('Add Dealer')
-class TravelForm(FlaskForm):
-    city = RadioField('City', choices=[(c, c) for c in CITIES], validators=[DataRequired()])
-    submit = SubmitField('Travel')
-class EditUserForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[Optional()])
-    crew_id = IntegerField('Crew ID', validators=[Optional()])
-    is_admin = BooleanField('Is Admin')
-    premium = BooleanField('Premium')
-    submit = SubmitField('Save')
-class EditCharacterForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    health = IntegerField('Health', validators=[DataRequired()])
-    money = IntegerField('Money', validators=[DataRequired()])
-    level = IntegerField('Level', validators=[DataRequired()])
-    xp = IntegerField('XP', validators=[DataRequired()])
-    is_alive = BooleanField('Alive')
-    submit = SubmitField('Save')
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    
-    submit = SubmitField('Login')
-class RegisterForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    captcha_answer = StringField('Captcha Answer', validators=[DataRequired()])
-    captcha_question = StringField('Captcha Question', validators=[DataRequired()])
-    submit = SubmitField('Register')
-class BreakoutForm(FlaskForm):
-    submit = SubmitField('Break Out')
-class BuyForm(FlaskForm):
-    submit = SubmitField('Buy')
-class UploadImageForm(FlaskForm):
-    profile_image = FileField('Profile Image', validators=[DataRequired()])
-    submit = SubmitField('Change Profile Image')
-class PlayerSearchForm(FlaskForm):
-    query = StringField('Search', validators=[DataRequired()])
-    submit = SubmitField('Search')
-class KillForm(FlaskForm):
-    submit = SubmitField('Shoot')
-class EquipGunForm(FlaskForm):
-    submit = SubmitField('Equip')
-class KillForm(FlaskForm):
-    submit = SubmitField('Shoot')
-class LeaveCrimeForm(FlaskForm):
-    submit = SubmitField('Leave Group')
-class DisbandCrimeForm(FlaskForm):
-    submit = SubmitField('Disband Group')
-class AttemptCrimeForm(FlaskForm):
-    submit = SubmitField('Attempt')
-class JoinCrimeForm(FlaskForm):
-    invite_code = StringField('Invite Code', validators=[DataRequired()])
-    submit = SubmitField('Join')
-class CreateCrimeForm(FlaskForm):
-    submit = SubmitField('Create Group')
-class UpgradeForm(FlaskForm):
-    submit = SubmitField('Upgrade')
-class EarnForm(FlaskForm):
-    submit = SubmitField('Earn')
-class CharacterEditForm(SecureForm):
-    name = StringField('Name')
-    health = IntegerField('Health')
-    money = IntegerField('Money')
-    level = IntegerField('Level')
-    xp = IntegerField('XP')
-    is_alive = BooleanField('Is Alive', default=True)
-    profile_image = StringField('Profile Image URL')
-class DeleteCrewForm(FlaskForm):
-    submit = SubmitField('Delete')
-class UserEditForm(SecureForm):
-    username = StringField('Username')
-    password = PasswordField('Password')
-    crew_id = StringField('Crew ID')
-    is_admin = BooleanField('Is Admin')
-    premium = BooleanField('Premium User')
-    premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
-class InviteForm(FlaskForm):
-    submit = SubmitField('Invite Member')
-class LeaveForm(FlaskForm):
-    submit = SubmitField('Leave Crew')
-class RoleForm(FlaskForm):
-    new_role = SelectField('Role', choices=[
-        ('member', 'Member'),
-        ('left_hand', 'Left-Hand'),
-        ('right_hand', 'Right-Hand'),
-        ('leader', 'Leader')
-    ])
-    submit = SubmitField('Update')
-class BlackjackForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Play Blackjack')
-class CoinflipForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    coin_choice = SelectField('Coin Side', choices=[('heads', 'Heads'), ('tails', 'Tails')], validators=[DataRequired()])
-    submit = SubmitField('Flip Coin')
-class RouletteForm(FlaskForm):
-    bet = IntegerField('Bet', validators=[DataRequired(), NumberRange(min=1)])
-    roulette_choice = SelectField('Roulette Choice', choices=[('red', 'Red'), ('black', 'Black'), ('green', 'Green (14x)')], validators=[DataRequired()])
-    submit = SubmitField('Spin Roulette')
-class SendMessageForm(FlaskForm):
-    content = TextAreaField('Message', validators=[DataRequired()])
-    submit = SubmitField('Send')
-class ComposeMessageForm(FlaskForm):
-    recipient_name = StringField('Recipient Name', validators=[DataRequired()])
-    content = TextAreaField('Message', validators=[DataRequired()])
-    submit = SubmitField('Send')
 
-# Player Models -------------------------------
-class User(db.Model, UserMixin):
-    __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(12), unique=True, nullable=False)
-    password_hash = db.Column(db.String(150), nullable=False)
-    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    email_verified = db.Column(db.Boolean, default=False)
-    email_verification_token = db.Column(db.String(128), nullable=True)
-    reset_token = db.Column(db.String(128), nullable=True)
-    reset_token_expiry = db.Column(db.DateTime, nullable=True)
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-    last_earned = db.Column(db.DateTime, default=None, nullable=True)
-    is_admin = db.Column(db.Boolean, default=False)
-    premium = db.Column(db.Boolean, default=False)
-    premium_until = db.Column(db.DateTime, nullable=True)
-    last_known_ip = db.Column(db.String(45))
-    organized_crime_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
-    last_crime_time = db.Column(db.DateTime, nullable=True)
-    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
-    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
-    character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
-    characters = db.relationship(
-    'Character',
-    backref=db.backref('owner', overlaps="character,master"),
-    lazy=True,
-    foreign_keys='Character.master_id',
-    overlaps="character,master"
-)
-    kills = db.Column(db.Integer, default=0)
-    # Characters owned by this user
-    
-    
-    # Optional: characters linked for crew, etc.
-    linked_characters = db.relationship('Character', foreign_keys='Character.user_id')
-    def set_password(self, password):
-        # Explicitly use pbkdf2:sha256 with 260,000 iterations (Werkzeug 2.3+ default)
-        self.password_hash = generate_password_hash(
-            password,
-            method='pbkdf2:sha256',
-            salt_length=16
-        )
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-    def __repr__(self):
-        return f'<User {self.username}>'
-    
-    def add_xp(self, amount):
-        self.xp += amount
-        # Maybe also increase level if xp passes a threshold
-        while self.xp >= self.level * 250:
-            self.xp -= self.level * 250
-            self.level += 1
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-class CrewRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    crew_name = db.Column(db.String(150), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    city = db.Column(db.String(64), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending, approved, denied
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user = db.relationship('User')
-class Character(db.Model):
-    __tablename__ = 'character'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    user = db.relationship('User', backref=db.backref('linked_character', overlaps="linked_characters"), foreign_keys=[user_id], overlaps="linked_characters")
-    name = db.Column(db.String(64), unique=True, nullable=False)
-    bodyguards = db.Column(db.Integer, default=0)
-    health = db.Column(db.Integer, default=100)
-    money = db.Column(db.Integer, default=250)
-    level = db.Column(db.Integer, default=1)
-    xp = db.Column(db.Integer, default=0)
-    
-    last_crime_time = db.Column(db.DateTime, nullable=True)
-    last_travel_time = db.Column(db.DateTime, nullable=True)
-    city = db.Column(db.String(64), default="New York")
-    gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
-    gun = db.relationship('ShopItem', foreign_keys=[gun_id])
-
-    in_jail = db.Column(db.Boolean, default=False)
-    jail_until = db.Column(db.DateTime, nullable=True)
-
-    crime_group_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
-    crime_group = db.relationship("OrganizedCrime", back_populates="members", foreign_keys=[crime_group_id])
-    # The actual owner of the character
-    master_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    
-    equipped_gun_id = db.Column(db.Integer, db.ForeignKey('gun.id'), nullable=True)
-    equipped_gun = db.relationship('Gun', foreign_keys=[equipped_gun_id])
-    
-    earn_streak = db.Column(db.Integer, default=0)
-    last_earned = db.Column(db.DateTime, nullable=True)
-    is_alive = db.Column(db.Boolean, default=True)
-    
-    
-    profile_image = db.Column(db.String(255), nullable=True)
-    
-    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'))
-    
-    linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
-    crew = db.relationship('Crew', backref='characters')
-    
-    @property
-    def immortal(self):
-        # Admin users' characters are immortal
-        if self.master and getattr(self.master, "is_admin", False):
-            return True
-        return False
-class Godfather(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    city = db.Column(db.String(64), unique=True, nullable=False)
-    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), unique=True, nullable=False)
-    character = db.relationship('Character', backref='godfather_of')    
-class CrewMember(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    role = db.Column(db.String(20), default='member')  # leader, right_hand, left_hand, member
-
-    crew = db.relationship('Crew', backref='crew_members')
-    
-    
-    user = db.relationship('User', backref='crew_roles')
-
-class OrganizedCrime(db.Model):
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=True)
-    invite_code = db.Column(db.String(8), unique=True, nullable=False)
-
-    leader_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
-    leader = db.relationship("Character", backref="led_crime_groups", foreign_keys=[leader_id])
-    
-    members = db.relationship(
-    "Character",
-    back_populates="crime_group",
-    foreign_keys="Character.crime_group_id"
-)
-
-
-    def is_full(self):
-        return len(self.members) >= 4
-class PrivateMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    is_read = db.Column(db.Boolean, default=False)
-
-    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
-    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')    
-class ShopItemModelView(ModelView):
-    can_create = True
-    can_edit = True
-    can_delete = True
-    can_view_details = True
-    column_list = ('id', 'name', 'description', 'price', 'stock', 'is_gun', 'damage')  
-    form_columns = ('name', 'description', 'price', 'stock', 'is_gun', 'damage')
-    column_searchable_list = ('name', 'description')
-    is_gun = BooleanField('Is Gun', default=False)
-    damage = IntegerField('Damage', default=0)
-
-class ShopItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=False)
-    description = db.Column(db.String(256))
-    price = db.Column(db.Integer, nullable=False)
-    stock = db.Column(db.Integer, nullable=False, default=0)
-    is_gun = db.Column(db.Boolean, default=False) 
-    damage = db.Column(db.Integer, default=0)      
-    gun_id = db.Column(db.Integer, db.ForeignKey('gun.id', ondelete='CASCADE'), nullable=True)
-    gun = db.relationship('Gun')
-
-
-class UserInventory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=False)
-    quantity = db.Column(db.Integer, default=1, nullable=False)
-
-    user = db.relationship('User', backref='inventory')
-    item = db.relationship('ShopItem')
-
-class Drug(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True, nullable=False)
-    type = db.Column(db.String(32), nullable=False, default="Other")
-
-class DrugDealer(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    city = db.Column(db.String(64), nullable=False)
-    drug_id = db.Column(db.Integer, db.ForeignKey('drug.id'), nullable=False)
-    price = db.Column(db.Integer, nullable=False)
-    stock = db.Column(db.Integer, nullable=False, default=10)
-    drug = db.relationship('Drug')
-
-class CharacterDrugInventory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
-    drug_id = db.Column(db.Integer, db.ForeignKey('drug.id'), nullable=False)
-    quantity = db.Column(db.Integer, default=0)
-    drug = db.relationship('Drug')
-    character = db.relationship('Character')
-
-class Gun(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True, nullable=False)
-    damage = db.Column(db.Integer, nullable=False)
-    accuracy = db.Column(db.Float, default=0.7)  # 0-1
-    rarity = db.Column(db.String(32), default='Common')
-    price = db.Column(db.Integer, nullable=False)
-    image = db.Column(db.String(255), nullable=True)
-    description = db.Column(db.String(255), nullable=True)
-    
-
-class CharacterModelView(ModelView):
-    column_list = ('id', 'name', 'master_id', 'health', 'money', 'level', 'is_alive')
-    form_columns = ('name', 'master_id', 'health', 'money', 'level', 'is_alive')
-
-
-
-
-class Crew(db.Model):
-    __tablename__ = 'crew'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), unique=True, nullable=False)
-    members = db.relationship('User', backref='crew', lazy=True)
-
-
-
-class CrewMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=db.func.now())
-    
-    user = db.relationship('User', backref='messages')
-
-class ChatMessage(db.Model):
-    timestamp = db.Column(db.DateTime, default=db.func.now())
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    channel = db.Column(db.String(10), default='public')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref='chat_messages')
-    crew_id = db.Column(db.Integer, nullable=True)
-
-class CrewInvitation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    inviter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    invitee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    crew_id = db.Column(db.Integer, db.ForeignKey('crew.id'), nullable=False)
-    inviter = db.relationship('User', foreign_keys=[inviter_id])
-    invitee = db.relationship('User', foreign_keys=[invitee_id])
-    crew = db.relationship('Crew')
-
-class Forum(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(128), nullable=False)
-    description = db.Column(db.String(256), nullable=True)
-    topics = db.relationship('ForumTopic', backref='forum', lazy=True)
-
-class ForumTopic(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
-    title = db.Column(db.String(128), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    posts = db.relationship('ForumPost', backref='topic', lazy=True)
-
-class ForumPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topic.id'), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# def generation of unique invite codes for OrganizedCrime
-def generate_unique_invite_code(length=6):
-    """Generate a unique invite code for OrganizedCrime."""
-    while True:
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-        if not OrganizedCrime.query.filter_by(invite_code=code).first():
-            return code
-# Function to check if a character is on crime cooldown
-def is_on_crime_cooldown(character, cooldown_minutes=360):
-    if character.last_crime_time:
-        return datetime.utcnow() < character.last_crime_time + timedelta(minutes=cooldown_minutes)
-    return False
-# Function to release characters from jail if their jail time has expired
-def release_expired_jail():
-        now = datetime.utcnow()
-        expired = Character.query.filter(
-            Character.in_jail == True,
-            Character.jail_until != None,
-            Character.jail_until <= now
-        ).all()
-        for char in expired:
-            char.in_jail = False
-            char.jail_until = None
-        if expired:
-            db.session.commit()
-
-
-# Admin Interface -------------------------------
-# class MyAdminIndexView(AdminIndexView):
-#     def is_accessible(self):
-#         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
-    
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
@@ -1169,6 +169,66 @@ def gun_detail(gun_id):
     gun = Gun.query.get_or_404(gun_id)
     return render_template('gun_detail.html', gun=gun)
 
+@app.route('/send_beer', methods=['GET', 'POST'])
+@login_required
+def send_beer():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    form = SendBeerForm()
+    if not character:
+        flash("You need to create a character first.", "warning")
+        return redirect(url_for('create_character'))
+    # Check if the character is on bar cooldown
+    
+    if form.validate_on_submit():
+        recipient_name = form.recipient_name.data.strip()
+        drink_type = form.drink_type.data
+        recipient = Character.query.filter_by(name=recipient_name, is_alive=True).first()
+        if not recipient:
+            flash(f"No character found with name {recipient_name}.", "danger")
+            return redirect(url_for('send_beer'))
+        
+        # Set drink cost and effect
+        if drink_type == 'beer':
+            drink_cost = 1000
+            recipient.xp += random.randint(5, 15)
+            # Set bar cooldown
+            
+            logging.info(f"{current_user.username} sent beer to {recipient_name}")
+            
+        elif drink_type == 'whiskey':
+            drink_cost = 20
+            recipient.xp += random.randint(10, 25)
+        elif drink_type == 'wine':
+            drink_cost = 15
+            recipient.xp += random.randint(15, 35)
+        elif drink_type == 'vodka':
+            drink_cost = 25
+            recipient.xp += random.randint(25, 50)
+        elif drink_type == 'rum':
+            drink_cost = 30
+            recipient.xp += random.randint(20, 40)
+        elif drink_type == 'gin':
+            drink_cost = 35
+            recipient.health += random.randint(1, 10)
+        else:
+            flash("Invalid drink type selected.", "danger")
+            return redirect(url_for('send_beer'))
+
+        # Check if sender has enough money
+        if character.money < drink_cost:
+            flash("You don't have enough money to send this drink.", "danger")
+            return redirect(url_for('send_beer'))
+
+        # Deduct money from sender
+        character.money -= drink_cost
+
+        # Commit changes
+        db.session.commit()
+
+        flash(f"Sent {drink_type.title()} to {recipient_name}!", "success")
+        return redirect(url_for('dashboard'))
+
+    return render_template('send_beer.html', form=form)
 
 @app.route('/forum/<int:forum_id>/new_topic', methods=['GET', 'POST'])
 @login_required
@@ -1216,26 +276,26 @@ def topic_view(topic_id):
 @app.route('/create_forum', methods=['GET', 'POST'])
 @login_required
 def create_forum():
+    form = CreateForumForm()
     if not getattr(current_user, 'is_admin', False):
         flash("Only admins can create forums.", "danger")
         return redirect(url_for('forums'))
     if request.method == 'POST':
-        forum = Forum(title=title, description=description)
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         if not title:
             flash("Forum title is required.", "danger")
             return redirect(url_for('create_forum'))
-        
+        forum = Forum(title=title, description=description)
         db.session.add(forum)
         db.session.commit()
         flash("Forum created!", "success")
         return redirect(url_for('forums'))
-    return render_template('create_forum.html')
+    return render_template('create_forum.html', form=form)
 @app.route('/messages', methods=['GET'])
 @login_required
 def inbox():
-    messages = PrivateMessage.query.filter_by(recipient_id=current_user.id).order_by(PrivateMessage.timestamp.desc()).all()
+    messages = PrivateMessage.query.filter_by(recipient_id=current_user.id).order_by(PrivateMessage.timestamp.asc()).all()
     char_map = {}
     for msg in messages:
         char = Character.query.filter_by(master_id=msg.sender.id, is_alive=True).first()
@@ -1246,25 +306,19 @@ def inbox():
 @login_required
 def notifications():
     # Fetch notifications for the current user
-    notifications = []
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.timestamp.desc()).all()
     # Only show unread private messages as notifications
     messages = PrivateMessage.query.filter_by(recipient_id=current_user.id, is_read=False).order_by(PrivateMessage.timestamp.desc()).all()
     for msg in messages:
         notifications.append({
-            "type": "message",
-            "from": msg.sender.username if msg.sender else "Unknown",
-            "content": msg.content,
+            "message": f"New private message from {msg.sender.username}",
             "timestamp": msg.timestamp,
             "is_read": msg.is_read,
-            "msg_id": msg.id
         })
-
     # Fetch crew invitations for the current user
     invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
-
     # Sort notifications by timestamp descending
-    notifications.sort(key=lambda n: n["timestamp"], reverse=True)
-
+    notifications = sorted(notifications, key=lambda n: n.timestamp if hasattr(n, 'timestamp') else n["timestamp"], reverse=True)
     return render_template('notifications.html', notifications=notifications, invitations=invitations)
 
 @app.route('/messages/send/<int:user_id>', methods=['GET', 'POST'])
@@ -1359,6 +413,8 @@ def attempt_organized_crime():
             if success:
                 member.money += reward_money
                 member.xp += reward_xp
+                logging.info(f"{member.name} successfully completed the crime and earned ${reward_money} and {reward_xp} XP.")
+                flash(f"{member.name} successfully completed the crime and earned ${reward_money} and {reward_xp} XP.", "success")
             else:
                 # 20% chance to go to jail on failed crime
                 if random.random() < 0.2:
@@ -1703,7 +759,7 @@ def npc_profile(id):
     return render_template('npc_profile.html', npc=npc)
 
 @app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("3 per minute")
+# @limiter.limit("3 per minute")
 def register():
     # Only generate a new CAPTCHA if it's a GET request or not present in session
     if 'captcha_question' not in session or request.method == 'GET':
@@ -1734,7 +790,10 @@ def register():
             token = serializer.dumps(email, salt='email-verify')
             new_user.email_verification_token = token
             db.session.add(new_user)
+            new_user.last_known_ip = request.remote_addr
+            db.session.add(new_user)
             db.session.commit()
+            notify_admin_duplicate_ip(new_user)
             verify_url = url_for('verify_email', token=token, _external=True)
             msg = Message('Verify your email', recipients=[email])
             msg.body = f'Click to verify your email: {verify_url}'
@@ -1847,7 +906,7 @@ def send_crew_message():
     return jsonify(success=True)
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("20 per minute")
 def login():
     form = LoginForm()
     next_page = request.args.get('next')
@@ -1868,6 +927,7 @@ def login():
                 session.permanent_session_lifetime = timedelta(minutes=30)
             user.last_known_ip = request.remote_addr
             db.session.commit()
+            notify_admin_duplicate_ip(user, admin_logger)
             if next_page and is_safe_url(next_page):
                 return redirect(next_page)
             return redirect(url_for('dashboard'))
@@ -1875,7 +935,7 @@ def login():
     return render_template('login.html', form=form)
 
 @app.route('/create_character', methods=['GET', 'POST'])
-@login_required
+
 def create_character():
     form = CreateCharacterForm()
     if form.validate_on_submit():
@@ -1960,29 +1020,43 @@ def get_messages():
 @app.route('/jail')
 @login_required
 def jail():
-    release_expired_jail()
     now = datetime.utcnow()
+    # List all currently jailed, alive characters
     jailed_characters = Character.query.filter(
         Character.in_jail == True,
         Character.is_alive == True,
         Character.jail_until != None,
         Character.jail_until > now
     ).order_by(Character.jail_until.asc()).all()
+    # Get the current user's character
     current_character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    
     return render_template(
-    "jail.html",
-    jailed_characters=jailed_characters,
-    current_character=current_character,
-    now=datetime.utcnow(),
-    breakout_form=BreakoutForm()
-)
+        "jail.html",
+        jailed_characters=jailed_characters,
+        current_character=current_character,
+        now=now,
+        breakout_form=BreakoutForm()
+    )
 
 @app.route('/breakout/<int:char_id>', methods=['POST'])
 @login_required
 def breakout(char_id):
     target = Character.query.get_or_404(char_id)
     actor = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-
+    success_chance = 0.25  # 25% chance to succeed
+    if random.random() < success_chance:
+        target.in_jail = False
+        target.jail_until = None
+        db.session.commit()
+        # --- Add notification for the broken out user ---
+        notif = Notification(
+            user_id=target.master_id,
+            message=f"You were broken out of jail by {actor.name}!",
+        )
+        db.session.add(notif)
+        db.session.commit()
+        flash(f"You successfully broke {target.name} out of jail!", "success")
     # Checks
     if not actor:
         flash("You must have a living character to attempt a breakout.", "danger")
@@ -2072,30 +1146,33 @@ def leave_crew():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    user = User.query.get(current_user.id)  # Use a different variable name
     godfathers = {g.city: g.character for g in Godfather.query.all()}
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
-    # Get all users online
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
-    # For each user, get their alive character
     online_characters = []
-    for user in online_users:
-        char = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
     npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     earn_form = EarnForm()
-    cities = CITIES  # Make sure CITIES is defined globally
+    cities = CITIES
     claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
+    if not character:
+        flash("You must have a character to access the dashboard.", "danger")
+        return redirect(url_for('create_character'))
     return render_template(
         'dashboard.html',
         character=character,
         online_users=online_users,
         online_characters=online_characters,
-        earn_form=earn_form,  # now a list of Character objects
+        earn_form=earn_form,
         npcs=npcs, godfathers=godfathers,
-        cities=cities,                # <-- Pass cities
-        claim_forms=claim_forms)
+        cities=cities,
+        claim_forms=claim_forms
+    )
 
 @app.route('/casino', methods=['GET', 'POST'])
 @login_required
@@ -2122,6 +1199,13 @@ def casino():
             return redirect(url_for('casino', table=table))
 
         if table == 'blackjack':
+            def hand_value(cards):
+                total = sum(cards)
+                aces = cards.count(11)
+                while total > 21 and aces:
+                    total -= 10
+                    aces -= 1
+                return total
             deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11] * 4
             random.shuffle(deck)
             hand = [deck.pop(), deck.pop()]
@@ -2463,7 +1547,7 @@ def upload_profile_image():
         flash('Invalid form submission.', 'danger')
         return redirect(request.referrer or url_for('dashboard'))
     file = form.profile_image.data
-    if file and allowed_file(file.filename):
+    if file and allowed_file(file.filename, ALLOWED_EXTENSIONS):
         # Check MIME type
         file.seek(0)
         try:
@@ -2722,6 +1806,7 @@ def deny_crew_request(req_id):
     db.session.commit()
     flash("Crew request denied.", "info")
     return redirect(url_for('crew_requests'))
+
 @app.route('/earn', methods=['POST', 'GET'])
 @login_required
 def earn():
@@ -2753,7 +1838,7 @@ def earn():
     # Premium bonus
     
     money_min, money_max = 5000, 10000
-    xp_min, xp_max = 50, 100
+    xp_min, xp_max = 25, 50
     if current_user.premium and current_user.premium_until and current_user.premium_until > now:
         money_min, money_max = int(money_min * 1.5), int(money_max * 1.5)
         xp_min, xp_max = int(xp_min * 1.5), int(xp_max * 1.5)
@@ -2874,6 +1959,7 @@ def step_down_godfather():
     return redirect(url_for('dashboard'))
 
 @app.route('/send_public_message', methods=['POST'])
+@limiter.limit("10 per minute, 10 per second")
 @login_required
 def send_public_message():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
@@ -2926,13 +2012,16 @@ def drug_dashboard():
         buy_forms=buy_forms,
         sell_forms=sell_forms
     )
+
 @app.route('/public_messages')
+@limiter.limit("1000 per minute")
 @login_required
 def public_messages():
     messages = ChatMessage.query.filter_by(channel='public')\
         .order_by(ChatMessage.timestamp.desc())\
         .limit(50).all()
-
+    if not messages:
+        return jsonify([])
     result = []
     for m in reversed(messages):
         char = Character.query.filter_by(master_id=m.user_id).first()
@@ -3013,7 +2102,9 @@ def sell_drug_form(drug_id, form=None):
 @app.context_processor
 def inject_upgrade_form():
     return dict(upgrade_form=UpgradeForm())
-
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
 @app.context_processor
 def inject_current_character():
     from flask_login import current_user
@@ -3038,35 +2129,18 @@ def inject_now():
 def inject_chat_form():
     return dict(chat_form=ChatForm())
 
-def randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=500):
-    """Randomize prices and stock for all DrugDealers."""
-    dealers = DrugDealer.query.all()
-    for dealer in dealers:
-        dealer.price = random.randint(min_price, max_price)
-        dealer.stock = random.randint(min_stock, max_stock)
-    db.session.commit()
-def randomize_drug_prices(interval_minutes=random.randint(5, 10)):
-    with app.app_context():
-        while True:
-            randomize_all_drug_prices(min_price=50, max_price=10000, min_stock=5, max_stock=5000)
-            time.sleep(interval_minutes * 60)
+
 
 # Start the background thread when the app starts
-def start_price_randomizer():
-    t = threading.Thread(target=randomize_drug_prices, args=(10,), daemon=True)  # 10 minutes interval
-    t.start()
-
-start_price_randomizer()
 
 
-def get_online_users():
-    cutoff = datetime.utcnow() - timedelta(seconds=1)
-    # Real users online
-    real_online = current_user.name.query.filter(current_user.last_seen >= cutoff).all()
-    # NPCs: Characters with master_id=0 (or whatever you use)
-    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
-    # Optionally, create a fake User object for each NPC if your template expects User
-    return real_online, npcs
+
+
+
+
+
+
+
 
 @app.cli.command("randomize-drug-prices")
 def randomize_drug_prices_command():
@@ -3078,7 +2152,27 @@ def randomize_drug_prices_command():
 def init_db():
     db.create_all()
     print("Database tables created.")
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error/404.html'), 404
 
+@app.errorhandler(500)
+def internal_error(error):
+    # Optionally log the error here
+    return render_template('error/500.html'), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('error/403.html'), 403
+
+@app.errorhandler(401)
+def unauthorized_error(error):
+    return render_template('error/401.html'), 401
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    flash("Too many requests, please slow down!", "warning")
+    # Try to redirect to the referring page, or fallback to dashboard
+    return redirect(request.referrer or url_for('dashboard'))
 
 if __name__ == '__main__':
     with app.app_context():

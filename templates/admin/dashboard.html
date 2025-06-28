@@ -9,7 +9,7 @@
     padding: 40px 32px 32px 32px;
     border: 1px solid #ffd700cc;
     color: #f5f6fa;
-    font-family: "geo", sans-serif;
+    
     margin: 0 auto 0 auto;
     max-width: 1000px;
     overflow: hidden;
@@ -80,7 +80,7 @@
 .admin-actions {
     flex: 1 1 260px;
     background: #23243a;
-    border-radius: 10px;
+    border-radius: 5px;
     padding: 32px 24px;
     box-shadow: 0 1px 12px #8be9fd22;
     display: flex;
@@ -95,7 +95,7 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    border-radius: 8px;
+    border-radius: 5px;
     
     padding: 8px 0;
     background: linear-gradient(120deg, #23243a 60%, #181824 100%);
@@ -135,8 +135,8 @@
 .admin-stats {
     flex: 2 1 400px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 14.7%;
     align-items: stretch;
     min-width: 220px;
 }
@@ -145,7 +145,7 @@
     border-radius: 5px;
     padding: 12px 0 12px 0;
     color: #8be9fd;
-    font-size: 1.18em;
+    font-size: 1em;
     font-weight: 700;
     box-shadow: 0 1px 12px #8be9fd22;
     text-align: center;
@@ -226,7 +226,7 @@
         font-size: .95em;
         padding: 8px 0;
         gap: 6px;
-        border-radius: 6px;
+        border-radius: 5px;
     }
     .admin-action-icon {
         font-size: 1em;
@@ -324,6 +324,33 @@
     </div>
 </div>
     <div class="admin-main">
+        <div id="admin-log-table" style="background:#131313; color:#ffd700; padding:1.5em; border-radius:5px; max-height:300px; width: 100%;  overflow:auto; font-family:monospace; font-size:0.95em; position: relative;">
+            {% if admin_logs %}
+                <table style="width:100%; border-collapse:collapse;">
+                <thead style="position: sticky; top: 0; z-index: 1;">
+                    <tr style="background:#181824;">
+                    <th style="color:#ffd700; padding:4px 8px; text-align:left;">Time</th>
+                    <th style="color:#ffd700; padding:4px 8px; text-align:left;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in admin_logs|reverse %}
+                    {% set parts = line.split(' at ') %}
+                    <tr style=" border-bottom:1px solid #444;">
+                        <td style=" padding:4px 8px; color:#8be9fd; min-width:120px;">
+                        {{ parts[-1].strip() if parts|length > 1 else '' }}
+                        </td>
+                        <td style="padding:4px 8px;">
+                        {{ parts[0] if parts|length > 1 else line }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            {% else %}
+                <p>No admin actions logged yet.</p>
+            {% endif %}
+        </div>
         <div class="admin-stats">
             <div class="admin-stat">
                 <i class="fas fa-users"></i>
@@ -345,49 +372,60 @@
                 <span class="stat-label">Jailed</span>
                 <b>{{ jailed_count }}</b>
             </div>
+            
+            
         </div>
-            <div class="admin-actions">
-        <a href="{{ url_for('admin.admin_users') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-users-cog"></i></span>
-            <span>Manage Users</span>
-        </a>
-        <a href="{{ url_for('admin.admin_characters') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-user-edit"></i></span>
-            <span>Manage Characters</span>
-        </a>
-        <a href="{{ url_for('admin.admin_forums') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
-            <span>Manage Forums</span>
-        </a>
-        <a href="{{ url_for('admin.admin_topics') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
-            <span>Manage Topics</span>
-        </a>
-        <a href="{{ url_for('admin.admin_jail') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-gavel"></i></span>
-            <span>Jail List</span>
-        </a>
-        <a href="{{ url_for('admin.admin_shop') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-store"></i></span>
-            <span>Manage Shop</span>
-        </a>
-        <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-mask"></i></span>
-            <span>Manage Organized Crimes</span>
-        </a>
-        <a href="{{ url_for('admin.admin_drugs_dashboard') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-capsules"></i></span>
-            <span>Drug Management</span>
-        </a>
-        <a href="{{ url_for('admin.admin_crews') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-users"></i></span>
-            <span>Crew Management</span>
-        </a>
-        <a href="{{ url_for('admin.reset_crime_cooldown') }}" class="btn admin-action-btn">
-            <span class="admin-action-icon"><i class="fas fa-users"></i></span>
-            <span>Reset Crime Cooldown</span>
-        </a>
-    </div>
+        
+        <div class="admin-actions">
+            <a href="{{ url_for('admin.admin_users') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-users-cog"></i></span>
+                <span>Manage Users</span>
+            </a>
+            <a href="{{ url_for('admin.admin_characters') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-user-edit"></i></span>
+                <span>Manage Characters</span>
+            </a>
+            <a href="{{ url_for('admin.admin_forums') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
+                <span>Manage Forums</span>
+            </a>
+            <a href="{{ url_for('admin.admin_topics') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
+                <span>Manage Topics</span>
+            </a>
+            <a href="{{ url_for('admin.admin_jail') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-gavel"></i></span>
+                <span>Jail List</span>
+            </a>
+            <a href="{{ url_for('admin.admin_shop') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-store"></i></span>
+                <span>Manage Shop</span>
+            </a>
+            <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-mask"></i></span>
+                <span>Manage Organized Crimes</span>
+            </a>
+            <a href="{{ url_for('admin.admin_drugs_dashboard') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-capsules"></i></span>
+                <span>Drug Management</span>
+            </a>
+            <a href="{{ url_for('admin.admin_crews') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-users"></i></span>
+                <span>Crew Management</span>
+            </a>
+            <a href="{{ url_for('admin.reset_crime_cooldown') }}" class="btn admin-action-btn">
+                <span class="admin-action-icon"><i class="fas fa-users"></i></span>
+                <span>Reset Crime Cooldown</span>
+            </a>
+        </div>
+        
     </div>
 </div>
+<script>
+  // Scroll the log container to the top on page load
+  window.addEventListener('DOMContentLoaded', function() {
+    var logDiv = document.getElementById('admin-log-table');
+    if (logDiv) logDiv.scrollTop = 0;
+  });
+</script>
 {% endblock %}
