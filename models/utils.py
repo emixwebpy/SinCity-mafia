@@ -7,13 +7,51 @@ from flask_limiter.util import get_remote_address
 from models.character import Character
 from models.organized_crime import OrganizedCrime
 from models.user import User
+from models.drug import Drug, DrugDealer
+from models.constants import CITIES
 from flask_login import current_user
 from extensions import db
-
-from flask import Blueprint, flash, redirect, url_for, current_app
-
+from flask import flash, redirect, url_for
 
 
+
+
+def randomize_all_drug_prices():
+    
+    from models.constants import DRUG_LIST
+    for city in CITIES:
+        for name, drug_type in DRUG_LIST:
+            drug = Drug.query.filter_by(name=name).first()
+            if not drug:
+                continue
+            dealer = DrugDealer.query.filter_by(city=city, drug_id=drug.id).first()
+            price = random.randint(250, 10000)
+            stock = random.randint(250, 500)
+            if not dealer:
+                dealer = DrugDealer(city=city, drug_id=drug.id, price=price, stock=stock)
+                db.session.add(dealer)
+            else:
+                dealer.price = price
+                dealer.stock = stock
+    db.session.commit()
+
+def seed_drugs():
+    DRUG_LIST = [
+        ("Cocaine", "Cocaine"),
+        ("Heroin", "Heroin"),
+        ("Methamphetamine", "Methamphetamine"),
+        ("Ecstasy", "Ecstasy"),
+        ("LSD", "LSD"),
+        ("Marijuana", "Marijuana"),
+        ("Opium", "Opium"),
+        ("Crack", "Crack"),
+        ("Speed", "Speed"),
+        ("Mushrooms", "Mushrooms"),
+    ]
+    for name, drug_type in DRUG_LIST:
+        if not Drug.query.filter_by(name=name).first():
+            db.session.add(Drug(name=name, drug_type=drug_type))
+    db.session.commit()
 
 def notify_admin_duplicate_ip(user, admin_logger):
     same_ip_users = User.query.filter(

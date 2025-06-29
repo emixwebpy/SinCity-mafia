@@ -3,7 +3,7 @@ from extensions import db
 class Drug(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
-    type = db.Column(db.String(32), nullable=False, default="Other")
+    drug_type = db.Column(db.String(32), nullable=False)  # <-- not 'type'
 
 class DrugDealer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -50,26 +50,22 @@ from models.forum import Forum, ForumTopic, ForumPost
 from models.chat import ChatMessage
 from models.admin import admin_bp
 from models.forms import *
-from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, BODYGUARD_NAMES, BODYGUARD_LASTNAMES,DRUG_LIST
 from models.loggers import admin_logger
-from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown
-from models.background_tasks import start_jail_release_thread, start_price_randomizer, randomize_all_drug_prices
+from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown, seed_drugs, randomize_all_drug_prices
+from models.background_tasks import start_jail_release_thread
 
 
 
 
 
-
-
-
-start_price_randomizer()
-start_jail_release_thread(app)
 app.register_blueprint(admin_bp)
 logging.getLogger('flask_limiter').setLevel(logging.ERROR)
-# Constants -------------------------------
-CITIES = ["New York", "Los Angeles", "Chicago", "Miami", "Las Vegas"]
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-ALLOWED_MIME_TYPES = {'image/png', 'image/jpeg', 'image/gif'}
+with app.app_context():
+    seed_drugs()
+    randomize_all_drug_prices()
+    start_jail_release_thread(app)
+
 
 # Database -------------------------------
 
@@ -93,7 +89,7 @@ login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
-limiter = Limiter(key_func=limiter_key_func, app=app)
+limiter = Limiter(key_func=limiter_key_func, app=app, default_limits=["200 per day", "50 per hour"])
 
 
 
@@ -533,11 +529,12 @@ def update_crew_role(crew_member_id):
     return redirect(url_for('crew_page', crew_id=crew_id))
 
 @app.route('/hire_bodyguard', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 @login_required
 def hire_bodyguard():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    COST_PER_BODYGUARD = 50000
-    MAX_BODYGUARDS = 5
+    COST_PER_BODYGUARD = 1000
+    MAX_BODYGUARDS = 200
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
@@ -555,12 +552,14 @@ def hire_bodyguard():
         if num < 1 or num > max_hire:
             flash(f"You can only hire up to {max_hire} more bodyguards.", "danger")
             return redirect(url_for('hire_bodyguard'))
-        total_cost = COST_PER_BODYGUARD * num
+        total_cost = character.bodyguards + COST_PER_BODYGUARD * num
         if character.money < total_cost:
             flash("Not enough money to hire bodyguards.", "danger")
             return redirect(url_for('hire_bodyguard'))
         character.money -= total_cost
         character.bodyguards = (character.bodyguards or 0) + num
+        new_names = [f"{random.choice(BODYGUARD_NAMES)} {random.choice(BODYGUARD_LASTNAMES)}" for _ in range(num)]
+        character.add_bodyguards(new_names)
         db.session.commit()
         flash(f"Hired {num} bodyguard(s)! You now have {character.bodyguards}.", "success")
         return redirect(url_for('hire_bodyguard'))
@@ -857,7 +856,7 @@ def register():
             new_user.last_known_ip = request.remote_addr
             db.session.add(new_user)
             db.session.commit()
-            notify_admin_duplicate_ip(new_user)
+            notify_admin_duplicate_ip(new_user, admin_logger)
             verify_url = url_for('verify_email', token=token, _external=True)
             msg = Message('Verify your email', recipients=[email])
             msg.body = f'Click to verify your email: {verify_url}'
@@ -999,7 +998,6 @@ def login():
     return render_template('login.html', form=form)
 
 @app.route('/create_character', methods=['GET', 'POST'])
-
 def create_character():
     form = CreateCharacterForm()
     if form.validate_on_submit():
@@ -1048,13 +1046,12 @@ def compose_message():
         flash("Message sent!", "success")
         return redirect(url_for('inbox'))
     return render_template("compose_message.html", form=form)
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
-
-
 
 @app.route('/equip_gun/<int:gun_id>', methods=['POST'])
 @login_required
@@ -1532,8 +1529,6 @@ def create_crime():
 
     return render_template('create_crime.html', create_crime_form=form)
 
-
-
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
 def join_crime():
@@ -1662,7 +1657,6 @@ def upload_profile_image():
         flash('Invalid file type.', 'danger')
         return redirect(request.referrer or url_for('dashboard'))
 
-
 @app.route('/crew_messages')
 @login_required
 def crew_messages():
@@ -1733,6 +1727,7 @@ def crews():
             'right_hand': right_hand
         }
     return render_template('crews.html', crews=all_crews, crew_roles=crew_roles)
+
 @app.route('/godfathers', methods=['GET', 'POST'])
 @login_required
 def godfathers_page():
@@ -1754,6 +1749,7 @@ def godfathers_page():
         claim_forms=claim_forms,
         step_down_form=step_down_form
     )
+
 @app.route('/accept_invite/<int:invite_id>')
 @login_required
 def accept_invite(invite_id):
@@ -1839,6 +1835,7 @@ def create_crew():
         return redirect(url_for('dashboard'))
 
     return render_template('create_crew.html', form=form)
+
 @app.route('/crew_requests')
 @login_required
 def crew_requests():
@@ -1863,6 +1860,7 @@ def crew_requests():
         approve_forms=approve_forms,
         deny_forms=deny_forms
     )
+
 @app.route('/approve_crew_request/<int:req_id>', methods=['POST'])
 @login_required
 def approve_crew_request(req_id):
@@ -2039,7 +2037,6 @@ def upgrade():
     flash(f'Your account has been upgraded to premium for {PREMIUM_DAYS} days for ${PREMIUM_COST}!', 'success')
     return redirect(url_for('dashboard'))
 
-
 @app.route('/profile/id/<int:char_id>', methods=['GET', 'POST'])
 def profile_by_id(char_id):
     character = Character.query.get_or_404(char_id)
@@ -2054,7 +2051,6 @@ def profile_by_id(char_id):
     return render_template('profile.html', user=user, character=character,
     upload_image_form=UploadImageForm(),
     kill_form=KillForm(), crew=crew, form=form)
-
 
 @app.route('/step_down_godfather', methods=['POST'])
 @login_required
@@ -2096,32 +2092,70 @@ def send_public_message():
 @login_required
 def drug_dashboard():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    dealers = DrugDealer.query.filter_by(city=character.city).all()
-    inventory = CharacterDrugInventory.query.filter_by(character_id=character.id).all()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
 
-    # Create a BuyDrugForm for each dealer
-    buy_forms = {dealer.id: BuyDrugForm(prefix=f'buy_{dealer.id}') for dealer in dealers}
-    # Create a SellDrugForm for each inventory drug
-    sell_forms = {inv.drug.id: SellDrugForm(prefix=f'sell_{inv.drug.id}') for inv in inventory}
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
-            remaining = character.jail_until - datetime.utcnow()
-            mins, secs = divmod(int(remaining.total_seconds()), 60)
-            flash(f"You are in jail for {mins}m {secs}s.", "danger")
-            return redirect(url_for('jail'))
-    # Handle buy/sell POSTs
-    for dealer in dealers:
-        form = buy_forms[dealer.id]
-        if form.validate_on_submit() and form.submit.data and form.quantity.data and f'buy_{dealer.id}-submit' in request.form:
-            return buy_drug_form(dealer.id, form)
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
 
-    for inv in inventory:
-        form = sell_forms[inv.drug.id]
-        if form.validate_on_submit() and form.submit.data and form.quantity.data and f'sell_{inv.drug.id}-submit' in request.form:
-            return sell_drug_form(inv.drug.id, form)
+    drugs = Drug.query.all()
+    dealers = {dealer.drug_id: dealer for dealer in DrugDealer.query.filter_by(city=character.city).all()}
+    inventory = {inv.drug_id: inv for inv in CharacterDrugInventory.query.filter_by(character_id=character.id).all()}
+
+    buy_forms = {drug.id: BuyDrugForm(prefix=f'buy_{drug.id}') for drug in drugs}
+    sell_forms = {drug.id: SellDrugForm(prefix=f'sell_{drug.id}') for drug in drugs}
+
+    # Handle buy POSTs
+    for drug in drugs:
+        dealer = dealers.get(drug.id)
+        form = buy_forms[drug.id]
+        if dealer and form.validate_on_submit() and form.submit.data and form.quantity.data and f'buy_{drug.id}-submit' in request.form:
+            quantity = form.quantity.data
+            if quantity < 1 or quantity > dealer.stock:
+                flash("Invalid quantity.", "danger")
+                return redirect(url_for('drug_dashboard'))
+            total_price = dealer.price * quantity
+            if character.money < total_price:
+                flash("Not enough money.", "danger")
+                return redirect(url_for('drug_dashboard'))
+            character.money -= total_price
+            dealer.stock -= quantity
+            inv = inventory.get(drug.id)
+            if not inv:
+                inv = CharacterDrugInventory(character_id=character.id, drug_id=drug.id, quantity=0)
+                db.session.add(inv)
+                inventory[drug.id] = inv
+            inv.quantity += quantity
+            db.session.commit()
+            flash(f"You bought {quantity}x {drug.name} for ${total_price}.", "success")
+            return redirect(url_for('drug_dashboard'))
+
+    # Handle sell POSTs
+    for drug in drugs:
+        dealer = dealers.get(drug.id)
+        inv = inventory.get(drug.id)
+        form = sell_forms[drug.id]
+        if dealer and inv and form.validate_on_submit() and form.submit.data and form.quantity.data and f'sell_{drug.id}-submit' in request.form:
+            quantity = form.quantity.data
+            if quantity < 1 or quantity > inv.quantity:
+                flash("Invalid quantity.", "danger")
+                return redirect(url_for('drug_dashboard'))
+            total_price = dealer.price * quantity
+            character.money += total_price
+            inv.quantity -= quantity
+            dealer.stock += quantity
+            db.session.commit()
+            flash(f"You sold {quantity}x {drug.name} for ${total_price}.", "success")
+            return redirect(url_for('drug_dashboard'))
 
     return render_template(
         'drug_dashboard.html',
         character=character,
+        drugs=drugs,
         dealers=dealers,
         inventory=inventory,
         buy_forms=buy_forms,
@@ -2212,8 +2246,25 @@ def sell_drug_form(drug_id, form=None):
     flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
     return redirect(url_for('drug_dashboard'))
 
+@app.route('/city/<city_name>')
+@login_required
+def city_characters(city_name):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
+    # Only allow valid cities
+    if city_name not in CITIES:
+        flash("Invalid city.", "danger")
+        return redirect(url_for('dashboard'))
+    # Show only alive, non-NPC characters in the city
+    characters = Character.query.filter_by(city=city_name, is_alive=True).filter(Character.master_id != 0).all()
+    return render_template('city_characters.html', city=city_name, characters=characters)
 
 # Create Flask app and configure it
+
 @app.context_processor
 def inject_upgrade_form():
     return dict(upgrade_form=UpgradeForm())
@@ -2248,15 +2299,6 @@ def inject_chat_form():
 
 # Start the background thread when the app starts
 
-
-
-
-
-
-
-
-
-
 @app.cli.command("randomize-drug-prices")
 def randomize_drug_prices_command():
     """Randomize all drug dealer prices (manual trigger)."""
@@ -2267,6 +2309,7 @@ def randomize_drug_prices_command():
 def init_db():
     db.create_all()
     print("Database tables created.")
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('error/404.html'), 404
@@ -2283,28 +2326,12 @@ def forbidden_error(error):
 @app.errorhandler(401)
 def unauthorized_error(error):
     return render_template('error/401.html'), 401
+
 @app.errorhandler(429)
 def ratelimit_handler(e):
     flash("Too many requests, please slow down!", "warning")
     # Try to redirect to the referring page, or fallback to dashboard
     return redirect(request.referrer or url_for('dashboard'))
-
-@app.route('/city/<city_name>')
-@login_required
-def city_characters(city_name):
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
-        remaining = character.jail_until - datetime.utcnow()
-        mins, secs = divmod(int(remaining.total_seconds()), 60)
-        flash(f"You are in jail for {mins}m {secs}s.", "danger")
-        return redirect(url_for('jail'))
-    # Only allow valid cities
-    if city_name not in CITIES:
-        flash("Invalid city.", "danger")
-        return redirect(url_for('dashboard'))
-    # Show only alive, non-NPC characters in the city
-    characters = Character.query.filter_by(city=city_name, is_alive=True).filter(Character.master_id != 0).all()
-    return render_template('city_characters.html', city=city_name, characters=characters)
 
 if __name__ == '__main__':
     with app.app_context():

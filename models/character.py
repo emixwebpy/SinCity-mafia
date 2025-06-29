@@ -1,6 +1,6 @@
 from datetime import datetime
 from extensions import db
-
+import json
 class Character(db.Model):
     __tablename__ = 'character'
     id = db.Column(db.Integer, primary_key=True)
@@ -34,7 +34,16 @@ class Character(db.Model):
     linked_user = db.relationship('User', foreign_keys=[user_id], overlaps="linked_character,linked_characters,user")
     crew = db.relationship('Crew', backref='characters')
     bio = db.Column(db.Text, default="")
+    bodyguard_names = db.Column(db.Text, default="[]")  # Store as JSON list of names
 
+    @property
+    def bodyguard_names_list(self):
+        return json.loads(self.bodyguard_names or "[]")
+
+    def add_bodyguards(self, names):
+        current = self.bodyguard_names_list
+        current.extend(names)
+        self.bodyguard_names = json.dumps(current)
 
 
 

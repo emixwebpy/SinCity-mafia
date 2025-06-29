@@ -1,98 +1,105 @@
 {% extends "base.html" %}
+{% block title %}Travel{% endblock %}
 {% block content %}
 <style>
-  .login-form {
-    max-width: 380px;
-    margin: 50px auto;
-    background: rgba(25, 25, 40, 0.98);
-    border-radius: 5px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 38px 28px 32px 28px;
-    border: 1.5px solid #8be9fd44;
-    color: #f5f6fa;
-    font-family: "geo", sans-serif;
+.forums-header {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    margin-bottom: 0;
+}
+.forums-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
     text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .login-form select {
-    width: 100%;
-    padding: 10px;
-    background: #1c1d2f;
-    color: #f5f6fa;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+.forums-list {
+    background: #23243a;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-width: 420px;
+    margin: 0 auto 2rem auto;
+    text-align: center;
+}
+.travel-info {
+    color: #8be9fd;
+    font-size: 1.1em;
+    margin-bottom: 1.5em;
+}
+.travel-form label {
+    color: #ffd700;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    display: block;
+    text-align: left;
+}
+.travel-form .city-choice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
     border: none;
-    border-radius: 5px;
-    font-size: 1em;
-    margin-bottom: 20px;
-  }
-  .login-form button[type="submit"] {
-    padding: 10px 20px; 
-    background: #8be9fd; 
-    color: #23243a; 
-    border: none; 
-    font-weight: 700; 
-    border-radius: 5px;
-    margin-bottom: 10px;
-  }
-  .login-form button[type="submit"]:hover {
-    background: #23243a;
-    color: #8be9fd;
-    box-shadow: 0 1px 5px #8be9fd22;
-  }
-  .btn {
-    width: 118.267px;
-    padding: 10px 20px; 
-    background: #8be9fd; 
-    color: #23243a; 
-    border: none; 
-    font-weight: 700; 
-    border-radius: 5px;
-    margin-bottom: 10px;
-  }
-  .btn:hover {
-    background: #23243a;
-    color: #8be9fd;
-    box-shadow: 0 1px 5px #8be9fd22;
-  }
-  @media screen and (max-width: 991px) {
-    .login-form {
-      max-width: 380px;
-      margin: auto;
-      background: rgba(25, 25, 40, 0.98);
-      border-radius: 5px;
-      box-shadow: 0 1px 5px #8be9fd22;
-      padding: 38px 28px 32px 28px;
-      border: 1.5px solid #8be9fd44;
-      color: #f5f6fa;
-      font-family: "geo", sans-serif;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-top: 0.5rem;
+    width: 100%;
+    transition: background 0.2s;
+    text-decoration: none;
+    box-shadow: 0 1px 8px #ffd70022;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.text-danger {
+    color: #ff5555;
+    font-size: 0.98em;
+    margin-top: 0.2em;
+}
+@media (max-width: 600px) {
+    .forums-header, .forums-list {
+        padding: 1.2rem 4vw 1.2rem 4vw;
     }
-    .login-form button[type="submit"] {
-      font-size: 1em;
+    .forums-header h1 {
+        font-size: 1.2em;
     }
-  }
+    .forums-list {
+        max-width: 98vw;
+    }
+}
 </style>
-<div class="login-form">
-  <h2>Travel to Another City</h2>
-  <p>Current city: <strong>{{ character.city }}</strong></p>
-  {% if time_left %}
-    <p style="color:#ffb86c;">You can travel again in {{ time_left.seconds // 3600 }}h {{ (time_left.seconds // 60) % 60 }}m.</p>
-  {% endif %}
-  <form method="POST">
-    {{ travel_form.hidden_tag() }}
-    <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
-     
-        <label style="display: flex; text-align: center; align-items: center; gap: 8px; width: 100%; padding: 6px 0;">
-          {{ travel_form.city(value=value, checked=(value == character.city), style="margin-right: 8px; text-align: center;") }}
-          <span>{{ label }}</span>
-        </label>
-      
+<div class="forums-header">
+    <h1>Travel to Another City</h1>
+</div>
+<div class="forums-list">
+    <div class="travel-info">
+        Current city: <strong>{{ character.city }}</strong>
+        {% if time_left %}
+            <br><span style="color:#ffb86c;">You can travel again in {{ time_left.seconds // 3600 }}h {{ (time_left.seconds // 60) % 60 }}m.</span>
+        {% endif %}
     </div>
-    <br>
-    {{ travel_form.submit(class_="btn btn-primary") }}
-  </form>
-  
+      <form method="POST" class="travel-form">
+      {{ travel_form.hidden_tag() }}
+      <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+          <label class="city-choice" >
+            {{ travel_form.city(value=value, checked=(value == character.city), style="margin-right: 8px;") }}
+            <span>{{ label }}</span>
+          </label>
+      </div>
+      <br>
+      {{ travel_form.submit(class_="btn btn-primary") }}
+    </form>
 </div>
 {% endblock %}

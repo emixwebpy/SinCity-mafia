@@ -22,7 +22,7 @@
     border-radius: 0 0 12px 12px;
     padding: 2rem 2.5rem 2.5rem 2.5rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 420px;
+    max-width: 90%;
     margin: 0 auto 2rem auto;
     text-align: center;
 }
@@ -72,12 +72,17 @@
 </style>
 <div class="hire-bg-header">
     <h1><i class="fas fa-user-shield"></i> Hire Bodyguards</h1>
+    
 </div>
 <div class="hire-bg-card">
     <div class="hire-bg-info">
         <strong>Current Bodyguards:</strong> {{ character.bodyguards or 0 }}<br>
         <strong>Max Bodyguards:</strong> 5<br>
-        <strong>Cost per Bodyguard:</strong> $50,000
+        <strong>Cost per Bodyguard:</strong> $1,000 x (current bodyguards + new hires)<br>
+        <strong>Total Spent:</strong> ${{ (character.bodyguards) * 1000 * (form.num.data or 1) }}<br>
+        <strong>Available Money:</strong> ${{ character.money }}<br>
+        <strong>Available Bodyguards:</strong> {{ max_hire }}<br>
+        <strong>Total to cost to hire all guards:</strong> ${{ (max_hire or 0) * 1000 * (character.bodyguards or 0 + 1) }}<br>
     </div>
     <form method="post" class="hire-bg-form">
         {{ form.hidden_tag() }}
@@ -88,5 +93,23 @@
         {% endfor %}
         {{ form.submit(class_="btn btn-primary", style="margin-top:1em;") }}
     </form>
+    {% if character.bodyguards and character.bodyguards > 0 %}
+    <table style="width: 100%; margin-top: 30px; margin-bottom:1.5em; color:#ffd700; background:#181824; border-radius:8px;">
+        <thead>
+            <tr>
+                <th style="width: 50%; padding:0.5em 1em; text-align:center;">#</th>
+                <th style="width: 50%; padding:0.5em 1em; text-align:center;">Bodyguard Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name in character.bodyguard_names_list %}
+            <tr>
+                <td style="width: 50%; padding:0.5em 1em; text-align:center;">{{ loop.index }}</td>
+                <td style="width: 50%; padding:0.5em 1em; text-align:center;">{{ name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
 </div>
 {% endblock %}
