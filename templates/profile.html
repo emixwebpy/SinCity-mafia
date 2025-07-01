@@ -22,110 +22,21 @@
     border-radius: 0 0 12px 12px;
     padding: 2rem 2rem 2.5rem 2rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 90%;
-    margin: 0 auto 2rem auto;
-}
-.forum-table {
-    width: 100%;
-    color: #f5f6fa;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 12px;
-    overflow: hidden;
-}
-.forum-table th, .forum-table td {
-    padding: 1.2rem 1rem;
-    text-align: center;
-    vertical-align: middle;
-}
-.forum-table th {
-    background: #181824;
-    color: #ffd700;
-    font-size: 1.15rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-    letter-spacing: 1px;
-}
-.forum-table tr {
-    background: #282a36;
-    transition: background 0.2s;
-}
-.forum-table tr:hover {
-    background: #34355b;
-}
-.forum-link {
-    color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.forum-link:hover {
-    color: #ffb86c;
-    text-decoration: underline;
-}
-.forum-desc {
-    color: #b8b8ff;
-    font-size: 1.08rem;
-    font-weight: 500;
-    text-align: center;
-}
-.forum-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
-}
-.btn-primary {
-    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
-    color: #232526;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 6px;
-    font-weight: bold;
-    margin-bottom: 0;
-    transition: background 0.2s;
-    text-decoration: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.08em;
-    box-shadow: 0 2px 8px #ffd70033;
-}
-.btn-primary:hover {
-    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
-    color: #232526;
-}
-.btn-danger {
-    background: #ff5555;
-    color: #fff;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 6px;
-    font-weight: bold;
-    transition: background 0.2s;
-    text-decoration: none;
-    cursor: pointer;
-}
-.btn-danger:hover {
-    background: #ff2222;
-    color: #fff;
+    
+    margin: 0 auto 1rem auto;
 }
 .profile-img {
     width: 350px;
-    height: 350px;
+    
     max-width: 350px;
-    margin: 0 auto 2rem auto;
     background: #181824;
     border-radius: 5px;
     box-shadow: 0 1px 8px #ffd70033;
     border: 2px solid #ffd70055;
     color: #f5f6fa;
-    object-fit: cover;
+    object-fit: fill;
     overflow: hidden;
-    display: block;
+    
     transition: transform 0.2s, box-shadow 0.2s;
 }
 .profile-premium {
@@ -135,23 +46,12 @@
     font-size: 1.1em;
     letter-spacing: 1px;
 }
-.profile-username {
-    background: rgba(139,233,253,0.08);
-    border-radius: 5px;
-    padding: 18px 0 12px 0;
-    color: #fff;
-    font-size: 1.08em;
-    font-weight: 500;
-    box-shadow: 0 1px 8px #8be9fd22;
-    border: 1px solid #8be9fd22;
-    margin-bottom: 12px;
-}
 .profile-stats {
     margin: 24px 0 0 0;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 20px;
+    gap: 12px;
     padding-bottom: 30px;
 }
 .profile-stat {
@@ -164,8 +64,6 @@
     border: 1px solid #8be9fd22;
     flex: 1 1 calc(45% - 12px);
     padding: 12px 16px;
-    display: flex;
-    gap: 10px;
     align-items: center;
     text-align: center;
     transition: box-shadow 0.18s, transform 0.18s;
@@ -183,7 +81,7 @@
     font-weight: 700;
     color: #fff;
 }
-.profile-wealth {
+.profile-wealth, .profile-bodyguards {
     font-size: 1.08em;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -192,60 +90,21 @@
     margin-top: 4px;
     display: inline-block;
 }
-.profile-wealth-poor { background: #23243a; color: #8be9fd; }
-.profile-wealth-working { background: #3a3a5a; color: #8be9fd; }
-.profile-wealth-middle { background: #8be9fd; color: #23243a; }
-.profile-wealth-rich { background: #ffd700; color: #23243a; }
-.profile-wealth-elite { background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%); color: #1d1d1d;}
-.profile-wealth-platinum {background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%); color: #1d1d1d;}
-.profile-wealth-billionair { background: linear-gradient(90deg, #ffd700 50%, #8bcafd 100%); color: #1d1d1d;}
-.profile-crew {
-    margin-top: 18px;
-    color: #b8b8ff;
-    font-size: 1.08em;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-@media (max-width: 768px) {
-    .forums-list {
-        padding: 1.2rem 0.5rem 2rem 0.5rem;
-    }
-    .forums-header {
-        padding: 1.2rem 0.5rem 0.7rem 0.5rem;
-    }
-    .forum-table th, .forum-table td {
-        padding: 0.7rem 0.3rem;
-        font-size: 1em;
-    }
-    
-    .profile-stats {
-        flex-direction: column;
-        align-items: center;
-    }
-    .profile-stat {
-        flex: 1 1 100%;
-        width: 100%;
-    }
-}
-@media (max-width: 480px) {
-    
-    .profile-stat {
-        font-size: 1em;
-        padding: 10px;
-    }
-    .forums-header h1 {
-        font-size: 1.3em;
-    }
-}
-.flex-profile {
-    
-    align-items: stretch;
-    
-    gap: 24px;
-    margin-bottom: 24px;
-    
-}
-.profile-bio{
+.profile-wealth-poor { background: #23243a; color: -webkit-linear-gradient(135deg, #ff00ff 50%, #ff6600 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-working { background: #3a3a5a; color: -webkit-linear-gradient(135deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-middle { background: #8be9fd; color: -webkit-linear-gradient(135deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-rich { background: #ffd700; color: -webkit-linear-gradient(135deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-elite { background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-platinum { background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-wealth-billionair { background: linear-gradient(135deg, #ffd700 0%, #c2c5ff 75%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-poor { background: -webkit-linear-gradient(135deg, #ff00ff 50%, #ff9100 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-working { background: -webkit-linear-gradient(135deg, #2bff00 50%, #00ffaa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-middle { background: -webkit-linear-gradient(135deg, #ff00ff 50%, #ffd700 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-rich { background: -webkit-linear-gradient(135deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-elite { background: linear-gradient(90deg, #ff00ff 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-platinum { background: linear-gradient(90deg, #e0e0e0 50%, #8bcafd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bodyguards-billionair { background: linear-gradient(135deg, #ffd700 0%, #c2c5ff 75%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.profile-bio {
     background: rgba(139,233,253,0.08);
     border-radius: 5px;
     color: #fff;
@@ -253,139 +112,173 @@
     font-weight: 500;
     box-shadow: 0 1px 5px #8be9fd22;
     border: 1px solid #8be9fd22;
-    
     padding: 12px 16px;
+}
+.flex-profile { align-items: stretch; gap: 24px; margin-bottom: 24px; }
+.flex-picturebox { display: flex; flex-direction: row; justify-content: center; align-items: center; position: relative; gap: 30px; direction: rtl; }
+.up-image-label { display: flex; flex-direction: column; align-items: center; gap: 10px; align-items: stretch; }
+@media (max-width: 768px) {
+    .forums-list { padding: 1.2rem 0.5rem 2rem 0.5rem; }
+    .forums-header { padding: 1.2rem 0.5rem 0.7rem 0.5rem; }
+    .profile-stats { flex-direction: column; align-items: center; gap: 0; }
+    .profile-stat { flex: 1 1 100%; width: 100%; }
     
+}
+@media (max-width: 480px) {
+    .profile-stat { font-size: 1em; padding: 10px; }
+    .forums-header h1 { font-size: 1.3em; }
 }
 </style>
 
+{% macro money_class(money) -%}
+    {%- if money < 1000 -%}
+        <span class="profile-wealth profile-wealth-poor">Poor</span>
+    {%- elif money < 10000 -%}
+        <span class="profile-wealth profile-wealth-working">Working Class</span>
+    {%- elif money < 100000 -%}
+        <span class="profile-wealth profile-wealth-middle">Middle Class</span>
+    {%- elif money < 1000000 -%}
+        <span class="profile-wealth profile-wealth-rich">Rich</span>
+    {%- elif money < 10000000 -%}
+        <span class="profile-wealth profile-wealth-elite">Elite Class</span>
+    {%- elif money < 100000000 -%}
+        <span class="profile-wealth profile-wealth-platinum">Platinum Star</span>
+    {%- else -%}
+        <span class="profile-wealth profile-wealth-billionair">Billionair Rich's</span>
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro bodyguard_class(bodyguards) -%}
+    {%- if bodyguards < 0 -%}
+        <span class="profile-bodyguards profile-bodyguards-poor">Unprotected</span>
+    {%- elif bodyguards < 20 -%}
+        <span class="profile-bodyguards profile-bodyguards-working">Slightly protected</span>
+    {%- elif bodyguards < 50 -%}
+        <span class="profile-bodyguards profile-bodyguards-middle">Protected</span>
+    {%- elif bodyguards < 100 -%}
+        <span class="profile-bodyguards profile-bodyguards-rich">Well protected</span>
+    {%- elif bodyguards < 150 -%}
+        <span class="profile-bodyguards profile-bodyguards-elite">Very well protected</span>
+    {%- elif bodyguards < 199 -%}
+        <span class="profile-bodyguards profile-bodyguards-platinum">Extremely well protected</span>
+    {%- else -%}
+        <span class="profile-bodyguards profile-bodyguards-billionair">Virtually untouchable</span>
+    {%- endif -%}
+{%- endmacro %}
+
 <div class="forums-header">
-    <h1>{{ user.character.name }}</h1>
+    <h1>{{ character.name }}</h1>
 </div>
 
-
-           
 <div class="forums-list">
-    {% macro money_class(money) -%}
-        {%- if money < 1000 -%}
-            <span class="profile-wealth profile-wealth-poor">Poor</span>
-        {%- elif money < 10000 -%}
-            <span class="profile-wealth profile-wealth-working">Working Class</span>
-        {%- elif money < 100000 -%}
-            <span class="profile-wealth profile-wealth-middle">Middle Class</span>
-        {%- elif money < 1000000 -%}
-            <span class="profile-wealth profile-wealth-rich">Rich</span>
-        {%- elif money < 10000000 -%}
-            <span class="profile-wealth profile-wealth-elite">Elite Class</span>
-        {%- elif money < 100000000 -%}
-            <span class="profile-wealth profile-wealth-platinum">Platinum Star</span>
-        {%- else -%}
-            <span class="profile-wealth profile-wealth-billionair">Billionair Rich's</span>
-        {%- endif -%}
-    {%- endmacro %}
-    
     {% if character %}
         <div style="text-align:center;">
-            
             <div class="flex-profile">
-            {% if current_user.is_authenticated and current_user.id == user.id %}
-                <form action="{{ url_for('upload_profile_image') }}" method="post" enctype="multipart/form-data" class="profile-upload-form" style="margin-bottom:18px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                    {{ upload_image_form.hidden_tag() }}
-                    <label for="profile_image" class="btn btn-primary" style="cursor:pointer; margin-bottom:0;">
-                        <i class="fas fa-upload"></i> Choose Image
-                        {{ upload_image_form.profile_image(class_="form-control-file", style="display:none;", id="profile_image") }}
-                    
-                        <button type="submit" class="btn btn-primary" style="margin-top:0;">
-                            <i class="fa-solid fa-upload"></i> Upload
-                        </button>
-                    </label>
-                </form>
-            {% endif %}
-            {% if character.profile_image %}
-                <img class="profile-img" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
-            {% endif %}
-
-            {% if user.premium and user.premium_until and user.premium_until > now() %}
-                <div class="profile-premium">
-                    <i class="fas fa-crown"></i> Premium Member
+                <div class="flex-picturebox">
+                    {% if current_user.is_authenticated and current_user.id == user.id %}
+                        <form action="{{ url_for('upload_profile_image') }}" method="post" enctype="multipart/form-data" class="profile-upload-form">
+                            {{ upload_image_form.hidden_tag() }}
+                            <div class="up-image-label">
+                                <label for="profile_image" class="btn btn-primary" style="cursor:pointer; margin-bottom:0;">
+                                    <i class="fas fa-upload"></i> Choose Image
+                                    {{ upload_image_form.profile_image(class_="form-control-file", style="display:none;", id="profile_image") }}
+                                </label>
+                                <button type="submit" class="btn btn-primary" style="margin-top:0;">
+                                    <i class="fa-solid fa-upload"></i> Upload
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                    {% if character.profile_image %}
+                        <img class="profile-img" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+                    {% endif %}
                 </div>
-            {% endif %}
-            
-            <div style="margin-bottom: 18px;">
-                {% if current_user.is_authenticated and current_user.id != user.id %}
-                    <a href="{{ url_for('send_message', user_id=user.id) }}" class="btn btn-primary">
-                        <i class="fas fa-envelope"></i> Send Private Message
-                    </a>
-                {% endif %}
-            </div>
-            <div class="profile-info-area">
-                
-            <div class="profile-stats">
-                <div class="profile-stat">
-                    <span class="profile-label">Level:&nbsp;</span>
-                    {{ character.level }}
-                </div>
-                <div class="profile-stat">
-                    <span class="profile-label">Wealth:&nbsp;</span>
-                    {{ money_class(character.money)|safe }}
-                </div>
-                <div class="profile-stat">
-                    <span class="profile-label">Health:&nbsp;</span>
-                    <span class="profile-value">{{ character.health }}</span>
-                </div>
-                <div class="profile-stat">
-                    <span class="profile-label">XP:&nbsp;</span>
-                    {{ character.xp }}
-                </div>
-                <div class="profile-stat">
-                    <span class="profile-label">Kills:&nbsp;</span>
-                    <span class="profile-value">{{ character.kills if character.kills is defined else 0 }}</span>
-                </div>
-                {% if character.equipped_gun %}
-                <div class="profile-stat">
-                    <span class="profile-label">Gun:</span>
-                    <span class="profile-value">{{ character.equipped_gun.name }} ({{ character.equipped_gun.damage }} dmg)</span>
-                </div>
-                {% endif %}
-                {% if crew %}
-                <div class="profile-stat">
-                    <span class="profile-label">Crew:</span>
-                    <span class="profile-value">
-                        <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color: #8be9fd; text-decoration: underline;">
-                            {{ crew.name }}
-                        </a>
-                    </span>
-                </div>
-                {% endif %}
-            </div>
-            {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
-            <form class="profile-stat" action="{{ url_for('kill', char_id=user.character.id) }}" method="post" style="margin-top:18px;">
-                {{ kill_form.hidden_tag() }}
-                {{ kill_form.submit(class_="btn btn-danger") }}
-            </form>
-            {% endif %}
-            <div class="profile-bio" >
-                <h3 style="color:#ffd700; margin-bottom:8px;">Bio</h3>
-                {% if current_user.is_authenticated and current_user.id == user.id %}
-                    <form method="post" action="{{ url_for('profile_by_id', char_id=character.id) }}">
-                        {{ form.hidden_tag() }}
-                        {{ form.bio(rows=4, class_="form-control", style="width:100%;max-width:600px;") }}
-                        <br>
-                        {{ form.submit(class_="btn btn-primary") }}
-                    </form>
-                {% else %}
-                    <div style="background:rgba(139,233,253,0.08);padding:12px 18px;border-radius:8px;min-height:48px;">
-                        {{ character.bio|default('No bio set yet.', true)|e }}
+                {% if user.premium and user.premium_until and user.premium_until > now() %}
+                    <div class="profile-premium">
+                        <i class="fas fa-crown"></i> Premium Member
                     </div>
                 {% endif %}
+                <div style="margin-bottom: 18px; margin-top: 18px;">
+                    {% if current_user.is_authenticated and current_user.id != user.id %}
+                        <a href="{{ url_for('send_message', user_id=user.id) }}" class="btn btn-primary">
+                            <i class="fas fa-envelope"></i> Send Private Message
+                        </a>
+                    {% endif %}
+                </div>
+                {% if crew %}
+                    <div class="profile-stat">
+                        <span class="profile-label">Crew:</span>
+                        <span class="profile-value">
+                            <a href="{{ url_for('crew_page', crew_id=crew.id) }}" style="color: #8be9fd; text-decoration: underline;">
+                                {{ crew.name }}
+                            </a>
+                        </span>
+                    </div>
+                {% endif %}
+                <div class="profile-info-area">
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <span class="profile-label">Level:&nbsp;</span>
+                            {{ character.level }}
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-label">Wealth:&nbsp;</span>
+                            {{ money_class(character.money)|safe }}
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-label">Bodyguards:&nbsp;</span>
+                            {{ bodyguard_class(character.bodyguards)|safe }}
+                        </div>
+                        {% if current_user.is_authenticated and current_user.character and character.id == current_user.character.id %}
+                        <div class="profile-stat">
+                            <span class="profile-label">Health:&nbsp;</span>
+                            <span class="profile-value">{{ character.health }}</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-label">Kills:&nbsp;</span>
+                            <span class="profile-value">{{ character.kills if character.kills is defined else 0 }}</span>
+                        </div>
+                        {% if character.equipped_gun %}
+                        <div class="profile-stat">
+                            <span class="profile-label">Gun:</span>
+                            <span class="profile-value">{{ character.equipped_gun.name }} ({{ character.equipped_gun.damage }} dmg)</span>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        <div class="profile-stat">
+                            <span class="profile-label">XP:&nbsp;</span>
+                            {{ character.xp }}
+                        </div>
+                        
+                    </div>
+                    {% if current_user.is_authenticated and current_user.id != character.master_id and current_user.gun %}
+                    <form class="profile-stat" action="{{ url_for('kill', char_id=user.character.id) }}" method="post" style="margin-top:18px;">
+                        {{ kill_form.hidden_tag() }}
+                        {{ kill_form.submit(class_="btn btn-danger") }}
+                    </form>
+                    {% endif %}
+                    <div class="profile-bio">
+                        <h3 style="color:#ffd700; margin-bottom:8px;">Bio</h3>
+                        {% if current_user.is_authenticated and current_user.id == user.id %}
+                            <form method="post" action="{{ url_for('profile_by_id', char_id=character.id) }}">
+                                {{ form.hidden_tag() }}
+                                {{ form.bio(rows=4, class_="form-control", style="width:100%; height: 300px;") }}
+                                <br>
+                                {{ form.submit(class_="btn btn-primary") }}
+                            </form>
+                        {% else %}
+                            <div style="background:rgba(139,233,253,0.08);padding:12px 18px;border-radius:8px;min-height:48px;">
+                                {{ character.bio|default('No bio set yet.', true)|e }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
         </div>
     {% else %}
         <div class="alert alert-warning" style="margin: 40px auto; max-width: 500px;">
             This user does not have a character yet.
         </div>
     {% endif %}
-</div>
 </div>
 {% endblock %}

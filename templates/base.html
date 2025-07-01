@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% block title %}Sin City{% endblock %}</title>
+  <title>{% block title %}Underworld Tycoon{% endblock %}</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Concert+One&display=swap" rel="stylesheet">
   <style>
       html, body {
-        font-family: "Bebas Neue", sans-serif;
+        font-family: "Concert One", sans-serif;
         font-size:0.85em;
         background: linear-gradient(135deg, #181824 0%, #23243a 100%);
         color: #f8f8ff;
@@ -25,7 +25,21 @@
       }
       .fade-in { animation: fadeIn 0.7s cubic-bezier(.4,2,.6,1) forwards; }
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+      .graveyard-bgbb {
+          background: url('https://images.unsplash.com/photo-1541140134513-85a161dc4a00?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+          background-size: cover;
+          background-position: center;
+          position: fixed;
+          top: 0; left: 0; width: 100vw; height: 100vh;
+          z-index: -2;
+          filter: grayscale(0.25) brightness(0.5) blur(1px);
+      }
+      .graveyard-overlay {
+          position: fixed;
+          top: 0; left: 0; width: 100vw; height: 100vh;
+          background: linear-gradient(180deg, rgba(24,24,36,0.92) 60%, rgba(35,36,58,0.98) 100%);
+          z-index: -1;
+      }
       /* Layout */
       .layout-root {
         display: flex;
@@ -92,7 +106,7 @@
         scrollbar-color: #ffd70033 #23243a;
       }
       .sidebar-category {
-        font-family: monospace;
+        
         margin-bottom: 0;
         overflow-y: hidden;
         scrollbar-width: thin;
@@ -103,7 +117,7 @@
         transition: background 0.18s;
       }
       .sidebar-category-title {
-        font-family: 'Bebas Neue', sans-serif;
+        
         color: #ffd700;
         font-size: 14px;
         font-weight: 700;
@@ -115,7 +129,7 @@
         user-select: none;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: space-around;
         background: linear-gradient(120deg, #23243a 60%, #181824 100%);
         transition: background 0.18s;
         box-shadow: 0 1px 0 #8be9fd11;
@@ -592,7 +606,7 @@
           right: 1vw !important;
           bottom: 10px !important;
           width: 98vw !important;
-          max-width: 98vw !important;
+          max-width: 95vw !important;
           min-width: 0 !important;
           font-size: 0.98em;
           border-radius: 8px;
@@ -702,7 +716,7 @@
           {% if current_user.is_authenticated and current_user.is_admin %}
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-tools"></i> Admin
+              <i class="fas fa-tools"></i>&nbsp;Admin
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             <div class="sidebar-subnav">
@@ -712,16 +726,43 @@
             </div>
           </div>
           {% endif %}
-          <!-- Main -->
+
+          <!-- Player management -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-home"></i> Main
+              <i class="fas fa-box"> </i>&nbsp;Character
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             <div class="sidebar-subnav">
               <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
                 <i class="fas fa-home"></i> <span>Dashboard</span>
               </a>
+              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
+                <i class="fas fa-concierge-bell"></i> <span>Notifications</span>
+              </a>
+              <a href="{{ url_for('hire_bodyguard') }}" class="{% if request.endpoint == 'hire_bodyguard' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Hire Bodyguard</span>
+              </a>
+              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
+                <i class="fas fa-inbox"></i> <span>Inbox</span>
+              </a>
+              <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
+                <i class="fas fa-box"></i> <span>Inventory</span>
+              </a>
+              <a href="{{ url_for('send_beer') }}" class="{% if request.endpoint == 'send_beer' %}active{% endif %}">
+                <i class="fas fa-box"></i> <span>Bar</span>
+              </a>
+            </div>
+          </div>
+          
+          <!-- Main -->
+          <div class="sidebar-category">
+            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+              <i class="fas fa-home"></i>&nbsp;Main
+              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            <div class="sidebar-subnav">
+              
               
               <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Forums</span>
@@ -729,14 +770,12 @@
               <a href="{{ url_for('graveyard') }}" class="{% if request.endpoint == 'graveyard' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Graveyard</span>
               </a>
-              <a href="{{ url_for('hire_bodyguard') }}" class="{% if request.endpoint == 'hire_bodyguard' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Hire Bodyguard</span>
-              </a>
+              
             </div>
           </div>
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-home"></i> Manage Crew
+              <i class="fas fa-home"></i>&nbsp;Manage Crew
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             <div class="sidebar-subnav">
@@ -763,18 +802,12 @@
           <!-- Dealings -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-user-alt"></i> Dealings
+              <i class="fas fa-user-alt"></i>&nbsp;Dealings
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             
             <div class="sidebar-subnav">
-              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
-                <i class="fas fa-concierge-bell"></i> <span>Notifications</span>
-              </a>
               
-              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
-                <i class="fas fa-inbox"></i> <span>Inbox</span>
-              </a>
               <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Player Search</span>
               </a>
@@ -792,10 +825,13 @@
           <!-- Crime -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-mask"></i> Crime
+              <i class="fas fa-mask"></i>&nbsp;Crime
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
             <div class="sidebar-subnav">
+              <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
+                <i class="fas fa-store"></i> <span>Shop</span>
+              </a>
               <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
                 <i class="fas fa-mask"></i> <span>Organized Crime</span>
               </a>
@@ -812,24 +848,7 @@
             </div>
           </div>
           
-          <!-- Inventory -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-box"></i> Inventory
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
-                <i class="fas fa-store"></i> <span>Shop</span>
-              </a>
-              <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
-                <i class="fas fa-box"></i> <span>Inventory</span>
-              </a>
-              <a href="{{ url_for('send_beer') }}" class="{% if request.endpoint == 'send_beer' %}active{% endif %}">
-                <i class="fas fa-box"></i> <span>Bar</span>
-              </a>
-            </div>
-          </div>
+          
         </div>
         <div class="sidebar-footer">
           {% if current_user.is_authenticated %}
@@ -842,7 +861,7 @@
     <div class="main-area">
       <header class="topbar">
         <span class="topbar-title">
-          <i class="fas fa-city"></i> <a href="/"> {%block topbar_title %}Sin City{% endblock %}</a>
+          <i class="fas fa-city"></i> <a href="/"> {%block topbar_title %}Underworld Tycoon{% endblock %}</a>
         </span>
         <div class="topbar-actions">
           {% block topbar_actions %}
@@ -860,6 +879,8 @@
         </div>
       </header>
       <main class="content-area">
+        <div class="graveyard-bgbb"></div>
+        <div class="graveyard-overlay"></div>
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <ul class="flashes">
@@ -872,7 +893,7 @@
         {% block content %}{% endblock %}
       </main>
       <footer>
-        &copy; {{ current_year if current_year else "2025" }} Sin City - All rights reserved
+        &copy; {{ current_year if current_year else "2025" }} Underworld Tycoon - All rights reserved
       </footer>
     </div>
     {% if current_user.is_authenticated %}
@@ -959,9 +980,9 @@
       window.chatPollInterval = setInterval(fetchMessages, 30000); // Restart polling
     }
     window.addEventListener('DOMContentLoaded', function() {
-    var logDiv = document.getElementById('chat-messages');
-    if (logDiv) logDiv.scrollTop = 1e999999; // Scroll to bottom on load
-  });
+      var logDiv = document.getElementById('chat-messages');
+      if (logDiv) logDiv.scrollTop = logDiv.scrollHeight; // Scroll to bottom on toggle
+      });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

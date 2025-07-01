@@ -3,90 +3,214 @@
 
 {% block content %}
 <style>
-.hire-bg-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+.content-area {
+    background: none !important;
+}
+.hire-bgbb {
+    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    z-index: -2 !important;
+    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
+}
+
+.hire-header {
+    background: rgba(40,42,54,0.92);
     padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     margin-bottom: 0;
     text-align: center;
-}
-.hire-bg-header h1 {
-    color: #ffd700;
-    font-size: 2.2rem;
+    font-family: 'Cinzel', serif;
     letter-spacing: 2px;
+    border-bottom: 2px solid #ffd70055;
+}
+.hire-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
     margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
+    letter-spacing: 4px;
 }
-.hire-bg-card {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
+.hire-header-desc {
+    color:#8be9fd;
+    font-size:1.1em;
+    margin-top:0.5em;
+    font-family: 'Cinzel', serif;
+    opacity: 0.8;
+}
+.hire-list {
+    background: rgba(35,36,58,0.92);
+    border-radius: 0 0 18px 18px;
     padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 90%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    max-width: 700px;
     margin: 0 auto 2rem auto;
-    text-align: center;
+    border-top: none;
 }
-.hire-bg-info {
+.hire-info-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+    margin-bottom: 2em;
+}
+.hire-info-table th, .hire-info-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.hire-info-table th {
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+    width: 220px;
+}
+.hire-info-table td {
     color: #8be9fd;
-    font-size: 1.1em;
-    margin-bottom: 1.5em;
+    font-size: 1.08em;
+    font-weight: 600;
 }
 .hire-bg-form label {
     color: #ffd700;
     font-weight: bold;
     margin-bottom: 0.5em;
     display: block;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+    font-family: 'Cinzel', serif;
 }
 .hire-bg-form input[type="number"] {
-    width: 80px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1.5px solid #8be9fd44;
-    background: #282a36;
+    width: 90px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 2px solid #8be9fd88;
+    background: #181824;
     color: #f5f6fa;
-    font-size: 1.08em;
+    font-size: 1.15em;
     outline: none;
     margin-bottom: 1em;
     text-align: center;
+    font-family: 'Cinzel', serif;
 }
 .btn-primary {
     background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
     color: #232526;
     border: none;
-    padding: 0.8rem 1.2rem;
-    border-radius: 6px;
+    padding: 1rem 2rem;
+    border-radius: 8px;
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 1.2em;
     margin-top: 0.5rem;
     width: 100%;
-    transition: background 0.2s;
+    transition: background 0.2s, box-shadow 0.2s;
     text-decoration: none;
-    box-shadow: 0 1px 8px #ffd70022;
+    box-shadow: 0 2px 12px #ffd70033;
     cursor: pointer;
     letter-spacing: 1px;
+    font-family: 'Cinzel', serif;
+    text-shadow: 0 1px 0 #fff4;
 }
 .btn-primary:hover {
     background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
     color: #232526;
+    box-shadow: 0 4px 18px #ffd70055;
+}
+.bodyguard-list-table {
+    width: 100%;
+    margin-top: 30px;
+    margin-bottom: 1.5em;
+    color: #ffd700;
+    background: #181824;
+    border-radius: 10px;
+    box-shadow: 0 1px 8px #ffd70022;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    font-family: 'Cinzel', serif;
+}
+.bodyguard-list-table th, .bodyguard-list-table td {
+    padding: 0.7em 1em;
+    text-align: center;
+    font-size: 1.08em;
+}
+.bodyguard-list-table th {
+    background: #23243a;
+    color: #8be9fd;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #ffd700;
+}
+.bodyguard-list-table tr:nth-child(even) {
+    background: #23243a;
+}
+.bodyguard-list-table tr:nth-child(odd) {
+    background: #181824;
+}
+@media (max-width: 700px) {
+    .hire-list {
+        padding: 1rem 0.5rem;
+        max-width: 98vw;
+    }
+    .hire-header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+    }
+    .hire-header h1 {
+        font-size: 1.2em;
+    }
 }
 </style>
-<div class="hire-bg-header">
-    <h1><i class="fas fa-user-shield"></i> Hire Bodyguards</h1>
-    
-</div>
-<div class="hire-bg-card">
-    <div class="hire-bg-info">
-        <strong>Current Bodyguards:</strong> {{ character.bodyguards or 0 }}<br>
-        <strong>Max Bodyguards:</strong> 5<br>
-        <strong>Cost per Bodyguard:</strong> $1,000 x (current bodyguards + new hires)<br>
-        <strong>Total Spent:</strong> ${{ (character.bodyguards) * 1000 * (form.num.data or 1) }}<br>
-        <strong>Available Money:</strong> ${{ character.money }}<br>
-        <strong>Available Bodyguards:</strong> {{ max_hire }}<br>
-        <strong>Total to cost to hire all guards:</strong> ${{ (max_hire or 0) * 1000 * (character.bodyguards or 0 + 1) }}<br>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="hire-bgbb"></div>
+
+
+<div class="hire-header">
+    <h1><i class="fas fa-user-shield"></i> Hire Bodyguards <i class="fas fa-user-shield"></i></h1>
+    <div class="hire-header-desc">
+        <i class="fas fa-shield-alt"></i> Need protection? Hire loyal bodyguards to watch your back. <i class="fas fa-shield-alt"></i>
     </div>
+</div>
+<div class="hire-list">
+    <table class="hire-info-table">
+        <tbody>
+            <tr>
+                <th><i class="fas fa-users"></i> Current Bodyguards</th>
+                <td>{{ character.bodyguards or 0 }}</td>
+            </tr>
+            <tr>
+                <th><i class="fas fa-user-plus"></i> Max Bodyguards</th>
+                <td>200</td>
+            </tr>
+            <tr>
+                <th><i class="fas fa-dollar-sign"></i> Cost per Bodyguard</th>
+                <td>$1,000 x (current bodyguards + new hires)</td>
+            </tr>
+            <tr>
+                <th><i class="fas fa-wallet"></i> Available Money</th>
+                <td>${{ character.money }}</td>
+            </tr>
+            <tr>
+                <th><i class="fas fa-user-secret"></i> Available to Hire</th>
+                <td>{{ max_hire }}</td>
+            </tr>
+            <tr>
+                <th><i class="fas fa-calculator"></i> Total Cost (All)</th>
+                <td>${{ (max_hire or 0) * 1000 * (character.bodyguards or 0 + 1) }}</td>
+            </tr>
+        </tbody>
+    </table>
     <form method="post" class="hire-bg-form">
         {{ form.hidden_tag() }}
-        <label for="{{ form.num.id }}">{{ form.num.label.text }}</label>
+        <label for="{{ form.num.id }}">
+            <i class="fas fa-user-plus"></i> {{ form.num.label.text }}
+        </label>
         {{ form.num(class_="form-control", min=1, max=max_hire, value=1, required=True) }}
         {% for error in form.num.errors %}
             <div class="text-danger">{{ error }}</div>
@@ -94,22 +218,22 @@
         {{ form.submit(class_="btn btn-primary", style="margin-top:1em;") }}
     </form>
     {% if character.bodyguards and character.bodyguards > 0 %}
-    <table style="width: 100%; margin-top: 30px; margin-bottom:1.5em; color:#ffd700; background:#181824; border-radius:8px;">
+    <table class="bodyguard-list-table">
         <thead>
             <tr>
-                <th style="width: 50%; padding:0.5em 1em; text-align:center;">#</th>
-                <th style="width: 50%; padding:0.5em 1em; text-align:center;">Bodyguard Name</th>
+                <th>#</th>
+                <th>Bodyguard Name</th>
             </tr>
         </thead>
         <tbody>
             {% for name in character.bodyguard_names_list %}
             <tr>
-                <td style="width: 50%; padding:0.5em 1em; text-align:center;">{{ loop.index }}</td>
-                <td style="width: 50%; padding:0.5em 1em; text-align:center;">{{ name }}</td>
+                <td>{{ loop.index }}</td>
+                <td>{{ name }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-{% endif %}
+    {% endif %}
 </div>
 {% endblock %}

@@ -8,6 +8,7 @@ class Character(db.Model):
     user = db.relationship('User', backref=db.backref('linked_character', overlaps="linked_characters"), foreign_keys=[user_id], overlaps="linked_characters")
     name = db.Column(db.String(64), unique=True, nullable=False)
     bodyguards = db.Column(db.Integer, default=0)
+    date_created = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
     health = db.Column(db.Integer, default=100)
     money = db.Column(db.Integer, default=250)
     level = db.Column(db.Integer, default=1)
@@ -20,7 +21,7 @@ class Character(db.Model):
     in_jail = db.Column(db.Boolean, default=False)
     jail_until = db.Column(db.DateTime, nullable=True)
     bar_timer = db.Column(db.DateTime, nullable=True)
-    bar_cooldown = db.Column(db.Integer, default=60)
+    bar_cooldown = db.Column(db.DateTime, nullable=True)  # New field for bar cooldown
     crime_group_id = db.Column(db.Integer, db.ForeignKey('organized_crime.id'))
     crime_group = db.relationship("OrganizedCrime", back_populates="members", foreign_keys=[crime_group_id])
     master_id = db.Column(db.Integer, db.ForeignKey('user.id'))

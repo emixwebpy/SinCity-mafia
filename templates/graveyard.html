@@ -3,36 +3,61 @@
 
 {% block content %}
 <style>
+.content-area {
+    background: none !important;
+}
+
+.graveyard-bgbb {
+    background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    z-index: -2 !important;
+    filter: grayscale(0.25) brightness(0.5) blur(1px) !important;
+}
+.graveyard-overlay {
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    background: linear-gradient(180deg, rgba(24,24,36,0.92) 60%, rgba(35,36,58,0.98) 100%) !important;
+    z-index: -1 !important;
+}
 .graveyard-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    background: rgba(40,42,54,0.92);
     padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     margin-bottom: 0;
     text-align: center;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #ffd70055;
 }
 .graveyard-header h1 {
     color: #ffd700;
-    font-size: 2.2rem;
-    letter-spacing: 2px;
+    font-size: 2.5rem;
     margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
+    letter-spacing: 4px;
 }
 .graveyard-list {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
+    background: rgba(35,36,58,0.92);
+    border-radius: 0 0 18px 18px;
     padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     max-width: 700px;
     margin: 0 auto 2rem auto;
+    border-top: none;
 }
 .graveyard-table {
     width: 100%;
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
+    font-family: 'Cinzel', serif;
 }
 .graveyard-table th, .graveyard-table td {
-    padding: 1rem 1rem;
+    padding: 1.1rem 1rem;
     text-align: left;
     vertical-align: middle;
     border: none;
@@ -40,16 +65,19 @@
 }
 .graveyard-table th {
     color: #ffd700;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: bold;
     border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
 }
 .graveyard-table tr {
-    background: #282a36;
+    background: rgba(40,42,54,0.85);
     transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
 }
 .graveyard-table tr.current-user {
-    background: rgba(255,215,0,0.10);
+    background: rgba(255,215,0,0.13);
     color: #ffd700;
     font-weight: 900;
 }
@@ -61,18 +89,23 @@
     color: #8be9fd;
     font-size: 1.08em;
     letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.graveyard-date {
-    color: #ffd700;
-    font-size: 0.98em;
-}
-.graveyard-city {
+.graveyard-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
     color: #b8b8ff;
-    font-size: 0.98em;
+    filter: drop-shadow(0 1px 2px #000);
 }
 .graveyard-level {
     color: #fff;
     font-size: 1em;
+}
+.graveyard-city {
+    color: #b8b8ff;
+    font-size: 0.98em;
 }
 @media (max-width: 700px) {
     .graveyard-list {
@@ -87,26 +120,33 @@
     }
 }
 </style>
-<div class="forums-header">
-    <h1>Graveyard</h1>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="graveyard-bgbb"></div>
+
+<div class="graveyard-header">
+    <h1><i class="fas fa-cross"></i> Graveyard <i class="fas fa-cross"></i></h1>
+    <div style="color:#b8b8ff;font-size:1.1em;margin-top:0.5em;">
+        <i class="fas fa-ghost"></i> Here lie the fallen. May they rest in peace. <i class="fas fa-ghost"></i>
+    </div>
 </div>
-<div class="forums-list">
-    <table class="table table-dark table-striped">
+<div class="graveyard-list">
+    <table class="graveyard-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Level</th>
-                <th>City</th>
-                
+                <th><i class="fas fa-tombstone"></i> Name</th>
+                <th><i class="fas fa-skull-crossbones"></i> Level</th>
+                <th><i class="fas fa-map-marker-alt"></i> City</th>
             </tr>
         </thead>
         <tbody>
         {% for c in all_characters %}
-            <tr {% if character and c.id == character.id %}style="background:rgba(255,215,0,0.10);font-weight:bold;"{% endif %}>
-                <td>{{ c.name }}</td>
-                <td>{{ c.level }}</td>
-                <td>{{ c.city }}</td>
-                
+            <tr class="{% if character and c.id == character.id %}current-user{% endif %}">
+                <td class="graveyard-name">
+                    <span class="graveyard-icon"><i class="fas fa-tombstone"></i></span>
+                    {{ c.name }}
+                </td>
+                <td class="graveyard-level">{{ c.level }}</td>
+                <td class="graveyard-city">{{ c.city }}</td>
             </tr>
         {% endfor %}
         </tbody>

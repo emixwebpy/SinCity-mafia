@@ -146,6 +146,16 @@
                 </form>
             {% endif %}
         </div>
+        {% if crew.territories %}
+            <div class="crew-territories">
+                <h4>Controlled Territories</h4>
+                <ul>
+                    {% for t in crew.territories %}
+                    <li>{{ t.city }} (Payout: ${{ t.payout }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
     </div>
 
     {% if crew.description %}

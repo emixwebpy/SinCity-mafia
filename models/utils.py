@@ -9,6 +9,7 @@ from models.organized_crime import OrganizedCrime
 from models.user import User
 from models.drug import Drug, DrugDealer
 from models.constants import CITIES
+from models.crew import CrewMember, Crew
 from flask_login import current_user
 from extensions import db
 from flask import flash, redirect, url_for
@@ -34,6 +35,18 @@ def randomize_all_drug_prices():
                 dealer.price = price
                 dealer.stock = stock
     db.session.commit()
+
+
+
+def update_crew_member_count(Crew):
+    for cm in CrewMember.query.all():
+        char = Character.query.filter_by(master_id=cm.user_id, is_alive=True).first()
+        if not char or not char.crew_id or char.crew_id != cm.crew_id:
+            db.session.delete(cm)
+    db.session.commit()
+
+
+
 
 def seed_drugs():
     DRUG_LIST = [

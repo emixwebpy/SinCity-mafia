@@ -50,11 +50,11 @@ from models.forum import Forum, ForumTopic, ForumPost
 from models.chat import ChatMessage
 from models.admin import admin_bp
 from models.forms import *
-from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, BODYGUARD_NAMES, BODYGUARD_LASTNAMES,DRUG_LIST
+from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, BODYGUARD_NAMES, BODYGUARD_LASTNAMES, DRUG_LIST
 from models.loggers import admin_logger
-from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown, seed_drugs, randomize_all_drug_prices
+from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown, seed_drugs, randomize_all_drug_prices, update_crew_member_count
 from models.background_tasks import start_jail_release_thread
-
+from models.territory import Territory
 
 
 
@@ -65,6 +65,7 @@ with app.app_context():
     seed_drugs()
     randomize_all_drug_prices()
     start_jail_release_thread(app)
+    update_crew_member_count(Crew)
 
 
 # Database -------------------------------
@@ -112,7 +113,7 @@ def enable_sqlite_fk():
 @app.before_request
 def check_character_alive():
     allowed_endpoints = (
-         'logout', 'static', 'dashboard', 'register', 'login', 'admin','create_character', 'forums', 'forum_view', 'gun_detail', 'send_beer', 'new_topic', 'topic_view', 'create_forum', 'inbox', 'notifications', 'send_message', 'view_message', 'leave_crime', 'attempt_organized_crime', 'crew_page', 'update_crew_role', 'hire_bodyguard', 'kill', 'profile_by_id', 'crew_member_update_role', 'crew_member_leave', 'crew_member_invite', 'crew_member_kick', 'crew_member_accept_invite', 'crew_member_decline_invite', 'crew_member_send_message', 'crew_member_view_messages', 'crew_member_leave_crime_group', 'crew_member_disband_crime_group', 'crew_member_create_crime_group', 'crew_member_join_crime_group', 'crew_member_view_crime_group', 'crew_member_send_invitation', 'crew_member_accept_invitation', 'crew_member_decline_invitation', 'crew_member_view_invitations','crews', 'crew_member_view_profile', 'crew_member_edit_profile', 'crew_member_delete_profile', 'crew_member_view_crew', 'crew_member_create_crew', 'crew_member_edit_crew', 'crew_member_delete_crew', 'crew_member_view_members', 'crew_member_add_member', 'crew_member_remove_member', 'crew_member_view_requests', 'crew_member_accept_request', 'crew_member_decline_request', 'crew_member_view_notifications', 'crew_member_mark_notification_read', 'crew_member_delete_notification', 'crew_member_view_messages', 'crew_member_send_message', 'crew_member_view_message', 'crew_member_delete_message', 'crew_member_view_sent_messages', 'crew_member_view_received_messages', 'crew_member_view_chat', 'crew_member_send_chat_message', 'crew_member_delete_chat_message', 'crew_member_view_chat_history', 'crew_member_clear_chat_history', 'crew_member_view_crime_history', 'crew_member_clear_crime_history', 'crew_member_edit_crime_group', 'crew_member_delete_crime_group', 'crew_member_view_crime_group_members', 'crew_member_add_crime_group_member', 'crew_member_remove_crime_group_member', 'crew_member_view_crime_group_requests', 'crew_member_accept_crime_group_request', 'crew_member_decline_crime_group_request', 'crew_member_view_crime_group_invitations', 'crew_member_accept_crime_group_invitation', 'public_message_view', 'public_message_send','player_search','travel','godfathers_page','send_beer','claim_godfather','create_crime','crime_group','send_public_message', 'public_message','get_messages', 'crew_messages','earn','jail','breakout','upload_profile_image','disband_crime', 'leave_crime', 'profile_by_id', 'shop', 'buy_item', 'view_item', 'delete_item', 'edit_item', 'create_item','kill', 'graveyard'
+         'logout', 'static', 'dashboard', 'register', 'login', 'admin','create_character', 'forums', 'forum_view', 'gun_detail', 'send_beer', 'new_topic', 'topic_view', 'create_forum', 'inbox', 'notifications', 'send_message', 'view_message', 'leave_crime', 'attempt_organized_crime', 'crew_page', 'update_crew_role', 'hire_bodyguard', 'kill', 'profile_by_id', 'crew_member_update_role', 'crew_member_leave', 'crew_member_invite', 'crews', 'crew_member_view_profile', 'crew_member_edit_profile', 'crew_member_delete_profile', 'crew_member_view_crew', 'crew_member_create_crew', 'crew_member_edit_crew', 'crew_member_delete_crew', 'crew_member_view_members', 'crew_member_add_member', 'crew_member_remove_member', 'crew_member_view_requests', 'crew_member_accept_request', 'crew_member_decline_request', 'crew_member_view_notifications', 'crew_member_mark_notification_read', 'crew_member_delete_notification', 'crew_member_view_messages', 'crew_member_send_message', 'crew_member_view_message', 'crew_member_delete_message', 'crew_member_view_sent_messages', 'crew_member_view_received_messages', 'crew_member_view_chat', 'crew_member_send_chat_message', 'crew_member_delete_chat_message', 'crew_member_view_chat_history', 'crew_member_clear_chat_history', 'crew_member_view_crime_history', 'crew_member_clear_crime_history', 'crew_member_edit_crime_group', 'crew_member_delete_crime_group', 'crew_member_view_crime_group_members', 'crew_member_add_crime_group_member', 'crew_member_remove_crime_group_member', 'crew_member_view_crime_group_requests', 'crew_member_accept_crime_group_request', 'crew_member_decline_crime_group_request', 'crew_member_view_crime_group_invitations', 'crew_member_accept_crime_group_invitation', 'public_message_view', 'public_message_send','player_search','travel','godfathers_page','send_beer','claim_godfather','create_crime','crime_group','send_public_message', 'public_message','get_messages', 'crew_messages','earn','jail','breakout','upload_profile_image','disband_crime', 'leave_crime', 'profile_by_id', 'shop', 'buy_item', 'view_item', 'delete_item', 'edit_item', 'create_item','kill', 'graveyard'
     )
     if current_user.is_authenticated:
         char = Character.query.filter_by(master_id=current_user.id).first()
@@ -173,34 +174,57 @@ def send_beer():
             mins, secs = divmod(int(remaining.total_seconds()), 60)
             flash(f"You are in jail for {mins}m {secs}s.", "danger")
             return redirect(url_for('jail'))
+    
+
     if form.validate_on_submit():
         recipient_name = form.recipient_name.data.strip()
         drink_type = form.drink_type.data
         recipient = Character.query.filter_by(name=recipient_name, is_alive=True).first()
+        
         if not recipient:
             flash(f"No character found with name {recipient_name}.", "danger")
             return redirect(url_for('send_beer'))
+        # Check if recipient is the same as sender
+        if recipient.master_id == current_user.id:
+            flash("You cannot send a drink to yourself.", "danger")
+            return redirect(url_for('send_beer'))
+        # Check if recipient is in jail
+        if recipient.in_jail and recipient.jail_until and recipient.jail_until > datetime.utcnow():
+            remaining = recipient.jail_until - datetime.utcnow()
+            mins, secs = divmod(int(remaining.total_seconds()), 60)
+            flash(f"{recipient_name} is in jail for {mins}m {secs}s and cannot receive drinks.", "danger")
+            return redirect(url_for('send_beer'))
         
+        #check if recipient is in the same city
+        if character.city != recipient.city:
+            flash(f"{recipient_name} is not in the same city as you. You can only send drinks to characters in your city.", "danger")
+            return redirect(url_for('send_beer'))
+        # Check if sender is on bar cooldown
+        if character.bar_cooldown and isinstance(character.bar_cooldown, datetime) and character.bar_cooldown > datetime.utcnow():
+            remaining = character.bar_cooldown - datetime.utcnow()
+            hour, remainder = divmod(int(remaining.total_seconds()), 3600)
+            mins, secs = divmod(remainder, 60)
+            flash(f"You are on bar cooldown for {hour}h {mins}m {secs}s.", "danger")
+            return redirect(url_for('send_beer'))
         # Set drink cost and effect
         if drink_type == 'beer':
             drink_cost = 1000
             recipient.xp += random.randint(5, 15)
-            # Set bar cooldown
-            
-            logging.info(f"{current_user.username} sent beer to {recipient_name}")
+            print(f"{current_user.username} sent beer to {recipient_name}")
+            logging.warning(f"{current_user.username} sent beer to {recipient_name}")
             
         elif drink_type == 'whiskey':
             drink_cost = 20
-            recipient.xp += random.randint(10, 25)
+            recipient.xp += random.randint(100, 250)
         elif drink_type == 'wine':
             drink_cost = 15
-            recipient.xp += random.randint(15, 35)
+            recipient.xp += random.randint(150, 350)
         elif drink_type == 'vodka':
             drink_cost = 25
-            recipient.xp += random.randint(25, 50)
+            recipient.xp += random.randint(250, 500)
         elif drink_type == 'rum':
             drink_cost = 30
-            recipient.xp += random.randint(20, 40)
+            recipient.xp += random.randint(200, 400)
         elif drink_type == 'gin':
             drink_cost = 35
             recipient.health += random.randint(1, 10)
@@ -212,10 +236,12 @@ def send_beer():
         if character.money < drink_cost:
             flash("You don't have enough money to send this drink.", "danger")
             return redirect(url_for('send_beer'))
-
+        
         # Deduct money from sender
         character.money -= drink_cost
-
+        
+        # Set bar cooldown for sender
+        character.bar_cooldown = datetime.utcnow() + timedelta(hours=8)  # 8 hours cooldown
         # Commit changes
         db.session.commit()
 
@@ -1017,7 +1043,8 @@ def create_character():
             money=0,
             level=1,
             is_alive=True,
-            city=city
+            city=city,
+            date_created=datetime.utcnow()
         )
         db.session.add(new_char)
         db.session.commit()
@@ -1195,16 +1222,28 @@ def leave_crew():
     if not character or not character.crew_id:
         flash("You are not in a crew.", "warning")
         return redirect(url_for('dashboard'))
-
     crew = Crew.query.get(character.crew_id)
-
-    # Prevent leader from leaving without assigning a new one
-    if crew.leader_id == character.id:
+    leader_member = CrewMember.query.filter_by(crew_id=crew.id, role='leader').first()
+    if leader_member and leader_member.user_id == current_user.id:
         flash("You must assign a new leader before leaving the crew.", "danger")
         return redirect(url_for('dashboard'))
-
-
-    character.crime_group_id = None
+    
+    # Remove the character from the crew
+    crew_member = CrewMember.query.filter_by(user_id=current_user.id, crew_id=character.crew_id).first()
+    if crew_member:
+        db.session.delete(crew_member)
+        db.session.commit()  # Commit immediately to avoid NOT NULL constraint error
+        character.crew_id = None
+        character.crime_group_id = None
+        db.session.commit()
+    else:
+        flash("You are not a member of this crew.", "warning")
+        return redirect(url_for('dashboard'))
+    
+    # Optionally: remove the crew if it's empty
+    if not CrewMember.query.filter_by(crew_id=crew.id).count():
+        db.session.delete(crew)
+        db.session.commit()
     flash("You left the crew.", "success")
     return redirect(url_for('dashboard'))
 
@@ -1479,13 +1518,19 @@ def claim_godfather(city):
 @login_required
 def create_crime():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No active character found.", "danger")
+        return redirect(url_for('dashboard'))
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
-            remaining = character.jail_until - datetime.utcnow()
-            mins, secs = divmod(int(remaining.total_seconds()), 60)
-            flash(f"You are in jail for {mins}m {secs}s.", "danger")
-            return redirect(url_for('jail'))
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
+    # If already in a crime group, redirect and do NOT create a new one
+    if character.crime_group:
+        flash("You are already in a crime group!", "warning")
+        return redirect(url_for('crime_group'))
     form = CreateCrimeForm()
-    
     if form.validate_on_submit():
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
         db_character = Character.query.get(character.id)
@@ -1496,12 +1541,6 @@ def create_crime():
             flash("You must have an active character to create a crime group.", "danger")
             return redirect(url_for('dashboard'))
         
-        print("All character IDs:", [c.id for c in Character.query.all()])
-        print("Current character ID:", character.id)
-        print("Creating crime with leader_id:", character.id)
-        print("DB path:", os.path.abspath('users.db'))
-        
-
         cooldown_minutes = 360  # 6 hours for leaders
         if is_on_crime_cooldown(character, cooldown_minutes):
             wait_time = (character.last_crime_time + timedelta(minutes=cooldown_minutes)) - datetime.utcnow()
@@ -1518,12 +1557,6 @@ def create_crime():
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
         db.session.commit()
-
-        character.crime_group_id = crime.id
-        
-        db.session.commit()
-        print("DEBUG: character.id =", character.id)
-        print("DEBUG: Character in DB?", db.session.get(Character, character.id) is not None)
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
 
@@ -1568,31 +1601,28 @@ def join_crime():
 def crime_group():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     crime = character.crime_group
+
+    if not character or not crime:
+        flash("You must be in a crime group to access this page.", "warning")
+        return redirect(url_for('dashboard'))
+
     members = Character.query.filter_by(crime_group_id=crime.id).all()
-    crime_group = OrganizedCrime.query.get(crime.id) if crime else None
+    
 
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('dashboard'))
-    
-    if not character or not character.crime_group:
-        flash(f"You're not part of any crime group yet.", 'info')
-        return redirect(url_for('dashboard'))
-    
-    if character.crime_group == crime_group:
-        flash(f"You are already in this crime group.", "info")
-        return redirect(url_for('crime_group'))
-    
+
     return render_template(
-    "crime_group.html",
-    crime=crime,
-    members=members,
-    leave_crime_form=LeaveCrimeForm(),
-    disband_crime_form=DisbandCrimeForm(),
-    attempt_crime_form=AttemptCrimeForm()
-)
+        "crime_group.html",
+        crime=crime,
+        members=members,
+        leave_crime_form=LeaveCrimeForm(),
+        disband_crime_form=DisbandCrimeForm(),
+        attempt_crime_form=AttemptCrimeForm()
+    )
 
 @app.route('/disband_crime', methods=['POST'])
 @login_required
@@ -2263,6 +2293,46 @@ def city_characters(city_name):
     characters = Character.query.filter_by(city=city_name, is_alive=True).filter(Character.master_id != 0).all()
     return render_template('city_characters.html', city=city_name, characters=characters)
 
+@app.route('/claim_territory/<city>', methods=['POST'])
+@login_required
+def claim_territory(city):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
+        flash("You must be in a crew to claim territory.", "danger")
+        return redirect(url_for('dashboard'))
+    crew = Crew.query.get(character.crew_id)
+    territory = Territory.query.filter_by(city=city).first()
+    if not territory:
+        territory = Territory(city=city, owner_crew_id=crew.id)
+        db.session.add(territory)
+    else:
+        territory.owner_crew_id = crew.id
+    db.session.commit()
+    flash(f"{city} is now controlled by your crew!", "success")
+    return redirect(url_for('crew_page', crew_id=crew.id))
+
+@app.route('/crew_payout', methods=['POST'])
+@login_required
+def crew_payout():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
+        flash("You must be in a crew to receive payouts.", "danger")
+        return redirect(url_for('dashboard'))
+    crew = Crew.query.get(character.crew_id)
+    # Sum all territory payouts
+    total_payout = sum(t.payout for t in crew.territories)
+    members = CrewMember.query.filter_by(crew_id=crew.id).all()
+    if not members or total_payout == 0:
+        flash("No payout available.", "info")
+        return redirect(url_for('crew_page', crew_id=crew.id))
+    split = total_payout // len(members)
+    for member in members:
+        char = Character.query.filter_by(master_id=member.user_id, is_alive=True).first()
+        if char:
+            char.money += split
+    db.session.commit()
+    flash(f"Crew territory payout distributed! Each member received ${split}.", "success")
+    return redirect(url_for('crew_page', crew_id=crew.id))
 # Create Flask app and configure it
 
 @app.context_processor
@@ -2278,7 +2348,6 @@ def inject_current_character():
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
         return dict(current_character=character)
     return dict(current_character=None)
-# Create DB (run once, or integrate with a CLI or shell)
 @app.context_processor
 def inject_is_godfather():
     if current_user.is_authenticated:
@@ -2294,7 +2363,6 @@ def inject_now():
 @app.context_processor
 def inject_chat_form():
     return dict(chat_form=ChatForm())
-
 
 
 # Start the background thread when the app starts

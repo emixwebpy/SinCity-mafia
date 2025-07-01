@@ -3,88 +3,84 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<style>
 
-.dashboard-hero {
-    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+<style>
+body {
+    font-family: "Concert One", sans-serif;
+    background: linear-gradient(135deg, #181824 0%, #23243a 100%);
+}
+.dashboard-main {
+    max-width: 1100px;
+    margin: 48px auto 0 auto;
+    padding: 0 16px;
+}
+.dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 36px;
+    background: rgba(24,24,36,0.98);
     border-radius: 12px;
-    box-shadow: 0 8px 40px #8be9fd33, 0 2px 0 #ffd70022 inset;
-    padding: 44px 36px 36px 36px;
-    border: 2px solid #8be9fd55;
+    box-shadow: 0 8px 40px #000a, 0 2px 0 #ffd70022 inset;
+    border: 2px solid #ffd70055;
+    padding: 36px 36px 28px 36px;
     color: #f5f6fa;
-    font-family: "geo", sans-serif;
-    text-align: left;
     position: relative;
-    margin: 32px auto 0 auto;
-    max-width: 900px;
     overflow: hidden;
 }
-.dashboard-hero-header {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 18px;
-}
-.dashboard-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background: #34355b;
+.dashboard-avatar-lg {
+    width: 130px;
+    height: 130px;
+    border-radius: 12px;
+    background: #23243a;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.8em;
-    border: 3px solid #ffd700;
+    font-size: 3.8em;
+    border: 5px solid #ffd700;
     object-fit: cover;
-    box-shadow: 0 2px 12px #ffd70033;
+    box-shadow: 0 2px 18px #ffd70033;
 }
-.dashboard-hero-info h1 {
-    color: #8be9fd;
-    font-size: 2.2em;
-    font-weight: 900;
-    margin: 0 0 4px 0;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 12px #23243a;
+.dashboard-header-info {
+    flex: 1;
 }
-.dashboard-hero-info .hero-meta {
+.dashboard-header-info h1 {
     color: #ffd700;
-    font-size: 1.1em;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 2.7em;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 12px #23243a;
+    
 }
-.dashboard-stats {
-    display: flex;
-    gap: 32px;
-    justify-content: flex-start;
-    margin: 18px 0 0 0;
-    flex-wrap: wrap;
-}
-.dashboard-stat {
-    background: #23243a;
-    border-radius: 8px;
-    padding: 18px 32px;
+.dashboard-header-info .hero-meta {
     color: #8be9fd;
     font-size: 1.15em;
-    font-weight: 700;
-    box-shadow: 0 1px 8px #8be9fd22;
-    min-width: 120px;
-    text-align: center;
-    position: relative;
-}
-.dashboard-stat .stat-label {
-    color: #ffd700;
-    font-size: 1em;
     font-weight: 600;
-    margin-bottom: 2px;
-    display: block;
-}
-.dashboard-actions {
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
     display: flex;
     gap: 18px;
-    margin: 32px 0 0 0;
+    align-items: center;
+}
+.city-badge {
+    display: inline-block;
+    background: linear-gradient(-180deg, #8be9fd 60%, #ffd700 100%);
+    color: #181824;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 1.1em;
+    font-weight: 700;
+    
+    
+    letter-spacing: 1px;
+}
+.dashboard-header-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 14px;
     flex-wrap: wrap;
 }
-.dashboard-actions .btn {
+.dashboard-header-actions .btn {
     border-radius: 6px;
     font-weight: 700;
     padding: 12px 32px;
@@ -93,22 +89,80 @@
     border: none;
     font-size: 1.1em;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    box-shadow: 0px 0px 10px 0px #ffd700;
+    
     margin-bottom: 2px;
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 10px;
 }
-.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
+.dashboard-header-actions .btn:hover, .dashboard-header-actions .btn:focus {
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
     color: #ffd700;
-    box-shadow: 0 0px 5px #ffd700;
+    
+}
+.dashboard-stats-row {
+    display: flex;
+    gap: 24px;
+    margin: 32px 0 0 0;
+    flex-wrap: wrap;
+    
+    justify-content: space-evenly;
+}
+.dashboard-stat-card {
+    
+    min-width: 160px;
+    max-width: 200px;
+    height: 120px;
+    border-radius: 10px;
+    background: #23243a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #ffd700;
+    box-shadow: 0 2px 18px #ffd70033;
+    text-align: center;
+    margin-bottom: 12px;
+    position: relative;
+}
+.dashboard-stat-card i {
+    font-size: 2.1em;
+    margin-bottom: 4px;
+    color: #ffd700;
+}
+.dashboard-stat-label {
+    color: #8be9fd;
+    font-size: 1.08em;
+    font-weight: 600;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+.dashboard-stat-value {
+    color: #ffd700;
+    font-size: 1.3em;
+    font-weight: 700;
+}
+@media (max-width: 900px) {
+    .dashboard-header {
+        flex-direction: column;
+        padding: 18px 2vw 16px 2vw;
+        margin: 18px 0 0 0;
+        max-width: 98vw;
+        gap: 18px;
+    }
+    .dashboard-header-info h1 {
+        font-size: 1.5em;
+    }
+    .dashboard-stats-row {
+        justify-content: space-around;
+        gap: 12px;
+    }
 }
 .dashboard-section {
     margin: 38px 0 0 0;
     background: #181824;
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 24px 28px;
     box-shadow: 0 1px 8px #8be9fd22;
 }
@@ -118,6 +172,9 @@
     font-weight: 800;
     margin-bottom: 18px;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 .dashboard-users-list {
     display: flex;
@@ -129,7 +186,7 @@
 }
 .dashboard-user-card {
     background: #23243a;
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: 0 1px 5px #8be9fd22;
     padding: 14px 18px;
     display: flex;
@@ -162,165 +219,6 @@
     margin-right: 2px;
     letter-spacing: 0.5px;
 }
-.forums-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 0;
-}
-.forums-header h1 {
-    color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 0.5rem;
-    letter-spacing: 2px;
-}
-.forums-list {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
-    padding: 1.5rem 2rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 900px;
-    margin: 0 auto;
-}
-.forums-user-list{
-    background: #23243a;
-    border-radius: 12px 12px 12px 12px;
-    padding: 1.5rem 2rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 900px;
-    margin: 0 auto;
-}
-.forum-table {
-    width: 100%;
-    color: #f5f6fa;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-.forum-table th, .forum-table td {
-    padding: 1rem 1rem;
-    text-align: left;
-    vertical-align: middle;
-}
-.forum-table th {
-    background: #181824;
-    color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-}
-.forum-table tr {
-    background: #282a36;
-    transition: background 0.2s;
-}
-.forum-table tr:hover {
-    background: #34355b;
-}
-.forum-link {
-    color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-decoration: none;
-    transition: color 0.2s;
-    text-decoration: underline;
-}
-
-.forum-desc {
-    color: #b8b8ff;
-    font-size: 1rem;
-}
-.forum-actions {
-    display: flex;
-    gap: 8px;
-}
-.btn-primary {
-    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
-    color: #232526;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    font-weight: bold;
-    margin-bottom: 0;
-    transition: background 0.2s;
-    text-decoration: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.btn-primary:hover {
-    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
-    color: #232526;
-}
-.badge-premium {
-    background: #ffd700;
-    color: #23243a;
-    font-size: 0.88em;
-    padding: 2px 12px;
-    border-radius: 5px;
-    font-weight: bold;
-    margin-left: 8px;
-    margin-right: 2px;
-    letter-spacing: 0.5px;
-}
-.dashboard-avatar {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2em;
-    border: 3px solid #ffd700;
-    object-fit: cover;
-    box-shadow: 0 2px 12px #ffd70033;
-}
-.dashboard-user-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3em;
-    border: 2px solid #8be9fd55;
-    object-fit: cover;
-}
-@media (max-width: 900px) {
-    .dashboard-hero {
-        padding: 18px 2vw 16px 2vw;
-        margin: 18px 0 0 0;
-        max-width: 98vw;
-    }
-    .dashboard-hero-info h1 {
-        font-size: 1.3em;
-    }
-    .dashboard-stat {
-        padding: 10px 8px;
-        font-size: 0.98em;
-    }
-    .dashboard-section {
-        padding: 10px 8px;
-    }
-    .forums-list {
-        padding: 1.2rem 0.5rem;
-    }
-    .forums-header {
-        padding: 1.2rem 0.5rem 0.7rem 0.5rem;
-    }
-    .forum-table th, .forum-table td {
-        padding: 0.7rem 0.3rem;
-        font-size: 1em;
-    }
-    .dashboard-avatar {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1em;
-    }
-}
 .earn-form {
     display: inline;
 }
@@ -333,7 +231,7 @@
     border: none;
     font-size: 1.1em;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    box-shadow: 0px 0px 10px 0px #ffd700;
+    
     margin-bottom: 2px;
     text-decoration: none;
     display: inline-flex;
@@ -346,106 +244,94 @@
     color: #232526;
     box-shadow: 0 0px 5px #ffd700;
 }
-
 </style>
 
-<div class="forums-header">
-    <h1>Dashboard</h1>
-</div>
-<div class="forums-list">
-    <table class="forum-table">
-        <tr>
-            <th style="width:35%;">Profile</th>
-            <th style="width:23%;">Stats</th>
-            <th style="width:0;">Actions</th>
-            <th style="width:20%;">Equipped Gun</th>
-        </tr>
-        <tr>
-            <td>
-                <div style="display:flex;align-items:center;gap:18px;">
-                    {% if character.profile_image %}
-                        <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="dashboard-avatar" alt="avatar">
-                    {% else %}
-                        <span class="dashboard-avatar"><i class="fas fa-user"></i></span>
-                    {% endif %}
-                    <div>
-                        <a href="{{ url_for('profile_by_id', char_id=character.id) }}" class="forum-link" style="font-size:1.2em;">{{ character.name }}</a>
-                        <div class="forum-desc" style="margin-top:6px;">
-                            Level {{ character.level }} <br> {{ character.city }}<br>
-                        </div>
-                    </div>
-                </div>
-            </td>
-            <td>
-                <div class="forum-desc">
-                    <b><i class="fas fa-money-bill-wave"></i> Money:</b> $<span id="money">{{ character.money }}</span>
-                    <br>
-                    <b><i class="fa fa-star"></i> XP:</b> <span id="xp">{{ character.xp }}</span>
-                    <br>
-                    <b><i class="fas fa-layer-group"></i> Level:</b> <span id="level">{{ character.level }}</span>
-                </div>
-            </td>
-            <td>
-                <div class="forum-actions">
-                    {% if character.crew_id %}
-                        <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn btn-primary">
-                            <i class="fas fa-users"></i> Crew
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
-                        
-                    {% endif %}
-                    <form action="{{ url_for('earn') }}" method="post" >
-                        {{ earn_form.hidden_tag() }}
-                        <button type="submit" class="btn btn-primary" id="earn-btn">
-                            {{ earn_form.submit.label }}<span id="earn-timer"></span>
-                        </button>
-                    </form>
-                </div>
-            </td>
-            <td>
-                {% if character.equipped_gun %}
-                    <div class="forum-desc">
-                        <b>
-                            <h1 class="forum-link">
-                                {{ character.equipped_gun.name }}
-                            </h1>
-                        </b><br>
-                        {% if character.equipped_gun.image %}
-                            <img src="{{ url_for('static', filename=character.equipped_gun.image) }}" alt="{{ character.equipped_gun.name }}" style="max-width:80px;max-height:60px;margin:4px 0;">
-                        {% endif %}
-                        Damage: {{ character.equipped_gun.damage }}<br>
-                        
-                        Rarity: {{ character.equipped_gun.rarity }}<br>
-                        Price: ${{ character.equipped_gun.price }}
-                    </div>
+<div class="dashboard-main">
+    
+    <div class="dashboard-header">
+        {% if character.profile_image %}
+            <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="dashboard-avatar-lg" alt="avatar">
+        {% else %}
+            <span class="dashboard-avatar-lg"><i class="fas fa-user-secret"></i></span>
+        {% endif %}
+        <div class="dashboard-header-info">
+            <h1><i class="fas fa-hat-cowboy"></i> {{ character.name }}</h1>
+            <div class="hero-meta">
+                <span><i class="fas fa-layer-group"></i> Level {{ character.level }}</span>
+                <span class="city-badge"><i class="fas fa-city"></i> {{ character.city }}</span>
+            </div>
+            <div class="dashboard-header-actions">
+                <form action="{{ url_for('earn') }}" method="post" class="earn-form">
+                    {{ earn_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-primary" id="earn-btn">
+                        <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}<span id="earn-timer"></span>
+                    </button>
+                </form>
+                {% if not character.crew_id %}
+                    <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
                 {% else %}
-                    <span class="forum-desc" style="color:#b8b8ff;">No gun equipped.</span>
+                    <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn btn-primary" style="background:#181824;color:#ffd700;">
+                        <i class="fas fa-users"></i> Crew
+                    </a>
                 {% endif %}
-            </td>
-        </tr>
-    </table>
-</div>
-
-<div class="forums-user-list" style="margin-top:32px;">
-    <div class="forum-desc" style="font-size:1.2em;margin-bottom:12px;">
-        <i class="fas fa-users"></i> Online Users
+                {% if character.equipped_gun %}
+                    <span class="btn btn-primary" style="background:#23243a;color:#ffd700;cursor:default;">
+                        <i class="fas fa-gun"></i> {{ character.equipped_gun.name }} ({{ character.equipped_gun.damage }} dmg)
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="dashboard-stats-row">
+            <div class="dashboard-stat-card">
+                <i class="fas fa-money-bill-wave"></i>
+                <span class="dashboard-stat-label">Money</span>
+                <span class="dashboard-stat-value" id="money">$&nbsp;{{ character.money }}</span>
+            </div>
+            <div class="dashboard-stat-card">
+                <i class="fa fa-star"></i>
+                <span class="dashboard-stat-label">XP</span>
+                <span class="dashboard-stat-value" id="xp">{{ character.xp }}</span>
+            </div>
+            <div class="dashboard-stat-card">
+                <i class="fas fa-skull-crossbones"></i>
+                <span class="dashboard-stat-label">Kills</span>
+                <span class="dashboard-stat-value">{{ character.kills or 0 }}</span>
+            </div>
+            <div class="dashboard-stat-card">
+                <i class="fas fa-user-shield"></i>
+                <span class="dashboard-stat-label">Bodyguards</span>
+                <span class="dashboard-stat-value">{{ character.bodyguards or 0 }}</span>
+            </div>
+            <div class="dashboard-stat-card">
+                <i class="fas fa-heartbeat"></i>
+                <span class="dashboard-stat-label">Health</span>
+                <span class="dashboard-stat-value">{{ character.health }}</span>
+            </div>
+        </div>
     </div>
-    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:18px;">
-        {% for char in online_characters %}
-        <li style="background:#282a36;border-radius:8px;box-shadow:0 1px 5px #8be9fd22;padding:10px 16px;display:flex;align-items:center;gap:12px;min-width:180px;font-size:1.08em;position:relative;">
-            {% if char.profile_image %}
-                <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="dashboard-user-avatar" alt="avatar">
-            {% else %}
-                <span class="dashboard-user-avatar"><i class="fas fa-user"></i></span>
-            {% endif %}
-            <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-            {% if char.premium and char.premium_until and char.premium_until > now() %}
-                <span class="badge-premium"><i class="fas fa-crown"></i></span>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
+    
+    
+
+    <div class="dashboard-section" style="margin-top:32px;">
+        <div class="dashboard-section-title">
+            <i class="fas fa-users"></i> Online Users
+        </div>
+        <ul class="dashboard-users-list">
+            {% for char in online_characters %}
+            <li class="dashboard-user-card">
+                {% if char.profile_image %}
+                    <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="dashboard-user-avatar" alt="avatar">
+                {% else %}
+                    <span class="dashboard-user-avatar"><i class="fas fa-user"></i></span>
+                {% endif %}
+                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                {% if char.premium and char.premium_until and char.premium_until > now() %}
+                    <span class="badge-premium"><i class="fas fa-crown"></i></span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 
 <script>
@@ -490,22 +376,5 @@ async function updateEarnButton() {
   }
 }
 document.addEventListener('DOMContentLoaded', updateEarnButton);
-
-function showFloatingEffect(elementId) {
-  const el = document.getElementById(elementId);
-  el.style.opacity = '1';
-  el.style.top = '0px';
-
-  setTimeout(() => {
-    el.style.transition = 'opacity 0.5s ease-out, top 0.5s ease-out';
-    el.style.opacity = '0';
-    el.style.top = '-20px';
-  }, 10);
-
-  setTimeout(() => {
-    el.style.transition = '';
-    el.style.top = '0px';
-  }, 1000);
-}
 </script>
 {% endblock %}
