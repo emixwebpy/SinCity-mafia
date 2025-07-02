@@ -3,88 +3,110 @@
 
 {% block content %}
 <style>
-.content-area {
-    background: none !important;
-}
-
-.graveyard-bgbb {
+.graveyard-bg {
     background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80') !important;
     background-size: cover !important;
     background-position: center !important;
     position: fixed !important;
     top: 0; left: 0; width: 100vw; height: 100vh !important;
     z-index: -2 !important;
-    filter: grayscale(0.25) brightness(0.5) blur(1px) !important;
+    filter: grayscale(0.35) brightness(0.45) blur(1.5px) !important;
 }
-.graveyard-overlay {
-    position: fixed !important;
-    top: 0; left: 0; width: 100vw; height: 100vh !important;
-    background: linear-gradient(180deg, rgba(24,24,36,0.92) 60%, rgba(35,36,58,0.98) 100%) !important;
-    z-index: -1 !important;
+
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
 }
-.graveyard-header {
-    background: rgba(40,42,54,0.92);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    margin-bottom: 0;
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 2px;
-    border-bottom: 2px solid #ffd70055;
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
 }
-.graveyard-header h1 {
+
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+    justify-content: center;
+}
+.profile-card-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
-    letter-spacing: 4px;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 12px #000, 0 0 6px #ffd70044;
+    font-family: 'Cinzel', serif;
 }
-.graveyard-list {
-    background: rgba(35,36,58,0.92);
-    border-radius: 0 0 18px 18px;
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    max-width: 700px;
-    margin: 0 auto 2rem auto;
-    border-top: none;
+.graveyard-epitaph {
+    color: #b8b8ff;
+    font-size: 1.18em;
+    margin-bottom: 1.5em;
+    text-align: center;
+    font-style: italic;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 8px #000;
 }
-.graveyard-table {
+.graveyard-ghost {
+    color: #8be9fd;
+    font-size: 1.3em;
+    margin: 0 0.5em;
+    filter: drop-shadow(0 0 6px #8be9fd88);
+}
+.profile-table {
     width: 100%;
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
     font-family: 'Cinzel', serif;
+    background: none;
 }
-.graveyard-table th, .graveyard-table td {
+.profile-table th, .profile-table td {
     padding: 1.1rem 1rem;
     text-align: left;
     vertical-align: middle;
     border: none;
     background: none;
 }
-.graveyard-table th {
+.profile-table th {
     color: #ffd700;
     font-size: 1.2rem;
     font-weight: bold;
     border-bottom: 2px solid #8be9fd55;
     text-shadow: 0 1px 8px #000;
 }
-.graveyard-table tr {
-    background: rgba(40,42,54,0.85);
+.profile-table tr {
+    background: rgba(40,42,54,0.65);
     transition: background 0.2s;
     border-radius: 12px;
     box-shadow: 0 2px 8px #00000022;
 }
-.graveyard-table tr.current-user {
+.profile-table tr.current-user {
     background: rgba(255,215,0,0.13);
     color: #ffd700;
     font-weight: 900;
 }
-.graveyard-table tr:hover {
+.profile-table tr:hover {
     background: #34355b;
 }
-.graveyard-name {
+.profile-name {
     font-weight: 700;
     color: #8be9fd;
     font-size: 1.08em;
@@ -93,64 +115,107 @@
     align-items: center;
     gap: 8px;
 }
-.graveyard-icon {
+.profile-icon {
     font-size: 1.2em;
     margin-right: 6px;
     color: #b8b8ff;
     filter: drop-shadow(0 1px 2px #000);
 }
-.graveyard-level {
+.profile-level, .profile-city {
     color: #fff;
     font-size: 1em;
 }
-.graveyard-city {
-    color: #b8b8ff;
-    font-size: 0.98em;
-}
-@media (max-width: 700px) {
-    .graveyard-list {
-        padding: 1rem 0.5rem;
-        max-width: 98vw;
-    }
-    .graveyard-header {
-        padding: 1rem 0.5rem 0.5rem 0.5rem;
-    }
-    .graveyard-header h1 {
-        font-size: 1.2em;
-    }
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-main { padding: 24px 12px; }
+    .profile-table th, .profile-table td { padding: 0.5rem 0.5rem; font-size: 0.95em; }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
-<div class="graveyard-bgbb"></div>
+<div class="graveyard-bg"></div>
 
-<div class="graveyard-header">
-    <h1><i class="fas fa-cross"></i> Graveyard <i class="fas fa-cross"></i></h1>
-    <div style="color:#b8b8ff;font-size:1.1em;margin-top:0.5em;">
-        <i class="fas fa-ghost"></i> Here lie the fallen. May they rest in peace. <i class="fas fa-ghost"></i>
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1>
+                    <i class="fas fa-cross"></i>
+                    Graveyard
+                    <i class="fas fa-cross"></i>
+                </h1>
+            </div>
+            <div class="graveyard-epitaph">
+                <span class="graveyard-ghost"><i class="fas fa-ghost"></i></span>
+                Here lie the fallen. May they rest in peace.
+                <span class="graveyard-ghost"><i class="fas fa-ghost"></i></span>
+            </div>
+            <div>
+                <table class="profile-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-tombstone"></i> Name</th>
+                            <th><i class="fas fa-skull-crossbones"></i> Level</th>
+                            <th><i class="fas fa-map-marker-alt"></i> City</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in all_characters %}
+                        <tr class="{% if character and c.id == character.id %}current-user{% endif %}">
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-tombstone"></i></span>
+                                {{ c.name }}
+                            </td>
+                            <td class="profile-level">{{ c.level }}</td>
+                            <td class="profile-city">{{ c.city }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
-<div class="graveyard-list">
-    <table class="graveyard-table">
-        <thead>
-            <tr>
-                <th><i class="fas fa-tombstone"></i> Name</th>
-                <th><i class="fas fa-skull-crossbones"></i> Level</th>
-                <th><i class="fas fa-map-marker-alt"></i> City</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for c in all_characters %}
-            <tr class="{% if character and c.id == character.id %}current-user{% endif %}">
-                <td class="graveyard-name">
-                    <span class="graveyard-icon"><i class="fas fa-tombstone"></i></span>
-                    {{ c.name }}
-                </td>
-                <td class="graveyard-level">{{ c.level }}</td>
-                <td class="graveyard-city">{{ c.city }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+
+<div class="profile-card-container" style="margin-top: 24px;">
+    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
+        <div class="profile-card-main" style="width:100%;">
+            <div class="profile-card-header">
+                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="profile-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-layer-group"></i> Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-user">
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                {{ character.name }}
+                            </td>
+                            <td class="profile-level">{{ character.level }}</td>
+                        </tr>
+                        {% for char in online_characters %}
+                        {% if char.id != character.id %}
+                        <tr>
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                            </td>
+                            <td class="profile-level">{{ char.level }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

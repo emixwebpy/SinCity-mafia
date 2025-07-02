@@ -143,7 +143,7 @@ def forums():
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-    return render_template('forums.html', forums=forums)
+    return render_template('forums.html', forums=forums,character=character)
 
 @app.route('/forum/<int:forum_id>')
 def forum_view(forum_id):
@@ -527,7 +527,7 @@ def graveyard():
     all_characters = Character.query.filter_by(is_alive=False).all()
     # Sort by death_date if available, most recent first
     all_characters.sort(key=lambda c: getattr(c, 'death_date', None) or datetime.min, reverse=True)
-    return render_template("graveyard.html", all_characters=all_characters)
+    return render_template("graveyard.html", all_characters=all_characters, character=character)
 
 @app.route('/crew/<int:crew_id>')
 @login_required
@@ -1599,13 +1599,14 @@ def create_crime():
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
     # If already in a crime group, redirect and do NOT create a new one
-    if character.crime_group:
-        flash("You are already in a crime group!", "warning")
-        return redirect(url_for('crime_group'))
+    
     form = CreateCrimeForm()
     if form.validate_on_submit():
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
         db_character = Character.query.get(character.id)
+        if character.crime_group:
+            flash("You are already in a crime group!", "warning")
+            return redirect(url_for('crime_group'))
         if not db_character:
             flash("Your character does not exist in the database.", "danger")
             return redirect(url_for('dashboard'))
@@ -1628,6 +1629,9 @@ def create_crime():
         # --- Only use character.id as leader_id ---
         crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
         db.session.add(crime)
+        db.session.commit()
+        # FIX: Set the creator's crime_group_id to the new crime group
+        character.crime_group_id = crime.id
         db.session.commit()
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
@@ -2174,7 +2178,7 @@ def earn():
     if current_user.premium and current_user.premium_until and current_user.premium_until > now:
         money_min, money_max = int(money_min * 1.5), int(money_max * 1.5)
         xp_min, xp_max = int(xp_min * 1.5), int(xp_max * 1.5)
-        cooldown = timedelta(seconds=35)
+        cooldown = timedelta(seconds=-30)
 
     earned_money = random.randint(money_min, money_max)
     earned_xp = random.randint(xp_min, xp_max)
@@ -2209,6 +2213,60 @@ def user_stats():
         level=character.level
     )
 
+@app.route('/steal', methods=['GET', 'POST'])
+@login_required
+def steal():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    form = StealForm()
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
+
+    if form.validate_on_submit():
+        target_name = form.target_name.data.strip()
+        target = Character.query.filter_by(name=target_name, is_alive=True).first()
+        
+        if not target:
+            flash("Target not found.", "danger")
+            return redirect(url_for('dashboard'))
+
+        if target.id == character.id:
+            flash("You can't steal from yourself!", "warning")
+            return redirect(url_for('dashboard'))
+        if target.city != character.city:
+            flash("Target is not in your city.", "warning")
+            return redirect(url_for('dashboard'))
+        if target.money < 100:
+            flash("Target doesn't have enough money to steal.", "info")
+            return redirect(url_for('dashboard'))
+        
+        # 30% chance to succeed
+        if random.random() < 0.3:
+            amount = random.randint(100, min(2000, target.money))
+            target.money -= amount
+            character.money += amount
+            db.session.commit()
+            flash(f"Success! You stole ${amount} from {target.name}.", "success")
+        else:
+            # 20% chance to go to jail for 2-5 minutes
+            if random.random() < 0.2:
+                jail_minutes = random.randint(2, 5)
+                character.in_jail = True
+                character.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
+                db.session.commit()
+                flash(f"You got caught and are in jail for {jail_minutes} minutes!", "danger")
+                return redirect(url_for('jail'))
+            else:
+                flash("You failed to steal and got nothing.", "warning")
+        return redirect(url_for('dashboard'))
+    return render_template('steal.html', form=form, character=character)
+
 @app.route('/earn_status')
 @login_required
 def earn_status():
@@ -2218,16 +2276,14 @@ def earn_status():
         return jsonify({'seconds_remaining': 0})
 
     now = datetime.utcnow()
-    # Default cooldown
-    cooldown = timedelta(seconds=60)
-    # Premium cooldown
-    if current_user.premium and current_user.premium_until and current_user.premium_until > now:
-        cooldown = timedelta(seconds=30)
+    cooldown = timedelta(seconds=120)  # Cooldown of 2 minutes
 
     if character.last_earned:
         elapsed = now - character.last_earned
         remaining = cooldown - elapsed
         seconds_remaining = max(0, int(remaining.total_seconds()))
+    elif current_user.premium and current_user.premium_until and current_user.premium_until > now:
+        cooldown = timedelta(seconds=30)
     else:
         seconds_remaining = 0
 

@@ -301,130 +301,320 @@
         font-size: .9em !important;
     }
 }
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 1100px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4em;
+    color: #ffd700;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
+}
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+}
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
+}
+.profile-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.profile-table th, .profile-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.profile-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.profile-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.profile-table tr.current-user {
+    background: rgba(255,215,0,0.13);
+    color: #ffd700;
+    font-weight: 900;
+}
+.profile-table tr:hover {
+    background: #34355b;
+}
+.profile-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.profile-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
+    color: #b8b8ff;
+    filter: drop-shadow(0 1px 2px #000);
+}
+.profile-level {
+    color: #fff;
+    font-size: 1em;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.08em;
+    box-shadow: 0 2px 8px #ffd70033;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.btn-danger {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background: #ff2222;
+    color: #fff;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+    .profile-table th, .profile-table td { padding: 0.5rem 0.5rem; font-size: 0.95em; }
+}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-<div class="admin-hero">
-    <div class="admin-header">
-    <div class="admin-header-info">
-        <h1>Admin Control Center</h1>
-        <div class="subtitle">
-            Welcome, <b>Admin</b>! Here you have full control over the game. Use the tools on the right to manage users, forums, shop, and more.
+<div class="profile-card-container">
+    <div class="profile-card" style="flex-direction: column; max-width: 1100px;">
+        <div class="profile-card-main">
+            <div class="profile-card-header" style="justify-content: space-between;">
+                <h1><i class="fas fa-tools"></i> Admin Control Center</h1>
+                <div>
+                    <form method="get" action="{{ url_for('admin.admin_search') }}" style="display:flex;gap:10px;">
+                        <input type="text" name="q" placeholder="Search users or characters..." style="flex:1;padding:8px 12px;border-radius:5px;border:1px solid #ffd70044;background:#181824;color:#ffd700;font-size:1em;">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                    </form>
+                </div>
+            </div>
+            <div class="profile-stats-grid" style="margin-bottom:32px;">
+                <div class="profile-stat">
+                    <span class="profile-label">Users</span>
+                    <span class="profile-value">{{ user_count }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Forums</span>
+                    <span class="profile-value">{{ forum_count }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Topics</span>
+                    <span class="profile-value">{{ topic_count }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Jailed</span>
+                    <span class="profile-value">{{ jailed_count }}</span>
+                </div>
+            </div>
+            <div class="profile-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
+                Admin Actions
+            </div>
+            <div style="background:#131313; color:#ffd700; padding:1.5em; border-radius:5px; max-height:300px; width: 100%;  overflow:auto; font-family:monospace; font-size:0.95em; position: relative;">
+                {% if admin_logs %}
+                    <table style="width:100%; border-collapse:collapse;">
+                    <thead style="position: sticky; top: 0; z-index: 1;">
+                        <tr style="background:#181824;">
+                        <th style="color:#ffd700; padding:4px 8px; text-align:left;">Time</th>
+                        <th style="color:#ffd700; padding:4px 8px; text-align:left;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in admin_logs|reverse %}
+                        {% set parts = line.split(' at ') %}
+                        <tr style=" border-bottom:1px solid #444;">
+                            <td style=" padding:4px 8px; color:#8be9fd; min-width:120px;">
+                            {{ parts[-1].strip() if parts|length > 1 else '' }}
+                            </td>
+                            <td style="padding:4px 8px;">
+                            {{ parts[0] if parts|length > 1 else line }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                {% else %}
+                    <p>No admin actions logged yet.</p>
+                {% endif %}
+            </div>
+            <div class="profile-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
+                Quick Admin Tools
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                <a href="{{ url_for('admin.admin_users') }}" class="btn btn-primary"><i class="fas fa-users-cog"></i> Manage Users</a>
+                <a href="{{ url_for('admin.admin_characters') }}" class="btn btn-primary"><i class="fas fa-user-edit"></i> Manage Characters</a>
+                <a href="{{ url_for('admin.admin_forums') }}" class="btn btn-primary"><i class="fas fa-comments"></i> Manage Forums</a>
+                <a href="{{ url_for('admin.admin_topics') }}" class="btn btn-primary"><i class="fas fa-comments"></i> Manage Topics</a>
+                <a href="{{ url_for('admin.admin_jail') }}" class="btn btn-primary"><i class="fas fa-gavel"></i> Jail List</a>
+                <a href="{{ url_for('admin.admin_shop') }}" class="btn btn-primary"><i class="fas fa-store"></i> Manage Shop</a>
+                <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn btn-primary"><i class="fas fa-mask"></i> Manage Organized Crimes</a>
+                <a href="{{ url_for('admin.admin_drugs_dashboard') }}" class="btn btn-primary"><i class="fas fa-capsules"></i> Drug Management</a>
+                <a href="{{ url_for('admin.admin_crews') }}" class="btn btn-primary"><i class="fas fa-users"></i> Crew Management</a>
+                <a href="{{ url_for('admin.reset_crime_cooldown') }}" class="btn btn-primary"><i class="fas fa-users"></i> Reset Crime Cooldown</a>
+            </div>
         </div>
-        <form method="get" action="{{ url_for('admin.admin_search') }}" style="margin-top:18px;display:flex;gap:10px;">
-            <input type="text" name="q" placeholder="Search users or characters..." style="flex:1;padding:8px 12px;border-radius:5px;border:1px solid #ffd70044;background:#181824;color:#ffd700;font-size:1em;">
-            <button type="submit" class="btn" style="background: #ffd700; padding:8px 18px;"><i class="fas fa-search"></i> Search</button>
-        </form>
-    </div>
-    <div class="admin-header-icon">
-        {% if current_admin and current_admin.character and current_admin.character.profile_image %}
-            <img src="{{ url_for('static', filename=current_admin.character.profile_image) if not current_admin.character.profile_image.startswith('http') else current_admin.character.profile_image }}" class="dashboard-avatar" alt="avatar">
-        {% else %}
-            <span class="dashboard-avatar"><i class="fas fa-user"></i></span>
-        {% endif %}
     </div>
 </div>
-    <div class="admin-main">
-        <div id="admin-log-table" style="background:#131313; color:#ffd700; padding:1.5em; border-radius:5px; max-height:300px; width: 100%;  overflow:auto; font-family:monospace; font-size:0.95em; position: relative;">
-            {% if admin_logs %}
-                <table style="width:100%; border-collapse:collapse;">
-                <thead style="position: sticky; top: 0; z-index: 1;">
-                    <tr style="background:#181824;">
-                    <th style="color:#ffd700; padding:4px 8px; text-align:left;">Time</th>
-                    <th style="color:#ffd700; padding:4px 8px; text-align:left;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for line in admin_logs|reverse %}
-                    {% set parts = line.split(' at ') %}
-                    <tr style=" border-bottom:1px solid #444;">
-                        <td style=" padding:4px 8px; color:#8be9fd; min-width:120px;">
-                        {{ parts[-1].strip() if parts|length > 1 else '' }}
-                        </td>
-                        <td style="padding:4px 8px;">
-                        {{ parts[0] if parts|length > 1 else line }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+
+<div class="profile-card-container" style="margin-top: 24px;">
+    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
+        <div class="profile-card-main" style="width:100%;">
+            <div class="profile-card-header">
+                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="profile-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-layer-group"></i> Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-user">
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                {{ character.name }}
+                            </td>
+                            <td class="profile-level">{{ character.level }}</td>
+                        </tr>
+                        {% for char in online_characters %}
+                        {% if char.id != character.id %}
+                        <tr>
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                            </td>
+                            <td class="profile-level">{{ char.level }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
                 </table>
-            {% else %}
-                <p>No admin actions logged yet.</p>
-            {% endif %}
+            </div>
         </div>
-        <div class="admin-stats">
-            <div class="admin-stat">
-                <i class="fas fa-users"></i>
-                <span class="stat-label">Users</span>
-                <b>{{ user_count }}</b>
-            </div>
-            <div class="admin-stat">
-                <i class="fas fa-comments"></i>
-                <span class="stat-label">Forums</span>
-                <b>{{ forum_count }}</b>
-            </div>
-            <div class="admin-stat">
-                <i class="fas fa-comment-dots"></i>
-                <span class="stat-label">Topics</span>
-                <b>{{ topic_count }}</b>
-            </div>
-            <div class="admin-stat">
-                <i class="fas fa-gavel"></i>
-                <span class="stat-label">Jailed</span>
-                <b>{{ jailed_count }}</b>
-            </div>
-            
-            
-        </div>
-        
-        <div class="admin-actions">
-            <a href="{{ url_for('admin.admin_users') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-users-cog"></i></span>
-                <span>Manage Users</span>
-            </a>
-            <a href="{{ url_for('admin.admin_characters') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-user-edit"></i></span>
-                <span>Manage Characters</span>
-            </a>
-            <a href="{{ url_for('admin.admin_forums') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
-                <span>Manage Forums</span>
-            </a>
-            <a href="{{ url_for('admin.admin_topics') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-comments"></i></span>
-                <span>Manage Topics</span>
-            </a>
-            <a href="{{ url_for('admin.admin_jail') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-gavel"></i></span>
-                <span>Jail List</span>
-            </a>
-            <a href="{{ url_for('admin.admin_shop') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-store"></i></span>
-                <span>Manage Shop</span>
-            </a>
-            <a href="{{ url_for('admin.admin_organized_crimes') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-mask"></i></span>
-                <span>Manage Organized Crimes</span>
-            </a>
-            <a href="{{ url_for('admin.admin_drugs_dashboard') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-capsules"></i></span>
-                <span>Drug Management</span>
-            </a>
-            <a href="{{ url_for('admin.admin_crews') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-users"></i></span>
-                <span>Crew Management</span>
-            </a>
-            <a href="{{ url_for('admin.reset_crime_cooldown') }}" class="btn admin-action-btn">
-                <span class="admin-action-icon"><i class="fas fa-users"></i></span>
-                <span>Reset Crime Cooldown</span>
-            </a>
-        </div>
-        
     </div>
 </div>
 <script>
   // Scroll the log container to the top on page load
   window.addEventListener('DOMContentLoaded', function() {
-    var logDiv = document.getElementById('admin-log-table');
+    var logDiv = document.querySelector('.profile-card-main [style*="overflow:auto"]');
     if (logDiv) logDiv.scrollTop = 0;
   });
 </script>

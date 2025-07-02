@@ -2,45 +2,90 @@
 {% block title %}Travel{% endblock %}
 {% block content %}
 <style>
-.forums-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 0;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
 }
-.forums-header h1 {
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    margin: 0;
     letter-spacing: 2px;
-}
-.forums-list {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 420px;
-    margin: 0 auto 2rem auto;
-    text-align: center;
 }
 .travel-info {
     color: #8be9fd;
     font-size: 1.1em;
     margin-bottom: 1.5em;
 }
+.travel-form {
+    
+    border-radius: 12px;
+    padding: 28px 24px;
+    box-shadow: 0 2px 12px #00000000;
+    max-width: 400px;
+    margin: auto;
+    width: 100%;
+    margin-bottom: 0;
+}
 .travel-form label {
     color: #ffd700;
     font-weight: bold;
-    margin-bottom: 0.5em;
-    display: block;
-    text-align: left;
-}
-.travel-form .city-choice {
+    margin-bottom: 10px;
+    font-size: 1.1em;
     display: flex;
+    text-align: center;
+    flex-direction: column;
+}
+.travel-form li{
+    padding: 10px 120px;
+    color: #8be9fd;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    box-shadow: 0 2px 3px #00000015;
+    background: linear-gradient(90deg, #23243a 0%, #34355b 100%);
+}
+
+
+.travel-form .form-control {
+    height: auto;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 7px;
+    border: 1px solid #23243a00;
+    background: #23243a00;
+    color: #8be9fd;
     margin-bottom: 10px;
 }
 .btn-primary {
@@ -51,7 +96,7 @@
     border-radius: 6px;
     font-weight: bold;
     font-size: 1.1em;
-    margin-top: 0.5rem;
+    margin-top: 10px;
     width: 100%;
     transition: background 0.2s;
     text-decoration: none;
@@ -68,38 +113,131 @@
     font-size: 0.98em;
     margin-top: 0.2em;
 }
-@media (max-width: 600px) {
-    .forums-header, .forums-list {
-        padding: 1.2rem 4vw 1.2rem 4vw;
-    }
-    .forums-header h1 {
-        font-size: 1.2em;
-    }
-    .forums-list {
-        max-width: 98vw;
-    }
+.profile-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.profile-table th, .profile-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.profile-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.profile-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.profile-table tr.current-user {
+    background: rgba(255,215,0,0.13);
+    color: #ffd700;
+    font-weight: 900;
+}
+.profile-table tr:hover {
+    background: #34355b;
+}
+.profile-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.profile-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
+    color: #b8b8ff;
+    filter: drop-shadow(0 1px 2px #000);
+}
+.profile-level {
+    color: #fff;
+    font-size: 1em;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-main { padding: 24px 12px; }
+    .profile-table th, .profile-table td { padding: 0.5rem 0.5rem; font-size: 0.95em; }
+    .travel-form { padding: 18px 8px; }
 }
 </style>
-<div class="forums-header">
-    <h1>Travel to Another City</h1>
-</div>
-<div class="forums-list">
-    <div class="travel-info">
-        Current city: <strong>{{ character.city }}</strong>
-        {% if time_left %}
-            <br><span style="color:#ffb86c;">You can travel again in {{ time_left.seconds // 3600 }}h {{ (time_left.seconds // 60) % 60 }}m.</span>
-        {% endif %}
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1><i class="fas fa-plane-departure"></i> Travel to Another City</h1>
+            </div>
+            <div class="travel-info">
+                Current city: <strong>{{ character.city }}</strong>
+                {% if time_left %}
+                    <br><span style="color:#ffb86c;">You can travel again in {{ time_left.seconds // 3600 }}h {{ (time_left.seconds // 60) % 60 }}m.</span>
+                {% endif %}
+            </div>
+            <form method="POST" class="travel-form">
+                {{ travel_form.hidden_tag() }}
+                <label for="{{ travel_form.city.id }}">
+                    Choose your destination:
+                </label>
+                {{ travel_form.city(class_="form-control") }}
+                {{ travel_form.submit(class_="btn btn-primary") }}
+            </form>
+        </div>
     </div>
-      <form method="POST" class="travel-form">
-      {{ travel_form.hidden_tag() }}
-      <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
-          <label class="city-choice" >
-            {{ travel_form.city(value=value, checked=(value == character.city), style="margin-right: 8px;") }}
-            <span>{{ label }}</span>
-          </label>
-      </div>
-      <br>
-      {{ travel_form.submit(class_="btn btn-primary") }}
-    </form>
+</div>
+
+<div class="profile-card-container" style="margin-top: 24px;">
+    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
+        <div class="profile-card-main" style="width:100%;">
+            <div class="profile-card-header">
+                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="profile-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-layer-group"></i> Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-user">
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                {{ character.name }}
+                            </td>
+                            <td class="profile-level">{{ character.level }}</td>
+                        </tr>
+                        {% for char in online_characters %}
+                        {% if char.id != character.id %}
+                        <tr>
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                            </td>
+                            <td class="profile-level">{{ char.level }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -38,6 +38,7 @@ def admin_required(f):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_dashboard():
+    character = Character.query.filter_by(master_id=current_user.id).first()
     user_count = User.query.count()
     forum_count = Forum.query.count()
     topic_count = ForumTopic.query.count()
@@ -52,7 +53,8 @@ def admin_dashboard():
                            forum_count=forum_count,
                            topic_count=topic_count,
                            jailed_count=jailed_count,
-                           admin_logs=log_lines)
+                           admin_logs=log_lines,
+                           character=character)
 
 # --- Admin Users ---
 @admin_bp.route('/users')

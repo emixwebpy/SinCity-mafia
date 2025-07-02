@@ -12,7 +12,9 @@ from models.character import Character
 
 
 
-
+class StealForm(FlaskForm):
+    target_name = StringField('Target Character Name', validators=[DataRequired()])
+    submit = SubmitField('Attempt Steal')
 
 class RenameTerritoryForm(FlaskForm):
     custom_name = StringField('Custom Name', validators=[Length(max=64), Optional()])

@@ -109,9 +109,30 @@
     display: block;
 }
 .profile-value {
+   
     font-size: 1.25em;
     font-weight: 700;
     color: #fff;
+    text-align: center;
+    margin: 0 auto;
+}
+.bodyguard-list-table {
+    width: 50%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    box-shadow: 0 1px 5px #8be9fd22;
+    
+    margin: 0 auto;
+}
+.bodyguard-list-table th {
+    border-radius: 8px;
+    width: 50%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    margin: 0 auto;
+    
 }
 @media (max-width: 900px) {
     .profile-card-container { flex-direction: column; align-items: center; }
@@ -188,14 +209,14 @@
                 <table class="bodyguard-list-table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>&nbsp; &nbsp;Bodyguard #</th>
                             <th>Bodyguard Name</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for name in character.bodyguard_names_list %}
                         <tr>
-                            <td>{{ loop.index }}</td>
+                            <td> &nbsp; &nbsp; &nbsp; # &nbsp;{{ loop.index }}</td>
                             <td>{{ name }}</td>
                         </tr>
                         {% endfor %}
