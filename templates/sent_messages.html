@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Sent Messages{% endblock %}
+
+{% block content %}
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.sent-list {
+    background: none;
+    border-radius: 0 0 12px 12px;
+    padding: 0;
+    box-shadow: none;
+}
+.message-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.message-item {
+    background: #282a36;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+}
+.message-item:hover {
+    background: #34355b;
+}
+.message-link {
+    color: #ffd700;
+    font-size: 1.15rem;
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: 1.5rem;
+    flex: 1;
+    transition: color 0.2s;
+}
+.message-link:hover {
+    color: #ffb86c;
+    text-decoration: underline;
+}
+.message-meta {
+    color: #b8b8ff;
+    font-size: 1rem;
+}
+.btn-primary {
+    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+    color: #232526;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 0;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+    color: #232526;
+}
+.pagination {
+    display: inline-flex;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+    margin-top: 1.5em;
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+}
+.pagination a {
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    background: #23243a;
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: bold;
+    border: 1px solid #ffd70044;
+    transition: background 0.2s, color 0.2s;
+}
+.pagination a.active,
+.pagination a:hover {
+    background: #ffd700;
+    color: #23243a;
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-main">
+            <div class="profile-card-header" style="display: flex; align-items: center; justify-content: space-between;">
+                <h1 style="margin-bottom: 0;">Sent Messages</h1>
+                <a href="{{ url_for('compose_message') }}" class="btn btn-primary" style="margin-bottom:0;">Compose New Message</a>
+            </div>
+            <div class="sent-list">
+                <ul class="message-list">
+                  {% for msg in messages %}
+                    <li class="message-item">
+                      <a href="{{ url_for('view_message', msg_id=msg.id) }}" class="message-link">
+                        To:
+                        {% if char_map[msg.recipient.id] %}
+                          <span style="color:#ffffff;">{{ char_map[msg.recipient.id] }}</span>
+                        {% endif %}
+                      </a>
+                      <span class="message-meta">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </li>
+                  {% else %}
+                    <li class="message-item" style="color: #b8b8ff;">No sent messages.</li>
+                  {% endfor %}
+                </ul>
+            </div>
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Sent pagination">
+              <ul class="pagination">
+                {% if pagination.has_prev %}
+                  <li><a href="{{ url_for('sent_messages', page=pagination.prev_num) }}">&laquo; Prev</a></li>
+                {% endif %}
+                {% for p in range(1, pagination.pages + 1) %}
+                  <li>
+                    <a{% if p == pagination.page %} class="active"{% endif %} href="{{ url_for('sent_messages', page=p) }}">{{ p }}</a>
+                  </li>
+                {% endfor %}
+                {% if pagination.has_next %}
+                  <li><a href="{{ url_for('sent_messages', page=pagination.next_num) }}">Next &raquo;</a></li>
+                {% endif %}
+              </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

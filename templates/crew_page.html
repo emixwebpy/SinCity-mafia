@@ -1,80 +1,162 @@
 {% extends "base.html" %}
+{% block title %}{{ crew.name }}{% endblock %}
+
 {% block content %}
 <style>
-.forums-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 0;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
 }
-.forums-header h1 {
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 1100px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar, .crew-logo {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4em;
     color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 0.5rem;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
     letter-spacing: 2px;
 }
-.forums-list {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
-    padding: 2rem 2rem 2.5rem 2rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 1150px;
-    margin: 0 auto 2rem auto;
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
 }
-.forum-table {
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+}
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
+}
+.profile-table {
     width: 100%;
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
-    border-radius: 12px;
-    overflow: hidden;
+    font-family: 'Cinzel', serif;
 }
-.forum-table th, .forum-table td {
-    padding: 1.2rem 1rem;
-    text-align: center;
+.profile-table th, .profile-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
     vertical-align: middle;
+    border: none;
+    background: none;
 }
-.forum-table th {
-    background: #181824;
+.profile-table th {
     color: #ffd700;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: bold;
     border-bottom: 2px solid #8be9fd55;
-    letter-spacing: 1px;
+    text-shadow: 0 1px 8px #000;
 }
-.forum-table tr {
-    background: #282a36;
+.profile-table tr {
+    background: rgba(40,42,54,0.85);
     transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
 }
-.forum-table tr:hover {
+.profile-table tr.current-user {
+    background: rgba(255,215,0,0.13);
+    color: #ffd700;
+    font-weight: 900;
+}
+.profile-table tr:hover {
     background: #34355b;
 }
-.forum-link {
-    color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.forum-link:hover {
-    color: #ffb86c;
-    text-decoration: underline;
-}
-.forum-desc {
-    color: #b8b8ff;
-    font-size: 1.08rem;
-    font-weight: 500;
-    text-align: center;
-}
-.forum-actions {
+.profile-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
     display: flex;
-    flex-direction: column;
-    gap: 12px;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
 }
+.profile-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
+    color: #b8b8ff;
+    filter: drop-shadow(0 1px 2px #000);
+}
+.badge-role {
+    padding: 0.3em 0.8em;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1em;
+    color: #fff;
+    margin-right: 4px;
+}
+.badge-leader { background: #ffd700; color: #23243a; }
+.badge-right { background: #8be9fd; color: #23243a; }
+.badge-left { background: #ffb347; color: #23243a; }
+.badge-member { background: #34355b; color: #fff; }
 .btn-primary {
     background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
     color: #232526;
@@ -111,122 +193,164 @@
     background: #ff2222;
     color: #fff;
 }
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+    .profile-table th, .profile-table td { padding: 0.5rem 0.5rem; font-size: 0.95em; }
+}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-<div class="forums-header">
-    <h1>{{ crew.name }}</h1>
-</div>
-<div class="forums-list">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:18px;">
-        <div style="display:flex;align-items:center;gap:16px;">
-            <div class="crew-logo" style="width:64px;height:64px;border-radius:50%;background:#34355b;display:flex;align-items:center;justify-content:center;font-size:2.2em;border:3px solid #ffd700;object-fit:cover;box-shadow:0 2px 12px #ffd70033;">
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            <div class="crew-logo">
                 <i class="fas fa-users"></i>
             </div>
-            <div>
-                <div class="forum-link" style="font-size:1.5em;">{{ crew.name }}</div>
-                <div class="forum-desc" style="color:#ffd700;">Crew ID: {{ crew.id }}</div>
-            </div>
-        </div>
-        <div class="forum-actions" style="align-items:flex-end;">
-            {% if current_user_role == 'leader' %}
-                <form method="POST" action="{{ url_for('invite_to_crew') }}">
-                    {{ invite_form.hidden_tag() }}
-                    {{ invite_form.submit(class_="btn btn-primary") }}
-                </form>
-            {% elif current_user_role in ['right_hand', 'left_hand'] %}
-                <form method="POST" action="{{ url_for('invite_to_crew') }}">
-                    {{ invite_form.hidden_tag() }}
-                    {{ invite_form.submit(class_="btn btn-primary") }}
-                </form>
-            {% endif %}
-            {% if current_user.crew_id == crew.id %}
-                <form method="POST" action="{{ url_for('leave_crew') }}">
-                    {{ leave_form.hidden_tag() }}
-                    {{ leave_form.submit(class_="btn btn-danger") }}
-                </form>
-            {% endif %}
-        </div>
-        {% if crew.territories %}
-            <div class="crew-territories">
-                <h4>Controlled Territories</h4>
-                <ul>
+            <div class="profile-value" style="font-size:1.3em;">{{ crew.name }}</div>
+            <div class="profile-label" style="color:#ffd700;">Crew ID: {{ crew.id }}</div>
+            {% if crew.territories %}
+            <div style="margin-top:18px;">
+                <div class="profile-label" style="color:#ffd700;">Controlled Territories</div>
+                <ul style="padding-left:18px;">
                     {% for t in crew.territories %}
-                    <li>{{ t.city }} (Payout: ${{ t.payout }})</li>
+                    <li style="color:#8be9fd;">{{ t.city }} <span style="color:#ffd700;">(Payout: ${{ t.payout }})</span></li>
                     {% endfor %}
                 </ul>
             </div>
-        {% endif %}
-    </div>
-
-    {% if crew.description %}
-    <div class="forum-desc" style="background:#181824;border-radius:10px;padding:16px 18px;margin-bottom:24px;">
-        {{ crew.description }}
-    </div>
-    {% endif %}
-
-    <table class="forum-table" style="margin-bottom:32px;">
-        <tr>
-            <th style="width:20%;">Members</th>
-            <th style="width:20%;">Founded</th>
-            <th style="width:20%;">Leader</th>
-        </tr>
-        <tr>
-            <td>{{ members|length }}</td>
-            <td>{{ crew.created_at.strftime('%b %d, %Y') if crew.created_at else 'Unknown' }}</td>
-            <td>
-                {% for member in members %}
-                    {% if member.role == 'leader' %}
-                        {{ member.user.character.name if member.user and member.user.character else 'Unknown' }}
+            {% endif %}
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header" style="justify-content: space-between;">
+                <h1>{{ crew.name }}</h1>
+                <div class="forum-actions" style="align-items:flex-end;">
+                    {% if current_user_role == 'leader' or current_user_role in ['right_hand', 'left_hand'] %}
+                        <form method="POST" action="{{ url_for('invite_to_crew') }}">
+                            {{ invite_form.hidden_tag() }}
+                            {{ invite_form.submit(class_="btn btn-primary") }}
+                        </form>
                     {% endif %}
+                    {% if current_user.crew_id == crew.id %}
+                        <form method="POST" action="{{ url_for('leave_crew') }}">
+                            {{ leave_form.hidden_tag() }}
+                            {{ leave_form.submit(class_="btn btn-danger") }}
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% if crew.description %}
+            <div class="profile-stat" style="margin-bottom:24px;">
+                {{ crew.description }}
+            </div>
+            {% endif %}
+            <div class="profile-stats-grid" style="margin-bottom:32px;">
+                <div class="profile-stat">
+                    <span class="profile-label">Members</span>
+                    <span class="profile-value">{{ members|length }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Founded</span>
+                    <span class="profile-value">{{ crew.created_at.strftime('%b %d, %Y') if crew.created_at else 'Unknown' }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Leader</span>
+                    <span class="profile-value">
+                        {% for member in members %}
+                            {% if member.role == 'leader' %}
+                                {{ member.user.character.name if member.user and member.user.character else 'Unknown' }}
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+            </div>
+            <div class="profile-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
+                Members
+            </div>
+            <table class="profile-table">
+                <tr>
+                    <th style="width:40%;">Member</th>
+                    <th style="width:30%;">Role</th>
+                    <th style="width:30%;">Actions</th>
+                </tr>
+                {% for member, role_form in member_forms %}
+                <tr>
+                    <td>
+                        {% set character = member.user.character if member.user and member.user.character else None %}
+                        {% if character and character.profile_image %}
+                          <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;">
+                        {% else %}
+                          <span class="crew-avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;"><i class="fas fa-user"></i></span>
+                        {% endif %}
+                        <strong>
+                          {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
+                        </strong>
+                    </td>
+                    <td>
+                        {% if member.role == 'leader' %}
+                          <span class="badge-role badge-leader">Leader</span>
+                        {% elif member.role == 'right hand' %}
+                          <span class="badge-role badge-right">Right-Hand</span>
+                        {% elif member.role == 'left hand' %}
+                          <span class="badge-role badge-left">Left-Hand</span>
+                        {% else %}
+                          <span class="badge-role badge-member">Member</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if member.user and current_user.id != member.user.id and current_user_role == 'leader' %}
+                        <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
+                            {{ role_form.hidden_tag() }}
+                            {{ role_form.new_role(class_="form-control", style="border-radius:6px;border:none;padding:4px 10px;margin-left:4px;font-size:0.98em;background:#23243a;color:#8be9fd;") }}
+                            {{ role_form.submit(class_="btn btn-primary", style="margin-left:6px;") }}
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
                 {% endfor %}
-            </td>
-        </tr>
-    </table>
-
-    <div class="forum-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
-        Members
+            </table>
+        </div>
     </div>
-    <table class="forum-table">
-        <tr>
-            <th style="width:40%;">Member</th>
-            <th style="width:30%;">Role</th>
-            <th style="width:30%;">Actions</th>
-        </tr>
-        {% for member, role_form in member_forms %}
-        <tr>
-            <td>
-                {% set character = member.user.character if member.user and member.user.character else None %}
-                {% if character and character.profile_image %}
-                  <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;">
-                {% else %}
-                  <span class="crew-avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;"><i class="fas fa-user"></i></span>
-                {% endif %}
-                <strong>
-                  {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
-                </strong>
-            </td>
-            <td>
-                {% if member.role == 'leader' %}
-                  <span class="badge-role badge-leader">Leader</span>
-                {% elif member.role == 'right hand' %}
-                  <span class="badge-role badge-right">Right-Hand</span>
-                {% elif member.role == 'left hand' %}
-                  <span class="badge-role badge-left">Left-Hand</span>
-                {% else %}
-                  <span class="badge-role badge-member">Member</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if member.user and current_user.id != member.user.id and current_user_role == 'leader' %}
-                <form method="POST" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" class="crew-role-form" style="display:inline;">
-                    {{ role_form.hidden_tag() }}
-                    {{ role_form.new_role(class_="form-control", style="border-radius:6px;border:none;padding:4px 10px;margin-left:4px;font-size:0.98em;background:#23243a;color:#8be9fd;") }}
-                    {{ role_form.submit(class_="btn btn-primary", style="margin-left:6px;") }}
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+</div>
+
+<div class="profile-card-container" style="margin-top: 24px;">
+    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
+        <div class="profile-card-main" style="width:100%;">
+            <div class="profile-card-header">
+                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="profile-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-layer-group"></i> Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-user">
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                {{ character.name }}
+                            </td>
+                            <td class="profile-level">{{ character.level }}</td>
+                        </tr>
+                        {% for char in online_characters %}
+                        {% if char.id != character.id %}
+                        <tr>
+                            <td class="profile-name">
+                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                            </td>
+                            <td class="profile-level">{{ char.level }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

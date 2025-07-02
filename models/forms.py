@@ -14,9 +14,22 @@ from models.character import Character
 
 
 
+class RenameTerritoryForm(FlaskForm):
+    custom_name = StringField('Custom Name', validators=[Length(max=64), Optional()])
+    theme = StringField('Theme', validators=[Length(max=64), Optional()])
+    submit = SubmitField('Update')
 
+class ClaimTerritoryForm(FlaskForm):
+    submit = SubmitField('Claim')
 
+class StartTakeoverForm(FlaskForm):
+    submit = SubmitField('Start Takeover')
 
+class ResolveTakeoverForm(FlaskForm):
+    submit = SubmitField('Resolve Takeover')
+
+class CrewPayoutForm(FlaskForm):
+    submit = SubmitField('Collect Crew Payout')
 
 class HireBodyguardForm(FlaskForm):
     num = IntegerField('How many bodyguards do you want to hire?', validators=[DataRequired(), NumberRange(min=1, max=5)])

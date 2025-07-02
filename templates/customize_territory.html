@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Customize Territory{% endblock %}
+{% block content %}
+<style>
+.content-area {
+    background: none !important;
+}
+.territory-bgbb {
+    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    z-index: -2 !important;
+    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
+}
+.customize-header {
+    background: rgba(40,42,54,0.92);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    margin-bottom: 0;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #ffd70055;
+}
+.customize-header h2 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
+    letter-spacing: 4px;
+}
+.customize-form-area {
+    background: rgba(35,36,58,0.92);
+    border-radius: 0 0 18px 18px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    max-width: 500px;
+    margin: 0 auto 2rem auto;
+    border-top: none;
+}
+.customize-form-area label {
+    color: #ffd700;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1em;
+    margin-bottom: 0.3em;
+    display: block;
+}
+.customize-form-area input[type="text"] {
+    width: 100%;
+    padding: 0.7em 1em;
+    border-radius: 7px;
+    border: 1px solid #8be9fd55;
+    background: #23243a;
+    color: #ffd700;
+    font-size: 1.1em;
+    margin-bottom: 1.2em;
+    box-shadow: 0 1px 6px #00000022;
+}
+.customize-form-area .btn {
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 0.5em 1.2em;
+    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
+    color: #ffd700;
+    border: none;
+    font-size: 1em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0px 0px 10px 0px #ffd70022;
+    margin-bottom: 2px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.customize-form-area .btn:hover, .customize-form-area .btn:focus {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    color: #ffd700;
+    box-shadow: 0 0px 5px #ffd700;
+}
+@media (max-width: 700px) {
+    .customize-form-area {
+        padding: 1rem 0.5rem;
+        max-width: 98vw;
+    }
+    .customize-header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+    }
+    .customize-header h2 {
+        font-size: 1.2em;
+    }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="territory-bgbb"></div>
+
+
+<div class="customize-header">
+    <h2><i class="fas fa-paint-brush"></i> Customize {{ territory.custom_name if territory.custom_name else territory.city }}</h2>
+    <div style="color:#8be9fd;font-size:1.1em;margin-top:0.5em;">
+        Give your territory a unique name and theme to show your crew's style!
+    </div>
+</div>
+<div class="customize-form-area">
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.custom_name.label }}
+            {{ form.custom_name(size=40, placeholder="Enter custom name...") }}
+        </div>
+        <div>
+            {{ form.theme.label }}
+            {{ form.theme(size=40, placeholder="Enter theme...") }}
+        </div>
+        <div>
+            {{ form.submit(class_="btn btn-success") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

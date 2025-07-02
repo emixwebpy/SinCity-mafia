@@ -1,339 +1,354 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
 <style>
-body {
-    font-family: "Concert One", sans-serif;
-    background: linear-gradient(135deg, #181824 0%, #23243a 100%);
+.content-area {
+    background: none !important;
 }
-.dashboard-main {
-    max-width: 1100px;
-    margin: 48px auto 0 auto;
-    padding: 0 16px;
+
+.dashboard-bgbb {
+    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    z-index: -2 !important;
+    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
 }
 .dashboard-header {
+    background: rgba(40,42,54,0.92);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    margin-bottom: 0;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #ffd70055;
+}
+.dashboard-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
+    letter-spacing: 4px;
+}
+.dashboard-meta {
+    color: #b8b8ff;
+    font-size: 1.1em;
+    margin-top: 0.5em;
+}
+.dashboard-list {
+    background: rgba(35,36,58,0.92);
+    border-radius: 0 0 18px 18px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+    border-top: none;
+}
+.dashboard-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.dashboard-table th, .dashboard-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.dashboard-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.dashboard-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.dashboard-table tr.current-user {
+    background: rgba(255,215,0,0.13);
+    color: #ffd700;
+    font-weight: 900;
+}
+.dashboard-table tr:hover {
+    background: #34355b;
+}
+.dashboard-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
     display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dashboard-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
+    color: #b8b8ff;
+    filter: drop-shadow(0 1px 2px #000);
+}
+.dashboard-level, .dashboard-city, .dashboard-money, .dashboard-xp, .dashboard-kills, .dashboard-bodyguards, .dashboard-health {
+    color: #fff;
+    font-size: 1em;
+}
+.dashboard-card-container {
+    display: flex;
+    justify-content: center;
     align-items: flex-start;
     gap: 36px;
-    background: rgba(24,24,36,0.98);
-    border-radius: 12px;
-    box-shadow: 0 8px 40px #000a, 0 2px 0 #ffd70022 inset;
-    border: 2px solid #ffd70055;
-    padding: 36px 36px 28px 36px;
-    color: #f5f6fa;
-    position: relative;
-    overflow: hidden;
-}
-.dashboard-avatar-lg {
-    width: 130px;
-    height: 130px;
-    border-radius: 12px;
-    background: #23243a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3.8em;
-    border: 5px solid #ffd700;
-    object-fit: cover;
-    box-shadow: 0 2px 18px #ffd70033;
-}
-.dashboard-header-info {
-    flex: 1;
-}
-.dashboard-header-info h1 {
-    color: #ffd700;
-    font-size: 2.7em;
-    font-weight: 900;
-    margin: 0 0 8px 0;
-    letter-spacing: 2px;
-    text-shadow: 0 2px 12px #23243a;
-    
-}
-.dashboard-header-info .hero-meta {
-    color: #8be9fd;
-    font-size: 1.15em;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: 10px;
-    display: flex;
-    gap: 18px;
-    align-items: center;
-}
-.city-badge {
-    display: inline-block;
-    background: linear-gradient(-180deg, #8be9fd 60%, #ffd700 100%);
-    color: #181824;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 1.1em;
-    font-weight: 700;
-    
-    
-    letter-spacing: 1px;
-}
-.dashboard-header-actions {
-    margin-top: 18px;
-    display: flex;
-    gap: 14px;
+    margin: 40px 0;
     flex-wrap: wrap;
 }
-.dashboard-header-actions .btn {
-    border-radius: 6px;
-    font-weight: 700;
-    padding: 12px 32px;
-    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
-    color: #ffd700;
-    border: none;
-    font-size: 1.1em;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    
-    margin-bottom: 2px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.dashboard-header-actions .btn:hover, .dashboard-header-actions .btn:focus {
+.dashboard-card {
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    color: #ffd700;
-    
-}
-.dashboard-stats-row {
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
     display: flex;
-    gap: 24px;
-    margin: 32px 0 0 0;
-    flex-wrap: wrap;
-    
-    justify-content: space-evenly;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
 }
-.dashboard-stat-card {
-    
-    min-width: 160px;
-    max-width: 200px;
-    height: 120px;
-    border-radius: 10px;
-    background: #23243a;
+.dashboard-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    border: 3px solid #ffd700;
-    box-shadow: 0 2px 18px #ffd70033;
-    text-align: center;
-    margin-bottom: 12px;
-    position: relative;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
 }
-.dashboard-stat-card i {
-    font-size: 2.1em;
-    margin-bottom: 4px;
-    color: #ffd700;
+.dashboard-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
 }
-.dashboard-stat-label {
+.dashboard-quick-actions {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.dashboard-crew-link {
+    margin-top: 10px;
+    font-size: 1.1em;
+}
+.dashboard-crew-link a {
     color: #8be9fd;
-    font-size: 1.08em;
+    text-decoration: underline;
     font-weight: 600;
-    margin-bottom: 2px;
-    letter-spacing: 0.5px;
 }
-.dashboard-stat-value {
+.dashboard-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.dashboard-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.dashboard-card-header h1 {
     color: #ffd700;
-    font-size: 1.3em;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.dashboard-premium {
+    color: #ffd700;
     font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+    margin-left: 8px;
+}
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
+}
+.dashboard-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+}
+.dashboard-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.dashboard-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
 }
 @media (max-width: 900px) {
-    .dashboard-header {
-        flex-direction: column;
-        padding: 18px 2vw 16px 2vw;
-        margin: 18px 0 0 0;
+    .dashboard-card-container { flex-direction: column; align-items: center; }
+    .dashboard-card { flex-direction: column; min-width: 0; }
+    .dashboard-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .dashboard-card-main { padding: 24px 12px; }
+}
+@media (max-width: 700px) {
+    .dashboard-list {
+        padding: 1rem 0.5rem;
         max-width: 98vw;
-        gap: 18px;
     }
-    .dashboard-header-info h1 {
-        font-size: 1.5em;
+    .dashboard-header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
     }
-    .dashboard-stats-row {
-        justify-content: space-around;
-        gap: 12px;
+    .dashboard-header h1 {
+        font-size: 1.2em;
     }
-}
-.dashboard-section {
-    margin: 38px 0 0 0;
-    background: #181824;
-    border-radius: 8px;
-    padding: 24px 28px;
-    box-shadow: 0 1px 8px #8be9fd22;
-}
-.dashboard-section-title {
-    color: #8be9fd;
-    font-size: 1.3em;
-    font-weight: 800;
-    margin-bottom: 18px;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.dashboard-users-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.dashboard-user-card {
-    background: #23243a;
-    border-radius: 6px;
-    box-shadow: 0 1px 5px #8be9fd22;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 180px;
-    font-size: 1.08em;
-    position: relative;
-}
-.dashboard-user-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #34355b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3em;
-    border: 2px solid #8be9fd55;
-    object-fit: cover;
-}
-.badge-premium {
-    background: #ffd700;
-    color: #23243a;
-    font-size: 0.88em;
-    padding: 2px 12px;
-    border-radius: 5px;
-    font-weight: bold;
-    margin-left: 8px;
-    margin-right: 2px;
-    letter-spacing: 0.5px;
-}
-.earn-form {
-    display: inline;
-}
-.earn-form .btn {
-    border-radius: 6px;
-    font-weight: 700;
-    padding: 12px 32px;
-    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
-    color: #232526;
-    border: none;
-    font-size: 1.1em;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    
-    margin-bottom: 2px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-}
-.earn-form .btn:hover, .earn-form .btn:focus {
-    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
-    color: #232526;
-    box-shadow: 0 0px 5px #ffd700;
 }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="dashboard-bgbb"></div>
 
-<div class="dashboard-main">
-    
-    <div class="dashboard-header">
-        {% if character.profile_image %}
-            <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="dashboard-avatar-lg" alt="avatar">
-        {% else %}
-            <span class="dashboard-avatar-lg"><i class="fas fa-user-secret"></i></span>
-        {% endif %}
-        <div class="dashboard-header-info">
-            <h1><i class="fas fa-hat-cowboy"></i> {{ character.name }}</h1>
-            <div class="hero-meta">
-                <span><i class="fas fa-layer-group"></i> Level {{ character.level }}</span>
-                <span class="city-badge"><i class="fas fa-city"></i> {{ character.city }}</span>
-            </div>
-            <div class="dashboard-header-actions">
-                <form action="{{ url_for('earn') }}" method="post" class="earn-form">
-                    {{ earn_form.hidden_tag() }}
-                    <button type="submit" class="btn btn-primary" id="earn-btn">
-                        <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}<span id="earn-timer"></span>
-                    </button>
-                </form>
-                {% if not character.crew_id %}
-                    <a href="{{ url_for('create_crew') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Crew</a>
+
+<div class="dashboard-card-container">
+    <div class="dashboard-card">
+        <div class="dashboard-card-sidebar">
+            {% if character.profile_image %}
+                <img class="dashboard-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="dashboard-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <div class="dashboard-quick-actions">
+                {% if character.crew_id %}
+                    <div class="dashboard-crew-link">
+                        <span>Crew: </span>
+                        <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}">
+                            {{ character.crew.name if character.crew else 'Unknown' }}
+                        </a>
+                    </div>
                 {% else %}
-                    <a href="{{ url_for('crew_page', crew_id=character.crew_id) }}" class="btn btn-primary" style="background:#181824;color:#ffd700;">
-                        <i class="fas fa-users"></i> Crew
+                    <a href="{{ url_for('create_crew') }}" class="btn btn-primary" style="margin-top:10px;">
+                        <i class="fas fa-plus"></i> Create Crew
                     </a>
                 {% endif %}
                 {% if character.equipped_gun %}
-                    <span class="btn btn-primary" style="background:#23243a;color:#ffd700;cursor:default;">
+                    <span class="btn btn-primary" style="background:#23243a;color:#ffd700;cursor:default;margin-top:10px;">
                         <i class="fas fa-gun"></i> {{ character.equipped_gun.name }} ({{ character.equipped_gun.damage }} dmg)
                     </span>
                 {% endif %}
             </div>
         </div>
-        <div class="dashboard-stats-row">
-            <div class="dashboard-stat-card">
-                <i class="fas fa-money-bill-wave"></i>
-                <span class="dashboard-stat-label">Money</span>
-                <span class="dashboard-stat-value" id="money">$&nbsp;{{ character.money }}</span>
+        <div class="dashboard-card-main">
+            <div class="dashboard-card-header">
+                <h1><i class="fas fa-hat-cowboy"></i> Dashboard <i class="fas fa-hat-cowboy"></i></h1>
             </div>
-            <div class="dashboard-stat-card">
-                <i class="fa fa-star"></i>
-                <span class="dashboard-stat-label">XP</span>
-                <span class="dashboard-stat-value" id="xp">{{ character.xp }}</span>
+            <div class="dashboard-stats-grid">
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">Name</span>
+                    <span class="dashboard-value">{{ character.name }}</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">Level</span>
+                    <span class="dashboard-value">{{ character.level }}</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">City</span>
+                    <span class="dashboard-value">{{ character.city }}</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">Cash</span>
+                    <span class="dashboard-value">$ {{ character.money }}</span>
+                </div>
+                
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">XP</span>
+                    <span class="dashboard-value">{{ character.xp }}</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">Health</span>
+                    <span class="dashboard-value">{{ character.health }}</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-label">Kills</span>
+                    <span class="dashboard-value">{{ character.kills if character.kills is defined else 0 }}</span>
+                </div>
             </div>
-            <div class="dashboard-stat-card">
-                <i class="fas fa-skull-crossbones"></i>
-                <span class="dashboard-stat-label">Kills</span>
-                <span class="dashboard-stat-value">{{ character.kills or 0 }}</span>
-            </div>
-            <div class="dashboard-stat-card">
-                <i class="fas fa-user-shield"></i>
-                <span class="dashboard-stat-label">Bodyguards</span>
-                <span class="dashboard-stat-value">{{ character.bodyguards or 0 }}</span>
-            </div>
-            <div class="dashboard-stat-card">
-                <i class="fas fa-heartbeat"></i>
-                <span class="dashboard-stat-label">Health</span>
-                <span class="dashboard-stat-value">{{ character.health }}</span>
+            <div style="margin-top:32px;">
+                <form action="{{ url_for('earn') }}" method="post" class="earn-form" style="display:inline;">
+                    {{ earn_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-primary" id="earn-btn">
+                        <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}<span id="earn-timer"></span>
+                    </button>
+                </form>
             </div>
         </div>
-    </div>
-    
-    
-
-    <div class="dashboard-section" style="margin-top:32px;">
-        <div class="dashboard-section-title">
-            <i class="fas fa-users"></i> Online Users
-        </div>
-        <ul class="dashboard-users-list">
-            {% for char in online_characters %}
-            <li class="dashboard-user-card">
-                {% if char.profile_image %}
-                    <img src="{{ url_for('static', filename=char.profile_image) if not char.profile_image.startswith('http') else char.profile_image }}" class="dashboard-user-avatar" alt="avatar">
-                {% else %}
-                    <span class="dashboard-user-avatar"><i class="fas fa-user"></i></span>
-                {% endif %}
-                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                {% if char.premium and char.premium_until and char.premium_until > now() %}
-                    <span class="badge-premium"><i class="fas fa-crown"></i></span>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
     </div>
 </div>
 
+<div class="dashboard-card-container" style="margin-top: 24px;">
+    <div class="dashboard-card" style="flex-direction: column; max-width: 900px;">
+        <div class="dashboard-card-main" style="width:100%;">
+            <div class="dashboard-card-header">
+                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="dashboard-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-layer-group"></i> Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-user">
+                            <td class="dashboard-name">
+                                <span class="dashboard-icon"><i class="fas fa-user"></i></span>
+                                {{ character.name }}
+                            </td>
+                            <td class="dashboard-level">{{ character.level }}</td>
+                        </tr>
+                        {% for char in online_characters %}
+                        {% if char.id != character.id %}
+                        <tr>
+                            <td class="dashboard-name">
+                                <span class="dashboard-icon"><i class="fas fa-user"></i></span>
+                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                            </td>
+                            <td class="dashboard-level">{{ char.level }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 let earnTimerInterval = null;
 

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Crew Territories{% endblock %}
+
+{% block content %}
+<style>
+.content-area {
+    background: none !important;
+}
+.territory-bgbb {
+    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh !important;
+    z-index: -2 !important;
+    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
+}
+
+.territory-header {
+    background: rgba(40,42,54,0.92);
+    padding: 2rem 2rem 1rem 2rem;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    margin-bottom: 0;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #ffd70055;
+}
+.territory-header h1 {
+    color: #ffd700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
+    letter-spacing: 4px;
+}
+.territory-header-desc {
+    color:#8be9fd;
+    font-size:1.1em;
+    margin-top:0.5em;
+    font-family: 'Cinzel', serif;
+    opacity: 0.8;
+}
+.territory-list {
+    background: rgba(35,36,58,0.92);
+    border-radius: 0 0 18px 18px;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    max-width: 900px;
+    margin: 0 auto 2rem auto;
+    border-top: none;
+}
+.territory-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.territory-table th, .territory-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.territory-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.territory-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.territory-table tr.owned-by-user {
+    background: rgba(255,215,0,0.13);
+    color: #ffd700;
+    font-weight: 900;
+}
+.territory-table tr:hover {
+    background: #34355b;
+}
+.territory-name {
+    font-weight: 700;
+    color: #8be9fd;
+    font-size: 1.08em;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.territory-icon {
+    font-size: 1.2em;
+    margin-right: 6px;
+    color: #ffd700;
+    filter: drop-shadow(0 1px 2px #000);
+}
+.territory-theme {
+    color: #b8b8ff;
+    font-size: 0.98em;
+}
+.territory-status {
+    font-size: 1em;
+}
+.territory-actions form, .territory-actions button, .territory-actions a {
+    display: inline-block;
+    margin: 0 0.2em;
+}
+.territory-actions .btn {
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 0.5em 1.2em;
+    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
+    color: #ffd700;
+    border: none;
+    font-size: 1em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0px 0px 10px 0px #ffd70022;
+    margin-bottom: 2px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.territory-actions .btn:hover, .territory-actions .btn:focus {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    color: #ffd700;
+    box-shadow: 0 0px 5px #ffd700;
+}
+@media (max-width: 700px) {
+    .territory-list {
+        padding: 1rem 0.5rem;
+        max-width: 98vw;
+    }
+    .territory-header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+    }
+    .territory-header h1 {
+        font-size: 1.2em;
+    }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="territory-bgbb"></div>
+
+
+<div class="territory-header">
+    <h1><i class="fas fa-flag"></i> Crew Territories <i class="fas fa-flag"></i></h1>
+    <div class="territory-header-desc">
+        <i class="fas fa-users"></i> Control the city, claim your turf, and show your crew's dominance! <i class="fas fa-users"></i>
+    </div>
+</div>
+<div class="territory-list">
+    <table class="territory-table">
+        <thead>
+            <tr>
+                <th><i class="fas fa-map-marker-alt"></i> Name</th>
+                <th><i class="fas fa-users"></i> Owner Crew</th>
+                <th><i class="fas fa-coins"></i> Payout</th>
+                <th><i class="fas fa-bolt"></i> Status</th>
+                <th><i class="fas fa-cogs"></i> Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for territory in territories %}
+            <tr class="{% if character.crew_id and territory.owner_crew_id == character.crew_id %}owned-by-user{% endif %}">
+                <td class="territory-name">
+                    <span class="territory-icon"><i class="fas fa-flag"></i></span>
+                    <strong>
+                        {{ territory.custom_name if territory.custom_name else territory.city }}
+                    </strong>
+                    {% if territory.theme %}
+                        <br><span class="territory-theme">Theme: {{ territory.theme }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if territory.owner_crew %}
+                        <a href="{{ url_for('crew_page', crew_id=territory.owner_crew.id) }}">{{ territory.owner_crew.name }}</a>
+                    {% else %}
+                        <span style="color:#8be9fd;">Unclaimed</span>
+                    {% endif %}
+                </td>
+                <td>${{ territory.payout }}</td>
+                <td class="territory-status">
+                    {% if territory.contested_until and territory.contested_until > now() %}
+                        <span style="color:#ffb347;">
+                            Contested by 
+                            {% if territory.contesting_crew_id %}
+                                {{ crews_by_id[territory.contesting_crew_id].name }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                            <br>
+                            (ends in 
+                            {% set remaining = territory.contested_until - now() %}
+                            {{ remaining.seconds // 60 }}m {{ remaining.seconds % 60 }}s)
+                        </span>
+                    {% else %}
+                        <span style="color:#8be9fd;">Stable</span>
+                    {% endif %}
+                </td>
+                <td class="territory-actions">
+                    {% if character.crew_id %}
+                        {% if not territory.owner_crew_id %}
+                            <form method="post" action="{{ url_for('claim_territory', city=territory.city) }}">
+                                {{ claim_forms[territory.id].hidden_tag() }}
+                                {{ claim_forms[territory.id].submit(class_="btn btn-success") }}
+                            </form>
+                        {% elif territory.owner_crew_id != character.crew_id and (not territory.contested_until or territory.contested_until < now()) %}
+                            <form method="post" action="{{ url_for('start_takeover', city=territory.city) }}">
+                                {{ takeover_forms[territory.id].hidden_tag() }}
+                                {{ takeover_forms[territory.id].submit(class_="btn btn-warning") }}
+                            </form>
+                        {% elif territory.contesting_crew_id == character.crew_id and territory.contested_until and territory.contested_until <= now() %}
+                            <form method="post" action="{{ url_for('resolve_takeover', city=territory.city) }}">
+                                {{ resolve_forms[territory.id].hidden_tag() }}
+                                {{ resolve_forms[territory.id].submit(class_="btn btn-primary") }}
+                            </form>
+                        {% elif territory.owner_crew_id == character.crew_id %}
+                            <span class="btn btn-secondary" style="cursor:default;">Owned</span>
+                        {% endif %}
+                        {% if territory.owner_crew_id == character.crew_id %}
+                            <a href="{{ url_for('customize_territory', territory_id=territory.id) }}" class="btn btn-info">Customize</a>
+                        {% endif %}
+                    {% else %}
+                        <span style="color:#888;">Join a crew to participate</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if territory.contesting_crew_id == character.crew_id and territory.contested_until and territory.contested_until <= now() %}
+                <form action="{{ url_for('territory_minigame', city=territory.city) }}" method="post">
+                    {{ csrf_token() }}
+                    <button type="submit" class="btn btn-warning">Play Minigame to Resolve!</button>
+                </form>
+            {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if character.crew_id %}
+    <form method="post" action="{{ url_for('crew_payout') }}" style="margin-top:2em;">
+        {{ payout_form.hidden_tag() }}
+        {{ payout_form.submit(class_="btn btn-lg btn-success") }}
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

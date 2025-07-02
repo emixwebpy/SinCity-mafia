@@ -3,237 +3,207 @@
 
 {% block content %}
 <style>
-.content-area {
-    background: none !important;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px 0;
+    flex-wrap: wrap;
 }
-.hire-bgbb {
-    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    position: fixed !important;
-    top: 0; left: 0; width: 100vw; height: 100vh !important;
-    z-index: -2 !important;
-    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
-}
-
-.hire-header {
-    background: rgba(40,42,54,0.92);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    margin-bottom: 0;
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 2px;
-    border-bottom: 2px solid #ffd70055;
-}
-.hire-header h1 {
-    color: #ffd700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
-    letter-spacing: 4px;
-}
-.hire-header-desc {
-    color:#8be9fd;
-    font-size:1.1em;
-    margin-top:0.5em;
-    font-family: 'Cinzel', serif;
-    opacity: 0.8;
-}
-.hire-list {
-    background: rgba(35,36,58,0.92);
-    border-radius: 0 0 18px 18px;
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    max-width: 700px;
-    margin: 0 auto 2rem auto;
-    border-top: none;
-}
-.hire-info-table {
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
     width: 100%;
-    color: #f5f6fa;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-family: 'Cinzel', serif;
-    margin-bottom: 2em;
 }
-.hire-info-table th, .hire-info-table td {
-    padding: 1.1rem 1rem;
-    text-align: left;
-    vertical-align: middle;
-    border: none;
-    background: none;
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
 }
-.hire-info-table th {
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
     color: #ffd700;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-    text-shadow: 0 1px 8px #000;
-    width: 220px;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
 }
-.hire-info-table td {
-    color: #8be9fd;
-    font-size: 1.08em;
-    font-weight: 600;
-}
-.hire-bg-form label {
+.profile-premium {
     color: #ffd700;
-    font-weight: bold;
-    margin-bottom: 0.5em;
-    display: block;
+    font-weight: 700;
     font-size: 1.1em;
     letter-spacing: 1px;
-    font-family: 'Cinzel', serif;
+    margin-left: 8px;
 }
-.hire-bg-form input[type="number"] {
-    width: 90px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 2px solid #8be9fd88;
-    background: #181824;
-    color: #f5f6fa;
-    font-size: 1.15em;
-    outline: none;
-    margin-bottom: 1em;
-    text-align: center;
-    font-family: 'Cinzel', serif;
+.profile-quick-actions {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
 }
-.btn-primary {
-    background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
-    color: #232526;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-top: 0.5rem;
-    width: 100%;
-    transition: background 0.2s, box-shadow 0.2s;
-    text-decoration: none;
-    box-shadow: 0 2px 12px #ffd70033;
-    cursor: pointer;
-    letter-spacing: 1px;
-    font-family: 'Cinzel', serif;
-    text-shadow: 0 1px 0 #fff4;
+.profile-crew-link {
+    margin-top: 10px;
+    font-size: 1.1em;
 }
-.btn-primary:hover {
-    background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
-    color: #232526;
-    box-shadow: 0 4px 18px #ffd70055;
-}
-.bodyguard-list-table {
-    width: 100%;
-    margin-top: 30px;
-    margin-bottom: 1.5em;
-    color: #ffd700;
-    background: #181824;
-    border-radius: 10px;
-    box-shadow: 0 1px 8px #ffd70022;
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
-    font-family: 'Cinzel', serif;
-}
-.bodyguard-list-table th, .bodyguard-list-table td {
-    padding: 0.7em 1em;
-    text-align: center;
-    font-size: 1.08em;
-}
-.bodyguard-list-table th {
-    background: #23243a;
+.profile-crew-link a {
     color: #8be9fd;
-    font-weight: 900;
-    letter-spacing: 1px;
-    border-bottom: 2px solid #ffd700;
+    text-decoration: underline;
+    font-weight: 600;
 }
-.bodyguard-list-table tr:nth-child(even) {
-    background: #23243a;
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
 }
-.bodyguard-list-table tr:nth-child(odd) {
-    background: #181824;
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
 }
-@media (max-width: 700px) {
-    .hire-list {
-        padding: 1rem 0.5rem;
-        max-width: 98vw;
-    }
-    .hire-header {
-        padding: 1rem 0.5rem 0.5rem 0.5rem;
-    }
-    .hire-header h1 {
-        font-size: 1.2em;
-    }
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
-<div class="hire-bgbb"></div>
-
-
-<div class="hire-header">
-    <h1><i class="fas fa-user-shield"></i> Hire Bodyguards <i class="fas fa-user-shield"></i></h1>
-    <div class="hire-header-desc">
-        <i class="fas fa-shield-alt"></i> Need protection? Hire loyal bodyguards to watch your back. <i class="fas fa-shield-alt"></i>
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            {% if character.profile_image %}
+                <img class="profile-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <div class="profile-quick-actions">
+                <div class="profile-crew-link" style="margin-top:0;">
+                    <span>Bodyguards: </span>
+                    <span class="profile-value">{{ character.bodyguards or 0 }}</span>
+                </div>
+                <div class="profile-crew-link">
+                    <span>Money: </span>
+                    <span class="profile-value">${{ character.money }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1><i class="fas fa-user-shield"></i> Hire Bodyguards</h1>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="profile-stat">
+                    <span class="profile-label">Current Bodyguards</span>
+                    <span class="profile-value">{{ character.bodyguards or 0 }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Max Bodyguards</span>
+                    <span class="profile-value">200</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Cost per Bodyguard</span>
+                    <span class="profile-value">$1,000 x (current + new)</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Available Money</span>
+                    <span class="profile-value">${{ character.money }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Available to Hire</span>
+                    <span class="profile-value">{{ max_hire }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Total Cost (All)</span>
+                    <span class="profile-value">${{ (max_hire or 0) * 1000 * (character.bodyguards or 0 + 1) }}</span>
+                </div>
+            </div>
+            <div style="margin-top:32px;">
+                <form method="post" class="hire-bg-form">
+                    {{ form.hidden_tag() }}
+                    <label for="{{ form.num.id }}">
+                        <i class="fas fa-user-plus"></i> {{ form.num.label.text }}
+                    </label>
+                    {{ form.num(class_="form-control", min=1, max=max_hire, value=1, required=True) }}
+                    {% for error in form.num.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                    {{ form.submit(class_="btn btn-primary", style="margin-top:1em;") }}
+                </form>
+            </div>
+            {% if character.bodyguards and character.bodyguards > 0 %}
+            <div style="margin-top:32px;">
+                <table class="bodyguard-list-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Bodyguard Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name in character.bodyguard_names_list %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-<div class="hire-list">
-    <table class="hire-info-table">
-        <tbody>
-            <tr>
-                <th><i class="fas fa-users"></i> Current Bodyguards</th>
-                <td>{{ character.bodyguards or 0 }}</td>
-            </tr>
-            <tr>
-                <th><i class="fas fa-user-plus"></i> Max Bodyguards</th>
-                <td>200</td>
-            </tr>
-            <tr>
-                <th><i class="fas fa-dollar-sign"></i> Cost per Bodyguard</th>
-                <td>$1,000 x (current bodyguards + new hires)</td>
-            </tr>
-            <tr>
-                <th><i class="fas fa-wallet"></i> Available Money</th>
-                <td>${{ character.money }}</td>
-            </tr>
-            <tr>
-                <th><i class="fas fa-user-secret"></i> Available to Hire</th>
-                <td>{{ max_hire }}</td>
-            </tr>
-            <tr>
-                <th><i class="fas fa-calculator"></i> Total Cost (All)</th>
-                <td>${{ (max_hire or 0) * 1000 * (character.bodyguards or 0 + 1) }}</td>
-            </tr>
-        </tbody>
-    </table>
-    <form method="post" class="hire-bg-form">
-        {{ form.hidden_tag() }}
-        <label for="{{ form.num.id }}">
-            <i class="fas fa-user-plus"></i> {{ form.num.label.text }}
-        </label>
-        {{ form.num(class_="form-control", min=1, max=max_hire, value=1, required=True) }}
-        {% for error in form.num.errors %}
-            <div class="text-danger">{{ error }}</div>
-        {% endfor %}
-        {{ form.submit(class_="btn btn-primary", style="margin-top:1em;") }}
-    </form>
-    {% if character.bodyguards and character.bodyguards > 0 %}
-    <table class="bodyguard-list-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Bodyguard Name</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for name in character.bodyguard_names_list %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ name }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
 </div>
 {% endblock %}

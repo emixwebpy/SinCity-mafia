@@ -13,9 +13,36 @@ from models.crew import CrewMember, Crew
 from flask_login import current_user
 from extensions import db
 from flask import flash, redirect, url_for
+from models.event import CityEvent
 
+def maybe_trigger_city_event():
+    # 5% chance to trigger an event on dashboard load
+    if random.random() < 0.05:
+        event_types = [
+            ("Police Raid", "Police are cracking down! All crime payouts halved.", 30),
+            ("Festival", "City festival! XP gains doubled.", 30),
+            ("Double XP", "Double XP for all actions!", 30)
+        ]
+        event_type, desc, minutes = random.choice(event_types)
+        city = random.choice(CITIES)
+        event = CityEvent(
+            event_type=event_type,
+            city=city,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow() + timedelta(minutes=minutes),
+            description=desc
+        )
+        db.session.add(event)
+        db.session.commit()
 
-
+def seed_territories():
+    from models.territory import Territory
+    from models.constants import CITIES
+    for city in CITIES:
+        if not Territory.query.filter_by(city=city).first():
+            t = Territory(city=city)
+            db.session.add(t)
+    db.session.commit()
 
 def randomize_all_drug_prices():
     
