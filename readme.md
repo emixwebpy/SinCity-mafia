@@ -4,17 +4,19 @@ A digital implementation of the classic social deduction game "Mafia". Play with
 
 ## Features
 
-- Play Text Based Mafia Online
-- Chat system for player discussion
-- Customizable game settings
-
-
-## Usage
-
-- Create a new game room or join an existing one.
-- Share the room code with friends.
-- Assign roles and start the game.
-- Discuss, vote, and try to win as your assigned role!
+- Crew's
+- Crew territories/
+- Jail system
+- Organized crime's
+- Forums
+- Hire bodyguards
+- Private messages
+- Graveyard
+- Godfather position
+- Travel system
+- FAKE drug market to sell and buy FAKE drugs
+- Casino
+- Stealing from other players
 
 ## Contributing
 
