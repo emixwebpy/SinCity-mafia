@@ -138,12 +138,19 @@ def home():
 def forums():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     forums = Forum.query.all()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-    return render_template('forums.html', forums=forums,character=character)
+    return render_template('forums.html', forums=forums,character=character, online_characters=online_characters, online_users=online_users)
 
 @app.route('/forum/<int:forum_id>')
 def forum_view(forum_id):
@@ -323,6 +330,13 @@ def inbox():
     pagination = messages_query.paginate(page=page, per_page=per_page, error_out=False)
     messages = pagination.items
     char_map = {}
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -336,7 +350,9 @@ def inbox():
         messages=messages,
         char_map=char_map,
         character=character,
-        pagination=pagination
+        pagination=pagination,
+        online_characters=online_characters,
+        online_users=online_users
     )
 @app.route('/messages/sent_messages', methods=['GET'])
 @login_required
@@ -398,7 +414,7 @@ def notifications():
         key=lambda n: n.timestamp if hasattr(n, 'timestamp') else n.get("timestamp", datetime.min),
         reverse=True
     )
-    return render_template('notifications.html', notifications=notifications, invitations=invitations,character=character)
+    return render_template('notifications.html', notifications=notifications, invitations=invitations,character=character, online_characters=online_characters, online_users=online_users)
     
     
 
@@ -524,6 +540,13 @@ def attempt_organized_crime():
 @login_required
 def graveyard():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -533,7 +556,7 @@ def graveyard():
     all_characters = Character.query.filter_by(is_alive=False).all()
     # Sort by death_date if available, most recent first
     all_characters.sort(key=lambda c: getattr(c, 'death_date', None) or datetime.min, reverse=True)
-    return render_template("graveyard.html", all_characters=all_characters, character=character)
+    return render_template("graveyard.html", all_characters=all_characters, character=character, online_characters=online_characters, online_users=online_users)
 
 @app.route('/crew/<int:crew_id>')
 @login_required
@@ -546,6 +569,13 @@ def crew_page(crew_id):
     member_forms = [(member, RoleForm(new_role=member.role)) for member in members]
     # Determine current user's role in the crew
     current_user_role = None
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     for m in members:
         if m.user_id == current_user.id:
             current_user_role = m.role
@@ -567,7 +597,9 @@ def crew_page(crew_id):
         leave_form=leave_form,
         member_forms=member_forms,
         current_user_role=current_user_role,
-        character=character
+        character=character,
+        online_characters=online_characters,
+        online_users=online_users
     )
 
 @app.route('/crew_member/<int:crew_member_id>/update_role', methods=['POST'])
@@ -838,6 +870,13 @@ def travel():
 @login_required
 def inventory():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
@@ -872,7 +911,7 @@ def inventory():
     
     inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
     equip_forms = {inv.item.gun.id: EquipGunForm() for inv in inventory_items if inv.item.is_gun and inv.item.gun}
-    return render_template('inventory.html', inventory_items=inventory_items, character=character,equip_forms=equip_forms)
+    return render_template('inventory.html', inventory_items=inventory_items, character=character,equip_forms=equip_forms, online_characters=online_characters, online_users=online_users)
 
 @app.route("/users_online")
 @login_required
@@ -2389,6 +2428,13 @@ def profile_by_id(char_id):
     character = Character.query.get_or_404(char_id)
     user = User.query.filter_by(id=character.master_id).first()
     crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     form = EditBioForm(obj=character)
     if form.validate_on_submit() and current_user.id == user.id:
         character.bio = form.bio.data
@@ -2397,7 +2443,7 @@ def profile_by_id(char_id):
         return redirect(url_for('profile_by_id', char_id=character.id))
     return render_template('profile.html', user=user, character=character,
     upload_image_form=UploadImageForm(),
-    kill_form=KillForm(), crew=crew, form=form)
+    kill_form=KillForm(), crew=crew, form=form, online_characters=online_characters, online_users=online_users)
 
 @app.route('/step_down_godfather', methods=['POST'])
 @login_required
