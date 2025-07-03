@@ -273,11 +273,11 @@
                         {% for char in online_characters %}
                         {% if char.id != character.id %}
                         <tr>
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
+                            <td class="dashboard-name">
+                                <span class="dashboard-icon"><i class="fas fa-user"></i></span>
                                 <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
                             </td>
-                            <td class="profile-level">{{ char.level }}</td>
+                            <td class="dashboard-level">{{ char.level }}</td>
                         </tr>
                         {% endif %}
                         {% endfor %}

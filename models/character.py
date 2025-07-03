@@ -36,6 +36,9 @@ class Character(db.Model):
     crew = db.relationship('Crew', backref='characters')
     bio = db.Column(db.Text, default="")
     bodyguard_names = db.Column(db.Text, default="[]")  # Store as JSON list of names
+    steal_cooldown = db.Column(db.DateTime, nullable=True)
+
+
 
     @property
     def bodyguard_names_list(self):

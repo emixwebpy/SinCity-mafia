@@ -366,9 +366,15 @@ def sent_messages():
 @app.route('/notifications')
 @login_required
 def notifications():
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.timestamp.desc()).all()
-    
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -2227,7 +2233,16 @@ def steal():
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-
+    
+    if character.steal_cooldown and character.steal_cooldown > datetime.utcnow():
+        remaining = character.steal_cooldown - datetime.utcnow()
+        hours, mins, secs = 0, 0, 0
+        if remaining.total_seconds() > 0:
+            hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+            mins, secs = divmod(remainder, 60)
+        flash(f"You must wait {hours}h {mins}m {secs}s before stealing again.", "warning")
+        return redirect(url_for('dashboard'))
+    
     if form.validate_on_submit():
         target_name = form.target_name.data.strip()
         target = Character.query.filter_by(name=target_name, is_alive=True).first()
@@ -2248,15 +2263,30 @@ def steal():
         
         # 30% chance to succeed
         if random.random() < 0.3:
-            amount = random.randint(100, min(2000, target.money))
+            amount = random.randint(10000, min(2000000, target.money))
             target.money -= amount
             character.money += amount
+            character.steal_cooldown = datetime.utcnow() + timedelta(minutes=1)
             db.session.commit()
             flash(f"Success! You stole ${amount} from {target.name}.", "success")
+
+            # --- Notify the victim, sometimes with the thief's name ---
+            reveal_chance = 0.2  # 20% chance to reveal thief
+            if random.random() < reveal_chance:
+                notif_msg = f"{character.name} stole ${amount} from you!"
+            else:
+                notif_msg = f"Someone stole ${amount} from you!"
+            notif = Notification(
+                user_id=target.master_id,
+                message=notif_msg,
+                timestamp=datetime.utcnow()
+            )
+            db.session.add(notif)
+            db.session.commit()
         else:
-            # 20% chance to go to jail for 2-5 minutes
-            if random.random() < 0.2:
-                jail_minutes = random.randint(2, 5)
+
+            if random.random() < 0.1: # 10% chance to go to jail for 0 minutes
+                jail_minutes = random.randint(0, 0)
                 character.in_jail = True
                 character.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
                 db.session.commit()
@@ -2264,6 +2294,9 @@ def steal():
                 return redirect(url_for('jail'))
             else:
                 flash("You failed to steal and got nothing.", "warning")
+        # Set cooldown for stealing
+        character.steal_cooldown = datetime.utcnow() + timedelta(hours=5)
+        db.session.commit()
         return redirect(url_for('dashboard'))
     return render_template('steal.html', form=form, character=character)
 

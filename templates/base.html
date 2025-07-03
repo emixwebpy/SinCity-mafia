@@ -33,12 +33,14 @@
           top: 0; left: 0; width: 100vw; height: 100vh;
           z-index: -2;
           filter: grayscale(0.25) brightness(0.5) blur(1px);
+          overflow: hidden;
       }
       .graveyard-overlay {
           position: fixed;
           top: 0; left: 0; width: 100vw; height: 100vh;
           background: linear-gradient(180deg, rgba(24,24,36,0.92) 60%, rgba(35,36,58,0.98) 100%);
           z-index: -1;
+          overflow:auto;
       }
       /* Layout */
       .layout-root {
@@ -128,8 +130,8 @@
         cursor: pointer;
         user-select: none;
         display: flex;
-        align-items: center;
-        justify-content: space-around;
+        align-content: stretch;
+        justify-content: space-between;
         background: linear-gradient(120deg, #23243a 60%, #181824 100%);
         transition: background 0.18s;
         box-shadow: 0 1px 0 #8be9fd11;
@@ -310,12 +312,12 @@
         width: 100vw;
         max-width: 100vw;
         margin: 0 auto;
-        min-width: 0;
-        min-height: 0;
-        height: 100vh;
+        min-height: 100vh;
         color: #f8f8ff;
         font-size: 12px;
         box-sizing: border-box;
+        scrollbar-width: thin;
+        scrollbar-color: #ffd700 #23243a;
       }
 
       /* Content */
@@ -625,7 +627,7 @@
         }
         .toggle-chat {
           right: 1vw !important;
-          
+          margin: 0 auto;
           font-size: 1.2em;
           width: 40px;
           height: 40px;
@@ -689,7 +691,7 @@
     {% block sidebar %}
     <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
       <nav class="sidebar">
-        {% if current_user.is_authenticated %}
+        <!-- {% if current_user.is_authenticated %}
           <div class="sidebar-user">
             {% set character = current_character %}
             {% if character and character.profile_image %}
@@ -710,7 +712,7 @@
               <span><strong>No character</strong></span>
             {% endif %}
           </div>
-        {% endif %}
+        {% endif %} -->
         <div class="sidebar-nav">
           <!-- Admin -->
           {% if current_user.is_authenticated and current_user.is_admin %}
@@ -1001,6 +1003,10 @@
     }
   });
 
+  window.addEventListener('resize', () => {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+  });
+  document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
   
   // Floating Chat Tabs and Messaging
   let currentTab = 'public';
@@ -1059,9 +1065,8 @@
         div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
         messageBox.appendChild(div);
       });
-      if (isNearBottom) {
-        messageBox.scrollTop = messageBox.scrollHeight;
-      }
+      // Always scroll to bottom after loading messages
+      messageBox.scrollTop = messageBox.scrollHeight;
     } catch (err) {
       console.error(`Failed to fetch ${currentTab} messages:`, err);
     }

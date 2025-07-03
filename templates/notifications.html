@@ -205,59 +205,52 @@
                     </thead>
                     <tbody>
                         {% set notification_count = 0 %}
+                        {% if notification_count == 0 and not invitations %}
+                        <tr>
+                            <td colspan="4" style="color:#b8b8ff;text-align:center;">No crew notifications.</td>
+                        </tr>
+                        {% endif %}
+                        <br>
                         {% for n in notifications %}
-                            {% if n.type == "message" %}
                             {% set notification_count = notification_count + 1 %}
                             <tr>
                                 <td>{{ notification_count }}</td>
                                 <td>
-                                    <span class="notification-link">
-                                        <i class="fas fa-envelope"></i> Private Message
-                                        {% if not n.is_read %}<span style="color:#ffd700;"> (unread)</span>{% endif %}
-                                    </span>
+                                    {% if n.__class__.__name__ == 'Notification' %}
+                                        {% if "stole" in n.message %}
+                                            <span class="notification-link" style="color:#ff5555;"><i class="fas fa-user-secret"></i> Theft</span>
+                                        {% else %}
+                                            <span class="notification-link"><i class="fas fa-exclamation-circle"></i> Event</span>
+                                        {% endif %}
+                                    {% elif n.type == "message" %}
+                                        <span class="notification-link"><i class="fas fa-envelope"></i> Private Message</span>
+                                    {% endif %}
                                 </td>
                                 <td class="notification-desc">
-                                    From <b>{{ n.from }}</b>: {{ n.content|truncate(50) }}
+                                    {% if n.__class__.__name__ == 'Notification' %}
+                                        {{ n.message }}
+                                    {% elif n.type == "message" %}
+                                        From <b>{{ n.from }}</b>: {{ n.content|truncate(50) }}
+                                    {% endif %}
                                     <br>
-                                    <small>{{ n.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    <small>
+                                        {% if n.__class__.__name__ == 'Notification' %}
+                                            {{ n.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            {{ n.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                        {% endif %}
+                                    </small>
                                 </td>
                                 <td>
                                     <div class="notification-actions">
-                                        <a href="{{ url_for('view_message', msg_id=n.msg_id) }}" class="btn btn-primary btn-sm">
-                                            View
-                                        </a>
+                                        {% if n.type == "message" %}
+                                            <a href="{{ url_for('view_message', msg_id=n.msg_id) }}" class="btn btn-primary btn-sm">View</a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
-                            {% endif %}
                         {% endfor %}
-                        {% if invitations %}
-                            {% for invite in invitations %}
-                            <tr>
-                                <td>—</td>
-                                <td>
-                                    <span class="notification-link">
-                                        <i class="fas fa-users"></i> Crew Invitation
-                                    </span>
-                                </td>
-                                <td class="notification-desc">
-                                    Invitation from <strong>{{ invite.inviter.username }}</strong>
-                                    to join crew <strong>{{ invite.crew.name }}</strong>
-                                </td>
-                                <td>
-                                    <div class="notification-actions">
-                                        <a href="{{ url_for('accept_invite', invite_id=invite.id) }}" class="btn btn-success btn-sm">Accept</a>
-                                        <a href="{{ url_for('decline_invite', invite_id=invite.id) }}" class="btn btn-danger btn-sm">Decline</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% endif %}
-                        {% if notification_count == 0 and not invitations %}
-                        <tr>
-                            <td colspan="4" style="color:#b8b8ff;text-align:center;">No notifications.</td>
-                        </tr>
-                        {% endif %}
+                        
                     </tbody>
                 </table>
             </div>
