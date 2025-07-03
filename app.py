@@ -2219,6 +2219,32 @@ def user_stats():
         level=character.level
     )
 
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def user_settings():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    form = UserSettingsForm()
+    user = User.query.get(current_user.id)
+    if form.validate_on_submit():
+        # Check current password
+        if not user.check_password(form.current_password.data):
+            flash("Current password is incorrect.", "danger")
+            return redirect(url_for('user_settings'))
+        # Change email
+        if form.email.data and form.email.data != user.email:
+            if User.query.filter_by(email=form.email.data).first():
+                flash("Email already in use.", "danger")
+                return redirect(url_for('user_settings'))
+            user.email = form.email.data
+            flash("Email updated.", "success")
+        # Change password
+        if form.new_password.data:
+            user.set_password(form.new_password.data)
+            flash("Password updated.", "success")
+        db.session.commit()
+        return redirect(url_for('user_settings'))
+    return render_template('user_settings.html', form=form, user=user, character=character)
+
 @app.route('/steal', methods=['GET', 'POST'])
 @login_required
 def steal():
@@ -2263,6 +2289,8 @@ def steal():
         
         # 30% chance to succeed
         if random.random() < 0.3:
+            
+            scrambled_name = ''.join(random.sample(character.name, len(character.name)))
             amount = random.randint(10000, min(2000000, target.money))
             target.money -= amount
             character.money += amount
@@ -2270,12 +2298,14 @@ def steal():
             db.session.commit()
             flash(f"Success! You stole ${amount} from {target.name}.", "success")
 
-            # --- Notify the victim, sometimes with the thief's name ---
+            
             reveal_chance = 0.2  # 20% chance to reveal thief
             if random.random() < reveal_chance:
                 notif_msg = f"{character.name} stole ${amount} from you!"
+            elif random.random() < reveal_chance:
+                notif_msg = f"{scrambled_name} stole ${amount} from you!"
             else:
-                notif_msg = f"Someone stole ${amount} from you!"
+                notif_msg = f"You were robbed of ${amount} by an unknown thief!"
             notif = Notification(
                 user_id=target.master_id,
                 message=notif_msg,

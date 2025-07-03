@@ -310,9 +310,10 @@
         display: flex;
         flex-direction: column;
         width: 100vw;
-        max-width: 100vw;
+        max-width: 100%;
         margin: 0 auto;
         min-height: 100vh;
+        max-height: 100vh;
         color: #f8f8ff;
         font-size: 12px;
         box-sizing: border-box;
@@ -691,7 +692,7 @@
     {% block sidebar %}
     <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
       <nav class="sidebar">
-        <!-- {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated %}
           <div class="sidebar-user">
             {% set character = current_character %}
             {% if character and character.profile_image %}
@@ -712,7 +713,7 @@
               <span><strong>No character</strong></span>
             {% endif %}
           </div>
-        {% endif %} -->
+        {% endif %}
         <div class="sidebar-nav">
           <!-- Admin -->
           {% if current_user.is_authenticated and current_user.is_admin %}

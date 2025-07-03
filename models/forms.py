@@ -5,12 +5,17 @@ from wtforms import (
     SelectField, FileField, RadioField, TextAreaField, HiddenField
 )
 from wtforms.fields import DateTimeField
-from wtforms.validators import DataRequired, NumberRange, Optional, Length,ValidationError
+from wtforms.validators import DataRequired, NumberRange, Optional, Length,ValidationError, Email, EqualTo
 from models.constants import CITIES
 from models.character import Character
 
 
-
+class UserSettingsForm(FlaskForm):
+    email = StringField('New Email', validators=[Optional(), Email(), Length(max=120)])
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[Optional(), Length(min=6)])
+    confirm_password = PasswordField('Confirm New Password', validators=[EqualTo('new_password', message='Passwords must match'), Optional()])
+    submit = SubmitField('Update Settings')
 
 class StealForm(FlaskForm):
     target_name = StringField('Target Character Name', validators=[DataRequired()])

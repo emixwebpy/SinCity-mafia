@@ -248,7 +248,7 @@
                 <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
             {% endif %}
             {% if current_user.is_authenticated and current_user.id == user.id %}
-                <form action="{{ url_for('upload_profile_image') }}" method="post" enctype="multipart/form-data" style="margin-top:10px;">
+                <form action="{{ url_for('upload_profile_image') }}" method="post" enctype="multipart/form-data" style="margin-top:10px;display: flex;align-content: flex-start;flex-direction: column;flex-wrap: nowrap;">
                     {{ upload_image_form.hidden_tag() }}
                     <label for="profile_image" class="btn btn-primary" style="cursor:pointer; margin-bottom:0;">
                         <i class="fas fa-upload"></i> Change Image
@@ -257,6 +257,9 @@
                     <button type="submit" class="btn btn-primary" style="margin-top:8px;">
                         <i class="fa-solid fa-upload"></i> Upload
                     </button>
+                    <a href="{{ url_for('user_settings') }}" class="btn btn-primary" style="margin-top:8px;">
+                        <i class="fa-solid fa-cog"></i> Settings
+                    </a>
                 </form>
             {% endif %}
             <div class="profile-quick-actions">
