@@ -572,45 +572,7 @@
     </div>
 </div>
 
-<div class="profile-card-container" style="margin-top: 24px;">
-    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
-        <div class="profile-card-main" style="width:100%;">
-            <div class="profile-card-header">
-                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="profile-table" style="width:100%;">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Name</th>
-                            <th><i class="fas fa-layer-group"></i> Level</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="current-user">
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                {{ character.name }}
-                            </td>
-                            <td class="profile-level">{{ character.level }}</td>
-                        </tr>
-                        {% for char in online_characters %}
-                        {% if char.id != character.id %}
-                        <tr>
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                            </td>
-                            <td class="profile-level">{{ char.level }}</td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+
 <script>
   // Scroll the log container to the top on page load
   window.addEventListener('DOMContentLoaded', function() {

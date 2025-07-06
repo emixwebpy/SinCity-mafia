@@ -2,47 +2,107 @@
 {% block title %}Shop{% endblock %}
 {% block content %}
 <style>
-.shop-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 0;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
 }
-.shop-header h1 {
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 18px;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    margin: 0;
     letter-spacing: 2px;
 }
-.shop-list-container {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
-    padding: 1.5rem 2rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+.shop-money {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #ffd700;
+    margin-bottom: 20px;
+    display: block;
+    text-align: center;
+}
+.shop-message {
+    background: rgba(139, 233, 253, 0.1);
+    color: #8be9fd;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px #8be9fd22;
+    text-align: center;
 }
 .shop-table {
     width: 100%;
     color: #f5f6fa;
     border-collapse: separate;
     border-spacing: 0;
+    font-family: 'Cinzel', serif;
 }
 .shop-table th, .shop-table td {
-    padding: 1rem 1rem;
+    padding: 1.1rem 1rem;
     text-align: left;
     vertical-align: middle;
+    border: none;
+    background: none;
 }
 .shop-table th {
-    background: #181824;
     color: #ffd700;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: bold;
     border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
 }
 .shop-table tr {
-    background: #282a36;
+    background: rgba(40,42,54,0.85);
     transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
 }
 .shop-table tr:hover {
     background: #34355b;
@@ -85,79 +145,75 @@
     color: #ff5555;
     font-weight: 700;
 }
-.shop-money {
-    font-size: 1.3em;
-    font-weight: 700;
-    color: #ffd700;
-    margin-bottom: 20px;
-    display: block;
-    text-align: center;
-}
-.shop-message {
-    background: rgba(139, 233, 253, 0.1);
-    color: #8be9fd;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 25px;
-    font-weight: 600;
-    box-shadow: 0 2px 8px #8be9fd22;
-    text-align: center;
-}
-@media (max-width: 600px) {
-    .shop-header, .shop-list-container {
-        padding: 1rem;
-    }
-    .shop-header h1 {
-        font-size: 2em;
-    }
-    .shop-table th, .shop-table td {
-        padding: 0.5rem 0.5rem;
-        font-size: 0.95em;
-    }
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
 }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-<div class="shop-header">
-    <h1><i class="fas fa-store"></i> Shop</h1>
-</div>
-<div class="shop-list-container">
-    <span class="shop-money">Your money: ${{ character.money }}</span>
-    {% if message %}
-      <div class="shop-message">{{ message }}</div>
-    {% endif %}
-    <table class="shop-table">
-        <tr>
-            <th style="width:25%;">Item</th>
-            <th style="width:35%;">Description</th>
-            <th style="width:10%;">Price</th>
-            <th style="width:10%;">Stock</th>
-            <th style="width:20%;">Actions</th>
-        </tr>
-        {% for item in items %}
-        <tr>
-            <td class="shop-item-name">{{ item.name }}</td>
-            <td class="shop-item-desc">{{ item.description }}</td>
-            <td>${{ item.price }}</td>
-            <td class="shop-item-stock">{{ item.stock }}</td>
-            <td>
-                <div class="shop-item-actions">
-                {% if item.stock > 0 %}
-                <form method="post" style="display:inline;">
-                    {{ buy_form.hidden_tag() }}
-                    <input type="hidden" name="item_id" value="{{ item.id }}">
-                    {{ buy_form.submit(class_="btn btn-primary") }}
-                </form>
-                {% else %}
-                <span class="shop-out">Out of stock</span>
-                {% endif %}
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            {% if character.profile_image %}
+                <img class="profile-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <div class="profile-quick-actions" style="margin-top:18px;">
+                <div class="profile-premium">
+                    <i class="fas fa-store"></i> Shop
                 </div>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="5" style="color:#b8b8ff;">No items available.</td>
-        </tr>
-        {% endfor %}
-    </table>
+                <div class="profile-crew-link" style="margin-top:10px;">
+                    <span>Money: </span>
+                    <span style="color:#ffd700;font-weight:600;">${{ character.money }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1><i class="fas fa-store"></i> Shop</h1>
+            </div>
+            {% if message %}
+                <div class="shop-message">{{ message }}</div>
+            {% endif %}
+            <table class="shop-table">
+                <tr>
+                    <th style="width:25%;">Item</th>
+                    <th style="width:35%;">Description</th>
+                    <th style="width:10%;">Price</th>
+                    <th style="width:10%;">Stock</th>
+                    <th style="width:20%;">Actions</th>
+                </tr>
+                {% for item in items %}
+                <tr>
+                    <td class="shop-item-name">{{ item.name }}</td>
+                    <td class="shop-item-desc">{{ item.description }}</td>
+                    <td>${{ item.price }}</td>
+                    <td class="shop-item-stock">{{ item.stock }}</td>
+                    <td>
+                        <div class="shop-item-actions">
+                        {% if item.stock > 0 %}
+                        <form method="post" style="display:inline;">
+                            {{ buy_form.hidden_tag() }}
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            {{ buy_form.submit(class_="btn btn-primary") }}
+                        </form>
+                        {% else %}
+                        <span class="shop-out">Out of stock</span>
+                        {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="color:#b8b8ff;">No items available.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

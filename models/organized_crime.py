@@ -4,6 +4,7 @@ class OrganizedCrime(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=True)
     invite_code = db.Column(db.String(8), unique=True, nullable=False)
+    level = db.Column(db.Integer, default=1, nullable=False)
     leader_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
     leader = db.relationship("Character", backref="led_crime_groups", foreign_keys=[leader_id])
     members = db.relationship(

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/x-icon" href="/static/icon-media/Untitled.jpg" />
   <title>{% block title %}Underworld Tycoon{% endblock %}</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,10 +9,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Concert+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
   <style>
       html, body {
-        font-family: "Concert One", sans-serif;
+        font-family: "Fira Sans", sans-serif;
         font-size:0.85em;
         background: linear-gradient(135deg, #181824 0%, #23243a 100%);
         color: #f8f8ff;
@@ -23,7 +24,7 @@
         letter-spacing: 0.01em;
         transition: background 0.3s;
       }
-      .fade-in { animation: fadeIn 0.7s cubic-bezier(.4,2,.6,1) forwards; }
+      .fade-in {background:#18182400; animation: fadeIn 0.7s cubic-bezier(.4,2,.6,1) forwards; }
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       .graveyard-bgbb {
           background: url('https://images.unsplash.com/photo-1549861833-c5932fd19229?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
@@ -540,7 +541,188 @@
         color: #23243a;
         box-shadow: 0 4px 16px #8be9fd55;
       }
-
+      .online-card-container {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          gap: 36px;
+          margin: 40px 0;
+          flex-wrap: wrap;
+      }
+      .online-card {
+          background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+          border-radius: 18px;
+          box-shadow: 0 6px 32px #00000044;
+          display: flex;
+          flex-direction: row;
+          overflow: hidden;
+          min-width: 340px;
+          max-width: 1100px;
+          width: 100%;
+      }
+      .online-card-sidebar {
+          background: #181824;
+          padding: 36px 28px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 260px;
+          border-right: 1px solid #23243a;
+      }
+      .online-avatar {
+          width: 170px;
+          height: 170px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 4px solid #ffd70055;
+          box-shadow: 0 2px 16px #ffd70033;
+          margin-bottom: 18px;
+          background: #23243a;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 4em;
+          color: #ffd700;
+      }
+      .online-card-main {
+          flex: 1;
+          padding: 36px 32px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+      }
+      .online-card-header {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          margin-bottom: 12px;
+      }
+      .online-card-header h1 {
+          color: #ffd700;
+          font-size: 2.2rem;
+          margin: 0;
+          letter-spacing: 2px;
+      }
+      .online-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 18px;
+          margin: 24px 0 0 0;
+      }
+      .online-stat {
+          background: rgba(139,233,253,0.08);
+          border-radius: 8px;
+          color: #fff;
+          font-size: 1.08em;
+          font-weight: 500;
+          box-shadow: 0 1px 5px #8be9fd22;
+          border: 1px solid #8be9fd22;
+          padding: 16px 18px;
+          text-align: center;
+      }
+      .online-label {
+          color: #8be9fd;
+          font-size: 0.92em;
+          font-weight: 700;
+          margin-bottom: 4px;
+          letter-spacing: 0.5px;
+          display: block;
+      }
+      .online-value {
+          font-size: 1.25em;
+          font-weight: 700;
+          color: #fff;
+      }
+      .online-table {
+          width: 100%;
+          color: #f5f6fa;
+          border-collapse: separate;
+          border-spacing: 0;
+          font-family: 'Cinzel', serif;
+      }
+      .online-table th, .online-table td {
+          padding: 1.1rem 1rem;
+          text-align: left;
+          vertical-align: middle;
+          border: none;
+          background: none;
+      }
+      .online-table th {
+          color: #ffd700;
+          font-size: 1.2rem;
+          font-weight: bold;
+          border-bottom: 2px solid #8be9fd55;
+          text-shadow: 0 1px 8px #000;
+      }
+      .online-table tr {
+          background: rgba(40,42,54,0.85);
+          transition: background 0.2s;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px #00000022;
+      }
+      .online-table tr.current-user {
+          background: rgba(255,215,0,0.13);
+          color: #ffd700;
+          font-weight: 900;
+      }
+      .online-table tr:hover {
+          background: #34355b;
+      }
+      .online-name {
+          font-weight: 700;
+          color: #8be9fd;
+          font-size: 1.08em;
+          letter-spacing: 0.2px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+      .online-icon {
+          font-size: 1.2em;
+          margin-right: 6px;
+          color: #b8b8ff;
+          filter: drop-shadow(0 1px 2px #000);
+      }
+      .online-level {
+          color: #fff;
+          font-size: 1em;
+      }
+      .btn-primary {
+          background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
+          color: #232526;
+          border: none;
+          padding: 0.7rem 1.5rem;
+          border-radius: 6px;
+          font-weight: bold;
+          margin-bottom: 0;
+          transition: background 0.2s;
+          text-decoration: none;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 1.08em;
+          box-shadow: 0 2px 8px #ffd70033;
+      }
+      .btn-primary:hover {
+          background: linear-gradient(90deg, #ffd700 0%, #ffb347 100%);
+          color: #232526;
+      }
+      .btn-danger {
+          background: #ff5555;
+          color: #fff;
+          border: none;
+          padding: 0.7rem 1.5rem;
+          border-radius: 6px;
+          font-weight: bold;
+          transition: background 0.2s;
+          text-decoration: none;
+          cursor: pointer;
+      }
+      .btn-danger:hover {
+          background: #ff2222;
+          color: #fff;
+      }
       /* Responsive */
       @media (max-width: 900px) {
         html, body { font-size: 15px; }
@@ -686,7 +868,9 @@
   </style>
 
 </head>
+
 <body class="fade-in">
+  
   <div class="layout-root fade-in">
     {% block sidebar %}
     <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
@@ -728,7 +912,7 @@
             </div>
           </div>
           {% endif %}
-
+          {% if current_character.in_jail == 0 %}
           <!-- Player management -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
@@ -756,25 +940,66 @@
               </a>
             </div>
           </div>
-          
-          <!-- Main -->
+          {% endif %}
+          {% if current_character.in_jail == 0 %}
+          <!-- Dealings -->
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-home"></i>&nbsp;Main
+              <i class="fas fa-user-alt"></i>&nbsp;Dealings
               <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
             </div>
+            
             <div class="sidebar-subnav">
-              
-              
               <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Forums</span>
               </a>
               <a href="{{ url_for('graveyard') }}" class="{% if request.endpoint == 'graveyard' %}active{% endif %}">
                 <i class="fas fa-crosshairs"></i> <span>Graveyard</span>
               </a>
+              <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>Player Search</span>
+              </a>
+              {% if character %}
+              <a href="{{ url_for('city_characters', city_name=character.city) }}" class="{% if request.endpoint == 'city_characters' %}active{% endif %}">
+                <i class="fas fa-crosshairs"></i> <span>City Characters</span>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Travel</span>
+              </a>
               
             </div>
           </div>
+          {% endif %}
+          <!-- Crime -->
+          <div class="sidebar-category">
+            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+              <i class="fas fa-mask"></i>&nbsp;Crime
+              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            <div class="sidebar-subnav">
+              {% if current_character.in_jail == 0 %}
+              <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
+                <i class="fas fa-store"></i> <span>Shop</span>
+              </a>
+              <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
+                <i class="fas fa-mask"></i> <span>Organized Crime</span>
+              </a>
+              <a href="{{ url_for('drug_dashboard') }}" class="{% if request.endpoint == 'drug_dashboard' %}active{% endif %}">
+                <i class="fas fa-capsules"></i> <span>Drug Market</span>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
+                <i class="fas fa-handcuffs"></i> <span>Jail</span>
+              </a>
+              {% if current_character.in_jail == 0 %}
+              <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
+                <i class="fas fa-plane"></i> <span>Casino</span>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% if current_character.in_jail == 0 %}
           <div class="sidebar-category">
             <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
               <i class="fas fa-home"></i>&nbsp;Manage Crew
@@ -804,54 +1029,9 @@
               {% endif %}
             </div>
           </div>
-          <!-- Dealings -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-user-alt"></i>&nbsp;Dealings
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            
-            <div class="sidebar-subnav">
-              
-              <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Player Search</span>
-              </a>
-              {% if character %}
-              <a href="{{ url_for('city_characters', city_name=character.city) }}" class="{% if request.endpoint == 'city_characters' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>City Characters</span>
-              </a>
-              {% endif %}
-              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Travel</span>
-              </a>
-              
-            </div>
-          </div>
-          <!-- Crime -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-mask"></i>&nbsp;Crime
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
-                <i class="fas fa-store"></i> <span>Shop</span>
-              </a>
-              <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
-                <i class="fas fa-mask"></i> <span>Organized Crime</span>
-              </a>
-              <a href="{{ url_for('drug_dashboard') }}" class="{% if request.endpoint == 'drug_dashboard' %}active{% endif %}">
-                <i class="fas fa-capsules"></i> <span>Drug Market</span>
-              </a>
-              <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
-                <i class="fas fa-handcuffs"></i> <span>Jail</span>
-              </a>
-              <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Casino</span>
-              </a>
-              
-            </div>
-          </div>
+          {% endif %}
+          
+          
           
           
         </div>
@@ -896,6 +1076,47 @@
           {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
+        {% if current_user.is_authenticated %}
+        <div class="online-card-container" style="margin-top: 24px;">
+          <div class="online-card" style="flex-direction: column; max-width: 900px;">
+              <div class="online-card-main" style="width:100%;">
+                  <div class="online-card-header">
+                      <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
+                  </div>
+                  <div style="overflow-x:auto;">
+                      <table class="online-table" style="width:100%;">
+                          <thead>
+                              <tr>
+                                  <th><i class="fas fa-user"></i> Name</th>
+                                  <th><i class="fas fa-layer-group"></i> Level</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <tr class="current-user">
+                                  <td class="online-name">
+                                      <span class="online-icon"><i class="fas fa-user"></i></span>
+                                      {{ character.name }}
+                                  </td>
+                                  <td class="online-level">{{ character.level }}</td>
+                              </tr>
+                              {% for char in online_characters %}
+                              {% if char.id != character.id %}
+                              <tr>
+                                  <td class="online-name">
+                                      <span class="online-icon"><i class="fas fa-user"></i></span>
+                                      <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
+                                  </td>
+                                  <td class="online-level">{{ char.level }}</td>
+                              </tr>
+                              {% endif %}
+                              {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% endif %}
       </main>
       <footer>
         &copy; {{ current_year if current_year else "2025" }} Underworld Tycoon - All rights reserved

@@ -1,10 +1,128 @@
 {% extends "base.html" %}
 {% block title %}Send Message{% endblock %}
+
 {% block content %}
-<h2>Send Message to {{ recipient.username }}</h2>
-<form method="post">
-    {{ form.hidden_tag() }}
-    {{ form.content(class_="form-control", rows="5", cols="40", required=True) }}<br>
-    {{ form.submit(class_="btn btn-primary") }}
-</form>
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 15px 15px;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.profile-premium {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+    margin-left: 8px;
+}
+.profile-quick-actions {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.profile-crew-link {
+    margin-top: 10px;
+    font-size: 1.1em;
+}
+.profile-crew-link a {
+    color: #8be9fd;
+    text-decoration: underline;
+    font-weight: 600;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            {% if recipient.character.profile_image %}
+                <img class="profile-avatar" src="{{ url_for('static', filename=recipient.character.profile_image) if not recipient.character.profile_image.startswith('http') else recipient.character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <div class="profile-quick-actions">
+                <div class="profile-premium">
+                    <i class="fas fa-envelope"></i> Send Message
+                </div>
+                <div class="profile-crew-link">
+                    <span>To: </span>
+                    <span style="color:#8be9fd;font-weight:600;">{{ recipient.character.name }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1>Send Message</h1>
+            </div>
+            <form method="post" style="margin-top:24px;">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.content(class_="form-control", rows="5", cols="40", required=True, style="width:100%;height:120px;") }}
+                </div>
+                <br>
+                {{ form.submit(class_="btn btn-primary") }}
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -37,7 +37,7 @@ class Character(db.Model):
     bio = db.Column(db.Text, default="")
     bodyguard_names = db.Column(db.Text, default="[]")  # Store as JSON list of names
     steal_cooldown = db.Column(db.DateTime, nullable=True)
-
+    
 
 
     @property

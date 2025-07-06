@@ -5,9 +5,9 @@
 .profile-card-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 36px;
-    margin: 40px 0;
+    
     flex-wrap: wrap;
 }
 .profile-card {
@@ -42,7 +42,7 @@
 }
 .profile-card-main {
     flex: 1;
-    padding: 36px 32px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -125,7 +125,12 @@
                 <div class="profile-city" style="margin-top:8px; color:#8be9fd;">
                     <i class="fas fa-city"></i> {{ character.city }}
                 </div>
+                <form method="POST" action="{{ url_for('kill_character') }}" onsubmit="return confirm('Are you sure you want to permanently kill your current character? This cannot be undone!');" style="margin-top:32px;">
+                    {{ kill_form.hidden_tag() }}
+                    {{ kill_form.submit(class="btn btn-danger btn-block") }}
+                </form>
             </div>
+            
         </div>
         <div class="profile-card-main">
             <div class="profile-card-header">
@@ -154,46 +159,26 @@
                 </div>
             </form>
         </div>
+        
     </div>
-</div>
-
-<div class="profile-card-container" style="margin-top: 24px;">
-    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
-        <div class="profile-card-main" style="width:100%;">
-            <div class="profile-card-header">
-                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="profile-table" style="width:100%;">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Name</th>
-                            <th><i class="fas fa-layer-group"></i> Level</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="current-user">
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                {{ character.name }}
-                            </td>
-                            <td class="profile-level">{{ character.level }}</td>
-                        </tr>
-                        {% for char in online_characters %}
-                        {% if char.id != character.id %}
-                        <tr>
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                            </td>
-                            <td class="profile-level">{{ char.level }}</td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div style="box-shadow: 0 6px 32px #00000044; padding: 30px; width:auto; border-radius: 18px; background: linear-gradient(135deg, #181824 0%, #23243a 100%);">
+        <h5 style="color:#ffd700; text-align:center; margin-bottom:10px;">Your Characters</h5>
+        <ul style="list-style:none; padding:0; margin:0;">
+            {% for char in all_characters %}
+                <li style="margin-bottom:8px; text-align:center;">
+                    <span style="color: {{ 'lime' if char.is_alive else '#ff5555' }};">
+                        {{ char.name }}
+                        {% if char.is_alive %}(Active){% else %}(Dead){% endif %}
+                    </span>
+                    <br>
+                    <span style="font-size:0.95em; color:#8be9fd;">
+                        Level {{ char.level }}, {{ char.city }}
+                    </span>
+                </li>
+            {% else %}
+                <li style="color:#b8b8ff; text-align:center;">No characters found.</li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
 {% endblock %}

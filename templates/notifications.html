@@ -6,14 +6,14 @@
 .profile-card-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 36px;
-    margin: 40px 0;
+    margin-top: 15px;
     flex-wrap: wrap;
 }
 .profile-card {
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    border-radius: 18px;
+    border-radius: 5px;
     box-shadow: 0 6px 32px #00000044;
     display: flex;
     flex-direction: row;
@@ -204,12 +204,34 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for invite in invitations %}
+                        <tr>
+                            <td>-</td>
+                            <td>
+                                <span class="notification-link" style="color:#8be9fd;">
+                                    <i class="fas fa-users"></i> Crew Invitation
+                                </span>
+                            </td>
+                            <td class="notification-desc">
+                                Invited to <b>{{ invite.crew.name }}</b>
+                                <br>
+                                <small>{{ invite.timestamp.strftime('%Y-%m-%d %H:%M') if invite.timestamp else '' }}</small>
+                            </td>
+                            <td>
+                                <div class="notification-actions">
+                                    <a href="{{ url_for('accept_invite', invite_id=invite.id) }}" class="btn btn-success btn-sm">Accept</a>
+                                    <a href="{{ url_for('decline_invite', invite_id=invite.id) }}" class="btn btn-danger btn-sm">Decline</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% set notification_count = 0 %}
                         {% if notification_count == 0 and not invitations %}
                         <tr>
                             <td colspan="4" style="color:#b8b8ff;text-align:center;">No crew notifications.</td>
                         </tr>
                         {% endif %}
+                        
                         <br>
                         {% for n in notifications %}
                             {% set notification_count = notification_count + 1 %}
@@ -258,43 +280,5 @@
     </div>
 </div>
 
-<div class="profile-card-container" style="margin-top: 24px;">
-    <div class="profile-card" style="flex-direction: column; max-width: 900px;">
-        <div class="profile-card-main" style="width:100%;">
-            <div class="profile-card-header">
-                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="profile-table" style="width:100%;">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Name</th>
-                            <th><i class="fas fa-layer-group"></i> Level</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="current-user">
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                {{ character.name }}
-                            </td>
-                            <td class="profile-level">{{ character.level }}</td>
-                        </tr>
-                        {% for char in online_characters %}
-                        {% if char.id != character.id %}
-                        <tr>
-                            <td class="profile-name">
-                                <span class="profile-icon"><i class="fas fa-user"></i></span>
-                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                            </td>
-                            <td class="profile-level">{{ char.level }}</td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}

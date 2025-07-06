@@ -4,28 +4,93 @@
 
 {% block content %}
 <style>
-.forums-header {
-    background: linear-gradient(90deg, #232526 0%, #414345 100%);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 0;
-    text-align: center;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
 }
-.forums-header h1 {
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 24px;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    margin: 0;
     letter-spacing: 2px;
 }
-.forums-list {
-    background: #23243a;
-    border-radius: 0 0 12px 12px;
-    padding: 2.5rem 2.5rem 2rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 420px;
-    margin: 0 auto;
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 12px 0 0;
+}
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+    margin-bottom: 25px;
+}
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
 }
 .login-form label {
     color: #ffd700;
@@ -72,50 +137,80 @@
     text-decoration: underline;
     font-weight: 600;
 }
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+}
 @media (max-width: 600px) {
-    .forums-list {
-        padding: 1.2rem 0.5rem;
-        max-width: 98vw;
-    }
-    .forums-header {
-        padding: 1.2rem 0.5rem 0.7rem 0.5rem;
-    }
-    .forums-header h1 {
-        font-size: 1.2em;
-    }
+    .profile-card { padding: 0; }
+    .profile-card-sidebar { padding: 18px 8px; }
+    .profile-card-main { padding: 18px 8px; }
+    .profile-card-header h1 { font-size: 1.2em; }
 }
 </style>
-<div class="forums-header">
-    <h1><i class="fas fa-sign-in-alt"></i> Login</h1>
-</div>
-<div class="forums-list">
-  {% for message in get_flashed_messages(with_categories=true) %}
-    <div class="alert alert-{{ message[0] }}" style="color: #ff6b6b; font-weight: bold; margin-bottom: 12px;">
-      {{ message[1] }}
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            
+            <div style="margin-top:32px; width:100%;">
+                <h5 style="color:#ffd700; text-align:center; margin-bottom:10px;">Game Stats</h5>
+                <ul style="list-style:none; padding:0; margin:0;">
+                    <li class="profile-stat">
+                        <span class="profile-label">Total Registered Users</span>
+                        <span class="profile-value">{{ total_users }}</span>
+                    </li>
+                    <li class="profile-stat">
+                        <span class="profile-label">Total Characters</span>
+                        <span class="profile-value">{{ total_characters }}</span>
+                    </li>
+                    <li class="profile-stat">
+                        <span class="profile-label">Total Dead Characters</span>
+                        <span class="profile-value">{{ total_dead_characters }}</span>
+                    </li>
+                    <li class="profile-stat">
+                        <span class="profile-label">Total Crews</span>
+                        <span class="profile-value">{{ total_crews }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1><i class="fas fa-sign-in-alt"></i> Login</h1>
+            </div>
+            {% for message in get_flashed_messages(with_categories=true) %}
+                <div class="alert alert-{{ message[0] }}" style="color: #ff6b6b; font-weight: bold; margin-bottom: 12px;">
+                    {{ message[1] }}
+                </div>
+            {% endfor %}
+            <form method="POST" class="login-form">
+                {{ form.hidden_tag() }}
+                <div>
+                    {{ form.username.label }}
+                    {{ form.username(class_="form-control", placeholder="Username") }}
+                    {% for error in form.username.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ form.password.label }}
+                    {{ form.password(class_="form-control", placeholder="Password") }}
+                    {% for error in form.password.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {{ form.recaptcha }}
+                {{ form.submit(class_="btn btn-primary") }}
+            </form>
+            <div class="login-links">
+                Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.<br>
+                <a href="{{ url_for('reset_password_request') }}">Forgot your password?</a>
+            </div>
+        </div>
     </div>
-  {% endfor %}
-  <form method="POST" class="login-form">
-    {{ form.hidden_tag() }}
-    <div>
-      {{ form.username.label }}
-      {{ form.username(class_="form-control", placeholder="Username") }}
-      {% for error in form.username.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-    <div>
-      {{ form.password.label }}
-      {{ form.password(class_="form-control", placeholder="Password") }}
-      {% for error in form.password.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-    {{ form.recaptcha }}
-    {{ form.submit(class_="btn btn-primary") }}
-  </form>
-  <div class="login-links">
-    Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.<br>
-    <a href="{{ url_for('reset_password_request') }}">Forgot your password?</a>
-  </div>
 </div>
 {% endblock %}

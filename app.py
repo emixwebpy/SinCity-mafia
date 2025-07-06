@@ -91,7 +91,7 @@ login_manager.login_view = 'login'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
-limiter = Limiter(key_func=limiter_key_func, app=app, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(key_func=limiter_key_func, app=app)
 
 
 
@@ -114,14 +114,15 @@ def enable_sqlite_fk():
 @app.before_request
 def check_character_alive():
     allowed_endpoints = (
-         'logout', 'static', 'dashboard', 'register', 'login', 'admin','create_character', 'forums', 'forum_view', 'gun_detail', 'send_beer', 'new_topic', 'topic_view', 'create_forum', 'inbox', 'notifications', 'send_message', 'view_message', 'leave_crime', 'attempt_organized_crime', 'crew_page', 'update_crew_role', 'hire_bodyguard', 'kill', 'profile_by_id', 'crew_member_update_role', 'crew_member_leave', 'crew_member_invite', 'crews', 'crew_member_view_profile', 'crew_member_edit_profile', 'crew_member_delete_profile', 'crew_member_view_crew', 'crew_member_create_crew', 'crew_member_edit_crew', 'crew_member_delete_crew', 'crew_member_view_members', 'crew_member_add_member', 'crew_member_remove_member', 'crew_member_view_requests', 'crew_member_accept_request', 'crew_member_decline_request', 'crew_member_view_notifications', 'crew_member_mark_notification_read', 'crew_member_delete_notification', 'crew_member_view_messages', 'crew_member_send_message', 'crew_member_view_message', 'crew_member_delete_message', 'crew_member_view_sent_messages', 'crew_member_view_received_messages', 'crew_member_view_chat', 'crew_member_send_chat_message', 'crew_member_delete_chat_message', 'crew_member_view_chat_history', 'crew_member_clear_chat_history', 'crew_member_view_crime_history', 'crew_member_clear_crime_history', 'crew_member_edit_crime_group', 'crew_member_delete_crime_group', 'crew_member_view_crime_group_members', 'crew_member_add_crime_group_member', 'crew_member_remove_crime_group_member', 'crew_member_view_crime_group_requests', 'crew_member_accept_crime_group_request', 'crew_member_decline_crime_group_request', 'crew_member_view_crime_group_invitations', 'crew_member_accept_crime_group_invitation', 'public_message_view', 'public_message_send','player_search','travel','godfathers_page','send_beer','claim_godfather','create_crime','crime_group','send_public_message', 'public_message','get_messages', 'crew_messages','earn','jail','breakout','upload_profile_image','disband_crime', 'leave_crime', 'profile_by_id', 'shop', 'buy_item', 'view_item', 'delete_item', 'edit_item', 'create_item','kill', 'graveyard'
+         'logout', 'static', 'dashboard', 'register', 'login', 'admin','create_character', 'forums', 'forum_view', 'gun_detail', 'send_beer', 'new_topic', 'topic_view', 'create_forum', 'inbox', 'notifications', 'send_message', 'view_message', 'leave_crime', 'attempt_organized_crime', 'crew_page', 'update_crew_role', 'hire_bodyguard', 'kill', 'profile_by_id', 'crew_member_update_role', 'crew_member_leave', 'crew_member_invite', 'crews', 'crew_member_view_profile', 'crew_member_edit_profile', 'crew_member_delete_profile', 'crew_member_view_crew', 'crew_member_create_crew', 'crew_member_edit_crew', 'crew_member_delete_crew', 'crew_member_view_members', 'crew_member_add_member', 'crew_member_remove_member', 'crew_member_view_requests', 'crew_member_accept_request', 'crew_member_decline_request', 'crew_member_view_notifications', 'crew_member_mark_notification_read', 'crew_member_delete_notification', 'crew_member_view_messages', 'crew_member_send_message', 'crew_member_view_message', 'crew_member_delete_message', 'crew_member_view_sent_messages', 'crew_member_view_received_messages', 'crew_member_view_chat', 'crew_member_send_chat_message', 'crew_member_delete_chat_message', 'crew_member_view_chat_history', 'crew_member_clear_chat_history', 'crew_member_view_crime_history', 'crew_member_clear_crime_history', 'crew_member_edit_crime_group', 'crew_member_delete_crime_group', 'crew_member_view_crime_group_members', 'crew_member_add_crime_group_member', 'crew_member_remove_crime_group_member', 'crew_member_view_crime_group_requests', 'crew_member_accept_crime_group_request', 'crew_member_decline_crime_group_request', 'crew_member_view_crime_group_invitations', 'crew_member_accept_crime_group_invitation', 'public_message_view', 'public_message_send','player_search','travel','godfathers_page','send_beer','claim_godfather','create_crime','crime_group','send_public_message', 'public_message','get_messages', 'crew_messages','earn','jail','breakout','upload_profile_image','disband_crime', 'leave_crime', 'profile_by_id', 'shop', 'buy_item', 'view_item', 'delete_item', 'edit_item', 'create_item','kill', 'graveyard','user_settings','inventory'
     )
     if current_user.is_authenticated:
-        char = Character.query.filter_by(master_id=current_user.id).first()
+        # Only get alive character, and get the newest one if multiple
+        char = Character.query.filter_by(master_id=current_user.id, is_alive=True).order_by(Character.id.desc()).first()
         # Always allow admin users to access admin endpoints
         if getattr(current_user, 'is_admin', False) and request.endpoint and request.endpoint.startswith('admin'):
             return
-        if not char or not char.is_alive:
+        if not char:
             if request.endpoint not in allowed_endpoints:
                 return redirect(url_for('create_character'))
 
@@ -135,6 +136,7 @@ def home():
     return redirect(url_for('dashboard'))
 
 @app.route('/forums')
+@login_required
 def forums():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     forums = Forum.query.all()
@@ -150,10 +152,12 @@ def forums():
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-    return render_template('forums.html', forums=forums,character=character, online_characters=online_characters, online_users=online_users)
+    return render_template('forums.html', forums=forums, character=character, online_characters=online_characters, online_users=online_users)
 
 @app.route('/forum/<int:forum_id>')
+@login_required
 def forum_view(forum_id):
+    character= Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     forum = Forum.query.get_or_404(forum_id)
     topics = ForumTopic.query.filter_by(forum_id=forum.id).order_by(ForumTopic.created_at.desc()).all()
     author_ids = {topic.author_id for topic in topics}
@@ -161,7 +165,7 @@ def forum_view(forum_id):
     for uid in author_ids:
         char = Character.query.filter_by(master_id=uid).first()
         char_map[uid] = char.name if char else f'User #{uid}'
-    return render_template('forum_view.html', forum=forum, topics=topics, char_map=char_map)
+    return render_template('forum_view.html', forum=forum, topics=topics, char_map=char_map, character=character)
 
 @app.route('/gun/<int:gun_id>')
 def gun_detail(gun_id):
@@ -256,7 +260,7 @@ def send_beer():
         flash(f"Sent {drink_type.title()} to {recipient_name}!", "success")
         return redirect(url_for('dashboard'))
 
-    return render_template('send_beer.html', form=form)
+    return render_template('send_beer.html', form=form,character=character)
 
 @app.route('/forum/<int:forum_id>/new_topic', methods=['GET', 'POST'])
 @login_required
@@ -304,6 +308,14 @@ def topic_view(topic_id):
 @app.route('/create_forum', methods=['GET', 'POST'])
 @login_required
 def create_forum():
+    character= Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     form = CreateForumForm()
     if not getattr(current_user, 'is_admin', False):
         flash("Only admins can create forums.", "danger")
@@ -319,7 +331,7 @@ def create_forum():
         db.session.commit()
         flash("Forum created!", "success")
         return redirect(url_for('forums'))
-    return render_template('create_forum.html', form=form)
+    return render_template('create_forum.html', form=form, character=character, online_characters=online_characters, online_users=online_users)
 @app.route('/messages', methods=['GET'])
 @login_required
 def inbox():
@@ -332,6 +344,10 @@ def inbox():
     char_map = {}
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    # FIX: Check if character exists before accessing its attributes
+    if not character:
+        flash("No character found. Please create a character.", "danger")
+        return redirect(url_for('create_character'))
     online_characters = []
     for u in online_users:
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
@@ -351,8 +367,7 @@ def inbox():
         char_map=char_map,
         character=character,
         pagination=pagination,
-        online_characters=online_characters,
-        online_users=online_users
+        online_characters=online_characters
     )
 @app.route('/messages/sent_messages', methods=['GET'])
 @login_required
@@ -382,16 +397,17 @@ def sent_messages():
 @app.route('/notifications')
 @login_required
 def notifications():
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.timestamp.desc()).all()
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.timestamp.desc()).all()
     online_characters = []
     for u in online_users:
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
-    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+
+    if character and character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
@@ -406,21 +422,20 @@ def notifications():
             "timestamp": msg.timestamp,
             "is_read": msg.is_read,
         })
-    # Fetch crew invitations for the current user
     invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
-    # Sort notifications by timestamp descending
     notifications = sorted(
         notifications,
         key=lambda n: n.timestamp if hasattr(n, 'timestamp') else n.get("timestamp", datetime.min),
         reverse=True
     )
-    return render_template('notifications.html', notifications=notifications, invitations=invitations,character=character, online_characters=online_characters, online_users=online_users)
+    return render_template('notifications.html', notifications=notifications, invitations=invitations, character=character, online_characters=online_characters, online_users=online_users)
     
     
 
 @app.route('/messages/send/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def send_message(user_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     recipient = User.query.get_or_404(user_id)
     form = SendMessageForm()
     if form.validate_on_submit():
@@ -433,7 +448,7 @@ def send_message(user_id):
         db.session.commit()
         flash("Message sent!", "success")
         return redirect(url_for('inbox'))
-    return render_template("send_message.html", form=form, recipient=recipient)
+    return render_template("send_message.html", form=form, recipient=recipient,character=character)
 @app.route('/leave_crime', methods=['POST', 'GET'])
 @login_required
 def leave_crime():
@@ -453,10 +468,11 @@ def leave_crime():
     db.session.commit()
     
     flash("You have left the crime group.", "success")
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard', character=character))
 @app.route('/messages/view/<int:msg_id>', methods=['GET', 'POST'])
 @login_required
 def view_message(msg_id):
+    character= Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     msg = PrivateMessage.query.get_or_404(msg_id)
     if msg.recipient_id != current_user.id and msg.sender_id != current_user.id:
         flash("You do not have permission to view this message.", "danger")
@@ -477,7 +493,7 @@ def view_message(msg_id):
         return redirect(url_for('inbox'))
     char = Character.query.filter_by(master_id=msg.sender_id, is_alive=True).first()
     char_map = {msg.sender_id: char.name if char else "Unknown"}
-    return render_template("view_message.html", msg=msg, form=form, char_map=char_map)
+    return render_template("view_message.html", msg=msg, form=form, char_map=char_map, character=character)
 @app.route('/organized_crime/attempt', methods=['POST'])
 @login_required
 def attempt_organized_crime():
@@ -499,20 +515,48 @@ def attempt_organized_crime():
         flash("You need at least 2 members to attempt the crime.", "warning")
         return redirect(url_for('dashboard'))
 
-    
-    success = random.random() < 0.35
-    reward_money = random.randint(500, 1500) if success else 25
-    reward_xp = random.randint(10, 30) if success else 25
+
+    success = random.randint(0, 100) < 50  # 50% chance of success
+    reward_money = random.randint(10000, 250000) if success else 25
+    reward_xp = random.randint(50, 300) if success else 25
 
     for member in members:
         if member:
             member.last_crime_time = datetime.utcnow()
-            if success:
+            if crime.level == 1:
                 member.money += reward_money
                 member.xp += reward_xp
                 member.crime_group_id = None  # Disband the crime group
-                logging.info(f"{member.name} successfully completed the crime and earned ${reward_money} and {reward_xp} XP.")
-                flash(f"{member.name} successfully completed the crime and earned ${reward_money} and {reward_xp} XP.", "success")
+                logging.info(f"{member.name} successfully completed the crime level 1 and earned ${reward_money} and {reward_xp} XP.")
+                flash(f"{member.name} successfully completed the crime level 1 and earned ${reward_money} and {reward_xp} XP.", "success")
+                db.session.commit()
+            elif crime.level == 2:
+                member.money += reward_money * 2  # Double the reward for level 2 crimes
+                member.xp += reward_xp * 2  # Double the XP for level 2 crimes
+                member.crime_group_id = None  # Disband the crime group
+                logging.info(f"{member.name} successfully completed the crime level 2 and earned ${reward_money * 2} and {reward_xp * 2} XP.")
+                flash(f"{member.name} successfully completed the crime level 2 and earned ${reward_money * 2} and {reward_xp * 2} XP.", "success")
+                db.session.commit()
+            elif crime.level == 3:
+                member.money += reward_money * 3  # Triple the reward for level 3 crimes
+                member.xp += reward_xp * 3  # Triple the XP for level 3 crimes
+                member.crime_group_id = None  # Disband the crime group
+                logging.info(f"{member.name} successfully completed the crime level 3 and earned ${reward_money * 3} and {reward_xp * 3} XP.")
+                flash(f"{member.name} successfully completed the crime level 3 and earned ${reward_money * 3} and {reward_xp * 3} XP.", "success")
+                db.session.commit()
+            elif crime.level == 4:
+                member.money += reward_money * 4  # Quadruple the reward for level 4 crimes
+                member.xp += reward_xp * 4  # Quadruple the XP for level 4 crimes
+                member.crime_group_id = None  # Disband the crime group
+                logging.info(f"{member.name} successfully completed the crime level 4 and earned ${reward_money * 4} and {reward_xp * 4} XP.")
+                flash(f"{member.name} successfully completed the crime level 4 and earned ${reward_money * 4} and {reward_xp * 4} XP.", "success")
+                db.session.commit()
+            elif crime.level == 5:
+                member.money += reward_money * 5  # Quintuple the reward for level 5 crimes
+                member.xp += reward_xp * 5  # Quintuple the XP for level 5 crimes
+                member.crime_group_id = None  # Disband the crime group
+                logging.info(f"{member.name} successfully completed the crime level 5 and earned ${reward_money * 5} and {reward_xp * 5} XP.")
+                flash(f"{member.name} successfully completed the crime level 5 and earned ${reward_money * 5} and {reward_xp * 5} XP.", "success")
                 db.session.commit()
             else:
                 # 20% chance to go to jail on failed crime
@@ -528,11 +572,7 @@ def attempt_organized_crime():
     db.session.delete(crime)
     db.session.commit()
 
-    if success:
-        
-        flash(f"Crime successful! Each member earned ${reward_money} and {reward_xp} XP.", "success")
-    else:
-        flash(f"Crime failed! The crew has disbanded.", "danger")
+    
 
     return redirect(url_for('dashboard'))
 
@@ -638,12 +678,20 @@ def update_crew_role(crew_member_id):
     return redirect(url_for('crew_page', crew_id=crew_id))
 
 @app.route('/hire_bodyguard', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
 @login_required
 def hire_bodyguard():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     COST_PER_BODYGUARD = 1000
     MAX_BODYGUARDS = 200
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    
+    online_characters = []
+    for u in online_users:
+            char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+            if char:
+                online_characters.append(char)
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
@@ -673,7 +721,7 @@ def hire_bodyguard():
         flash(f"Hired {num} bodyguard(s)! You now have {character.bodyguards}.", "success")
         return redirect(url_for('hire_bodyguard'))
 
-    return render_template("hire_bodyguard.html", character=character, form=form, max_hire=max_hire)
+    return render_template("hire_bodyguard.html", character=character, form=form, max_hire=max_hire, online_characters=online_characters)
 
 @app.route('/kill/character/<character_name>', methods=['POST'])
 @login_required
@@ -869,7 +917,16 @@ def travel():
 @app.route('/inventory', methods=['GET', 'POST'])
 @login_required
 def inventory():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    # Get all characters for this user, newest first
+    all_characters = Character.query.filter_by(master_id=current_user.id).order_by(Character.is_alive.desc(), Character.id.desc()).all()
+    character = all_characters[0] if all_characters else None
+
+    if not character:
+        flash("No character found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    is_readonly = not character.is_alive
+
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
     online_characters = []
@@ -877,27 +934,24 @@ def inventory():
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
-    if not character:
-        flash("No character found.", "danger")
-        return redirect(url_for('dashboard'))
-    if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
-            remaining = character.jail_until - datetime.utcnow()
-            mins, secs = divmod(int(remaining.total_seconds()), 60)
-            flash(f"You are in jail for {mins}m {secs}s.", "danger")
-            return redirect(url_for('jail'))
-    if request.method == 'POST':
+
+    # Only check for jail if the character is alive
+    if not is_readonly and character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
+
+    if request.method == 'POST' and not is_readonly:
         item_id = int(request.form.get('item_id'))
         inventory_item = UserInventory.query.filter_by(user_id=current_user.id, item_id=item_id).first()
         item = ShopItem.query.get(item_id)
-        # Check if the item is a gun and if the user has it in their inventory
         if not inventory_item or not item:
             flash("Item not found in your inventory.", 'danger')
             return redirect(url_for('inventory'))
-        # Check if gun is equipped and sell it
         if current_user.gun_id == item.id:
             current_user.gun_id = None
             flash(f"You sold your equipped gun: {item.name}.", "info")
-        # Deletes item from inventory
         if inventory_item.quantity <= 0:
             db.session.delete(inventory_item)
         sell_price = item.price // 2
@@ -908,10 +962,17 @@ def inventory():
         flash(f"Sold 1x {item.name} for ${sell_price}.", "success")
         return redirect(url_for('inventory'))
 
-    
     inventory_items = UserInventory.query.filter_by(user_id=current_user.id).all()
     equip_forms = {inv.item.gun.id: EquipGunForm() for inv in inventory_items if inv.item.is_gun and inv.item.gun}
-    return render_template('inventory.html', inventory_items=inventory_items, character=character,equip_forms=equip_forms, online_characters=online_characters, online_users=online_users)
+    return render_template(
+        'inventory.html',
+        inventory_items=inventory_items,
+        character=character,
+        equip_forms=equip_forms,
+        online_characters=online_characters,
+        online_users=online_users,
+        is_readonly=is_readonly
+    )
 
 @app.route("/users_online")
 @login_required
@@ -935,6 +996,13 @@ def player_search():
     query = None
     results = []
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -945,20 +1013,20 @@ def player_search():
         if query:
             results = Character.query.filter(
                 Character.name.ilike(f'%{query}%'),
-                Character.master_id != current_user.id
+                Character.id != current_user.id
             ).all()
     return render_template(
         'player_search.html',
         query=query,
         results=results,
         search_form=search_form,
-        kill_form=kill_form
+        kill_form=kill_form,
+        character=character,
+        online_characters=online_characters,
+        online_users=online_users
     )
 
-@app.route('/npc/<int:id>')
-def npc_profile(id):
-    npc = Character.query.filter_by(id=id, master_id=0).first_or_404()
-    return render_template('npc_profile.html', npc=npc)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 # @limiter.limit("3 per minute")
@@ -1134,9 +1202,26 @@ def login():
                 return redirect(next_page)
             return redirect(url_for('dashboard'))
         flash('Invalid username or password.', 'danger')
-    return render_template('login.html', form=form)
+    # Only try to get character if user is authenticated
+    character = None
+    if current_user.is_authenticated:
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    total_users = User.query.count()
+    total_characters = Character.query.count()
+    total_dead_characters = Character.query.filter_by(is_alive=False).count()
+    total_crews = Crew.query.count()
+    return render_template(
+        'login.html',
+        form=form,
+        total_users=total_users,
+        total_characters=total_characters,
+        total_dead_characters=total_dead_characters,
+        total_crews=total_crews,
+        character=character
+    )
 
 @app.route('/create_character', methods=['GET', 'POST'])
+@login_required
 def create_character():
     form = CreateCharacterForm()
     if form.validate_on_submit():
@@ -1147,8 +1232,7 @@ def create_character():
         
         last_dead = Character.query.filter_by(master_id=current_user.id, is_alive=False).order_by(Character.id.desc()).first()
         
-        city= random.choice(CITIES)  # Randomly assign a city from the list
-        # Optionally check for duplicate names or add more validation here
+        city = random.choice(CITIES)
         new_char = Character(
             master_id=current_user.id,
             name=char_name,
@@ -1162,8 +1246,9 @@ def create_character():
         db.session.add(new_char)
         db.session.commit()
         flash("New character created!", "success")
-        return redirect(url_for('dashboard'))
-    return render_template('create_character.html', form=form)
+        # Redirect to the new character's profile page
+        return redirect(url_for('profile_by_id', char_id=new_char.id))
+    return render_template('create_character.html', form=form, character=None)
 
 @app.route('/messages/compose', methods=['GET', 'POST'])
 @login_required
@@ -1235,16 +1320,27 @@ def jail():
         Character.jail_until != None,
         Character.jail_until > now
     ).order_by(Character.jail_until.asc()).all()
-    # Get the current user's character
-    current_character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    character = Character.query.filter_by(master_id=current_user.id).first()
+    # Get the current user's alive character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    current_character = character  # For template compatibility
+
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
+
     return render_template(
         "jail.html",
         jailed_characters=jailed_characters,
-        current_character=current_character,
         now=now,
         breakout_form=BreakoutForm(),
-        character=character
+        character=character,  # always the alive character
+        current_character=current_character,
+        online_characters=online_characters,
+        online_users=online_users
     )
 
 @app.route('/breakout/<int:char_id>', methods=['POST'])
@@ -1362,6 +1458,7 @@ def leave_crew():
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
+@limiter.limit("1000 per minute")
 @login_required
 def dashboard():
     user = User.query.get(current_user.id)  # Use a different variable name
@@ -1375,29 +1472,33 @@ def dashboard():
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
-    npcs = Character.query.filter_by(master_id=0, is_alive=True).all()
+    
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     earn_form = EarnForm()
+    steal_form = StealForm()
     cities = CITIES
     claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
+    if not character:
+            flash("You must have a character to access the dashboard.", "danger")
+            return redirect(url_for('create_character'))
+
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-    if not character:
-        flash("You must have a character to access the dashboard.", "danger")
-        return redirect(url_for('create_character'))
+    
     return render_template(
         'dashboard.html',
         character=character,
         online_users=online_users,
         online_characters=online_characters,
         earn_form=earn_form,
-        npcs=npcs, godfathers=godfathers,
+        godfathers=godfathers,
         cities=cities,
         claim_forms=claim_forms,
         active_events=active_events,
+        steal_form=steal_form,
     )
 
 @app.route('/casino', methods=['GET', 'POST'])
@@ -1595,7 +1696,7 @@ def invite_to_crew():
         flash(f"Invite sent to {invitee.name}!", "success")
         return redirect(url_for('dashboard'))
 
-    return render_template('invite_to_crew.html', crew=crew, form=form)
+    return render_template('invite_to_crew.html', crew=crew, form=form,character=character)
 
 @app.route('/claim_godfather/<city>', methods=['POST'])
 @login_required
@@ -1634,6 +1735,7 @@ def claim_godfather(city):
 @app.route('/create_crime', methods=['GET', 'POST'])
 @login_required
 def create_crime():
+    crimes = OrganizedCrime.query.all()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         flash("No active character found.", "danger")
@@ -1670,9 +1772,9 @@ def create_crime():
             crime_name = f"{character.name}'s Crew"
 
         invite_code = generate_unique_invite_code()
-
+        
         # --- Only use character.id as leader_id ---
-        crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code)
+        crime = OrganizedCrime(name=crime_name, leader_id=character.id, invite_code=invite_code, level=1)
         db.session.add(crime)
         db.session.commit()
         # FIX: Set the creator's crime_group_id to the new crime group
@@ -1681,7 +1783,7 @@ def create_crime():
         flash(f"Crime group '{crime_name}' created! Invite code: {invite_code}", 'success')
         return redirect(url_for('crime_group'))
 
-    return render_template('create_crime.html', create_crime_form=form)
+    return render_template('create_crime.html', create_crime_form=form, character=character, crimes=crimes)
 
 @app.route('/join_crime', methods=['GET', 'POST'])
 @login_required
@@ -1715,7 +1817,7 @@ def join_crime():
             db.session.commit()
             flash("You joined the crime group!", 'success')
             return redirect(url_for('crime_group'))
-    return render_template('join_crime.html', join_crime_form=form)
+    return render_template('join_crime.html', join_crime_form=form, character=character)
 
 
 
@@ -1843,17 +1945,18 @@ def resolve_takeover(city):
     db.session.commit()
     flash(f"Your crew has taken over {city}!", "success")
     return redirect(url_for('dashboard'))
-@app.route('/crime_group')
+@app.route('/crime_group', methods=['GET', 'POST'])
 @login_required
 def crime_group():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     crime = character.crime_group
-
+    level = crime.level if crime.level is not None else 0
     if not character or not crime:
         flash("You must be in a crime group to access this page.", "warning")
         return redirect(url_for('dashboard'))
-
+    level = crime.level if crime.level is not None else 0
     members = Character.query.filter_by(crime_group_id=crime.id).all()
+    #upgrade crime group if leader
     
 
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
@@ -1861,14 +1964,30 @@ def crime_group():
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('dashboard'))
+    
 
+    upgrade_form = UpgradeCrimeForm()
+    if upgrade_form.validate_on_submit():
+        # Example: Only leader can upgrade and max level is 5
+        if crime.leader_id == character.id and crime.level is not None and crime.level < 5:
+            crime.level += 1
+            db.session.commit()
+            flash("Crime group upgraded!", "success")
+        else:
+            flash("You cannot upgrade this crime group.", "danger")
+
+        return redirect(url_for('crime_group'))
+    
     return render_template(
         "crime_group.html",
         crime=crime,
         members=members,
         leave_crime_form=LeaveCrimeForm(),
         disband_crime_form=DisbandCrimeForm(),
-        attempt_crime_form=AttemptCrimeForm()
+        attempt_crime_form=AttemptCrimeForm(),
+        character=character,
+        upgrade_form=upgrade_form,
+        level=level
     )
 
 @app.route('/disband_crime', methods=['POST'])
@@ -1923,13 +2042,16 @@ def upload_profile_image():
         filename = secure_filename(file.filename)
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(save_path)
-        # Save the path to the user's character
-        character = Character.query.filter_by(master_id=current_user.id).first()
+        # Save the path to the user's **alive** character
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
         if character:
             character.profile_image = f'uploads/{filename}'
             db.session.commit()
-        flash('Profile image uploaded successfully.', 'success')
-        return redirect(url_for('profile_by_id', char_id=character.id))
+            flash('Profile image uploaded successfully.', 'success')
+            return redirect(url_for('profile_by_id', char_id=character.id))
+        else:
+            flash('No active character found.', 'danger')
+            return redirect(url_for('dashboard'))
     else:
         flash('Invalid file type.', 'danger')
         return redirect(request.referrer or url_for('dashboard'))
@@ -2003,7 +2125,11 @@ def crews():
             'left_hand': left_hand,
             'right_hand': right_hand
         }
-    return render_template('crews.html', crews=all_crews, crew_roles=crew_roles)
+        #delete crew if it has no members
+        if not CrewMember.query.filter_by(crew_id=crew.id).count(): 
+            db.session.delete(crew)
+            db.session.commit()
+    return render_template('crews.html', crews=all_crews, crew_roles=crew_roles, character=character)
 
 @app.route('/godfathers', methods=['GET', 'POST'])
 @login_required
@@ -2188,7 +2314,7 @@ def earn():
         flash('No character found.', 'danger')
         return redirect(url_for('dashboard'))
 
-    character = current_user.character
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
 
     now = datetime.utcnow()
 
@@ -2257,12 +2383,36 @@ def user_stats():
         xp=character.xp,
         level=character.level
     )
+@app.route('/steal_status')
+@login_required
+def steal_status():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        return jsonify({'seconds_remaining': 0, 'hours': 0, 'minutes': 0, 'seconds': 0})
+
+    now = datetime.utcnow()
+    if character.steal_cooldown and character.steal_cooldown > now:
+        remaining = character.steal_cooldown - now
+        total_seconds = max(0, int(remaining.total_seconds()))
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+    else:
+        total_seconds = hours = minutes = seconds = 0
+
+    return jsonify({
+        'seconds_remaining': total_seconds,
+        'hours': hours,
+        'minutes': minutes,
+        'seconds': seconds
+    })
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def user_settings():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    all_characters = Character.query.filter_by(master_id=current_user.id).order_by(Character.is_alive.desc(), Character.id.desc()).all()
     form = UserSettingsForm()
+    kill_form = KillCharacterForm()
     user = User.query.get(current_user.id)
     if form.validate_on_submit():
         # Check current password
@@ -2282,13 +2432,14 @@ def user_settings():
             flash("Password updated.", "success")
         db.session.commit()
         return redirect(url_for('user_settings'))
-    return render_template('user_settings.html', form=form, user=user, character=character)
+    return render_template('user_settings.html', form=form, user=user, character=character, all_characters=all_characters, kill_form=kill_form)
 
 @app.route('/steal', methods=['GET', 'POST'])
 @login_required
 def steal():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     form = StealForm()
+    
     if not character:
         flash("No character found.", "danger")
         return redirect(url_for('dashboard'))
@@ -2312,10 +2463,12 @@ def steal():
         target_name = form.target_name.data.strip()
         target = Character.query.filter_by(name=target_name, is_alive=True).first()
         
+        if target and target.master.is_admin:
+            flash("You cannot steal from an admin character.", "danger")
+            return redirect(url_for('dashboard'))
         if not target:
             flash("Target not found.", "danger")
             return redirect(url_for('dashboard'))
-
         if target.id == character.id:
             flash("You can't steal from yourself!", "warning")
             return redirect(url_for('dashboard'))
@@ -2327,7 +2480,7 @@ def steal():
             return redirect(url_for('dashboard'))
         
         # 30% chance to succeed
-        if random.random() < 0.3:
+        if random.random() < 0.5:
             
             scrambled_name = ''.join(random.sample(character.name, len(character.name)))
             amount = random.randint(10000, min(2000000, target.money))
@@ -2337,14 +2490,18 @@ def steal():
             db.session.commit()
             flash(f"Success! You stole ${amount} from {target.name}.", "success")
 
-            
-            reveal_chance = 0.2  # 20% chance to reveal thief
-            if random.random() < reveal_chance:
+
+            reveal_chance = random.randint(1, 100)  # 50% chance to reveal thief
+            if reveal_chance <= 100: # 100% chance to reveal character name
                 notif_msg = f"{character.name} stole ${amount} from you!"
-            elif random.random() < reveal_chance:
+            elif reveal_chance <= 50:  # 50% chance to scramble name
                 notif_msg = f"{scrambled_name} stole ${amount} from you!"
-            else:
+            elif reveal_chance <= 25:  # 25% chance to not reveal name
+                notif_msg = f"An unknown thief stole ${amount} from you!"
+            else:  # 0% chance to not reveal name
                 notif_msg = f"You were robbed of ${amount} by an unknown thief!"
+
+                
             notif = Notification(
                 user_id=target.master_id,
                 message=notif_msg,
@@ -2441,9 +2598,15 @@ def profile_by_id(char_id):
         db.session.commit()
         flash('Bio updated!', 'success')
         return redirect(url_for('profile_by_id', char_id=character.id))
-    return render_template('profile.html', user=user, character=character,
-    upload_image_form=UploadImageForm(),
-    kill_form=KillForm(), crew=crew, form=form, online_characters=online_characters, online_users=online_users)
+    return render_template('profile.html', 
+                        user=user, 
+                        character=character,
+                        upload_image_form=UploadImageForm(),
+                        kill_form=KillForm(), 
+                        crew=crew, 
+                        form=form, 
+                        online_characters=online_characters, 
+                        online_users=online_users)
 
 @app.route('/step_down_godfather', methods=['POST'])
 @login_required
@@ -2638,7 +2801,23 @@ def sell_drug_form(drug_id, form=None):
     db.session.commit()
     flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
     return redirect(url_for('drug_dashboard'))
-
+@app.route('/kill_character', methods=['POST'])
+@login_required
+def kill_character():
+    form = KillCharacterForm()
+    if form.validate_on_submit():
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if not character:
+            flash("No active character to kill.", "danger")
+            return redirect(url_for('user_settings'))
+        character.is_alive = False
+        character.health = 0
+        character.death_date = datetime.utcnow()
+        db.session.commit()
+        flash("Your character has been killed. You may now create a new one.", "success")
+        return redirect(url_for('create_character'))
+    flash("Invalid request.", "danger")
+    return redirect(url_for('user_settings'))
 @app.route('/city/<city_name>')
 @login_required
 def city_characters(city_name):
@@ -2654,7 +2833,7 @@ def city_characters(city_name):
         return redirect(url_for('dashboard'))
     # Show only alive, non-NPC characters in the city
     characters = Character.query.filter_by(city=city_name, is_alive=True).filter(Character.master_id != 0).all()
-    return render_template('city_characters.html', city=city_name, characters=characters)
+    return render_template('city_characters.html', city=city_name, characters=characters, character=character)
 
 @app.route('/claim_territory/<city>', methods=['POST'])
 @login_required
@@ -2761,26 +2940,22 @@ def init_db():
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template('error/404.html'), 404
+    return render_template('error/404.html', character=None), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     # Optionally log the error here
-    return render_template('error/500.html'), 500
+    return render_template('error/500.html', character=None), 500
 
 @app.errorhandler(403)
 def forbidden_error(error):
-    return render_template('error/403.html'), 403
+    return render_template('error/403.html', character=None), 403
 
 @app.errorhandler(401)
 def unauthorized_error(error):
-    return render_template('error/401.html'), 401
+    return render_template('error/401.html', character=None), 401
 
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    flash("Too many requests, please slow down!", "warning")
-    # Try to redirect to the referring page, or fallback to dashboard
-    return redirect(request.referrer or url_for('dashboard'))
+
 
 if __name__ == '__main__':
     with app.app_context():

@@ -9,7 +9,8 @@ from wtforms.validators import DataRequired, NumberRange, Optional, Length,Valid
 from models.constants import CITIES
 from models.character import Character
 
-
+class KillCharacterForm(FlaskForm):
+    submit = SubmitField('Kill Current Character')
 class UserSettingsForm(FlaskForm):
     email = StringField('New Email', validators=[Optional(), Email(), Length(max=120)])
     current_password = PasswordField('Current Password', validators=[DataRequired()])
@@ -242,6 +243,8 @@ class AttemptCrimeForm(FlaskForm):
 class JoinCrimeForm(FlaskForm):
     invite_code = StringField('Invite Code', validators=[DataRequired()])
     submit = SubmitField('Join')
+class UpgradeCrimeForm(FlaskForm):
+    submit = SubmitField('Upgrade Group')
 class CreateCrimeForm(FlaskForm):
     submit = SubmitField('Create Group')
 class UpgradeForm(FlaskForm):

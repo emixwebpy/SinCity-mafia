@@ -3,33 +3,12 @@
 
 {% block content %}
 <style>
-.content-area {
-    background: none !important;
-}
 
-.dashboard-bgbb {
-    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    position: fixed !important;
-    top: 0; left: 0; width: 100vw; height: 100vh !important;
-    z-index: -2 !important;
-    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
-}
-.dashboard-header {
-    background: rgba(40,42,54,0.92);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 2px 2px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    margin-bottom: 0;
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 2px;
-    border-bottom: 2px solid #ffd70055;
-}
+
+
 .dashboard-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
     text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
     letter-spacing: 4px;
@@ -37,7 +16,7 @@
 .dashboard-meta {
     color: #b8b8ff;
     font-size: 1.1em;
-    margin-top: 0.5em;
+    
 }
 .dashboard-list {
     background: rgba(35,36,58,0.92);
@@ -56,7 +35,7 @@
     font-family: 'Cinzel', serif;
 }
 .dashboard-table th, .dashboard-table td {
-    padding: 1.1rem 1rem;
+    padding: 4px 10px;
     text-align: left;
     vertical-align: middle;
     border: none;
@@ -105,18 +84,19 @@
 .dashboard-card-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 36px;
-    margin: 40px 0;
+    margin-top: 15px;
     flex-wrap: wrap;
 }
 .dashboard-card {
+    
     background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    border-radius: 2px;
+    border-radius: 18px;
     box-shadow: 0 6px 32px #00000044;
     display: flex;
     flex-direction: row;
-    overflow: hidden;
+    
     min-width: 340px;
     max-width: 900px;
     width: 100%;
@@ -158,7 +138,7 @@
 }
 .dashboard-card-main {
     flex: 1;
-    padding: 36px 32px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -212,6 +192,25 @@
     font-weight: 700;
     color: #fff;
 }
+.earn-form {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-content: stretch;
+    
+}
+.btn, .btn-primary {
+    padding: 12px 18px;
+    font-size: 1.1em;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: background-color 0.2s, transform 0.1s;
+    cursor:not-allowed;
+    color: #fff;
+    
+}
 @media (max-width: 900px) {
     .dashboard-card-container { flex-direction: column; align-items: center; }
     .dashboard-card { flex-direction: column; min-width: 0; }
@@ -232,7 +231,7 @@
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
-<div class="dashboard-bgbb"></div>
+
 
 
 <div class="dashboard-card-container">
@@ -299,59 +298,24 @@
                 </div>
             </div>
             <div style="margin-top:32px;">
-                <form action="{{ url_for('earn') }}" method="post" class="earn-form" style="display:inline;">
+                <form action="{{ url_for('earn') }}" method="post" class="earn-form" id="earn-form">
                     {{ earn_form.hidden_tag() }}
                     <button type="submit" class="btn btn-primary" id="earn-btn">
                         <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}<span id="earn-timer"></span>
                     </button>
                 </form>
-                <a href="{{ url_for('steal') }}" class="btn btn-primary" >
-                    <i class="fas fa-user-secret"></i> Steal Money
-                </a>
+                <br>
+                <form action="{{ url_for('steal') }}" method="post" class="earn-form" id="steal-form">
+                    {{ steal_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-primary" id="steal-btn">
+                        <i class="fas fa-hand-holding-usd"></i> {{ steal_form.submit.label }}<span id="steal-timer"></span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<div class="dashboard-card-container" style="margin-top: 24px;">
-    <div class="dashboard-card" style="flex-direction: column; max-width: 900px;">
-        <div class="dashboard-card-main" style="width:100%;">
-            <div class="dashboard-card-header">
-                <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="dashboard-table" style="width:100%;">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Name</th>
-                            <th><i class="fas fa-layer-group"></i> Level</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="current-user">
-                            <td class="dashboard-name">
-                                <span class="dashboard-icon"><i class="fas fa-user"></i></span>
-                                {{ character.name }}
-                            </td>
-                            <td class="dashboard-level">{{ character.level }}</td>
-                        </tr>
-                        {% for char in online_characters %}
-                        {% if char.id != character.id %}
-                        <tr>
-                            <td class="dashboard-name">
-                                <span class="dashboard-icon"><i class="fas fa-user"></i></span>
-                                <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                            </td>
-                            <td class="dashboard-level">{{ char.level }}</td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 <script>
 let earnTimerInterval = null;
 
@@ -394,5 +358,48 @@ async function updateEarnButton() {
   }
 }
 document.addEventListener('DOMContentLoaded', updateEarnButton);
+
+let stealTimerInterval = null;
+
+async function updateStealButton() {
+  const btn = document.getElementById('steal-btn');
+  const timerSpan = document.getElementById('steal-timer');
+
+  try {
+    const res = await fetch('/steal_status');
+    const data = await res.json();
+
+    if (stealTimerInterval) {
+      clearInterval(stealTimerInterval);
+      stealTimerInterval = null;
+    }
+
+    if (data.seconds_remaining > 0) {
+      btn.disabled = true;
+      let seconds = data.seconds_remaining;
+
+      stealTimerInterval = setInterval(() => {
+        if (seconds <= 0) {
+          clearInterval(stealTimerInterval);
+          stealTimerInterval = null;
+          btn.disabled = false;
+          timerSpan.textContent = '';
+        } else {
+          let hours = Math.floor(seconds / 3600);
+          let min = Math.floor((seconds % 3600) / 60);
+          let sec = seconds % 60;
+          timerSpan.textContent = ` (Wait ${hours}:${min}:${sec.toString().padStart(2, '0')})`;
+          seconds--;
+        }
+      }, 1000);
+    } else {
+      btn.disabled = false;
+      timerSpan.textContent = '';
+    }
+  } catch (err) {
+    console.error("Error updating steal button:", err);
+  }
+}
+document.addEventListener('DOMContentLoaded', updateStealButton);
 </script>
 {% endblock %}

@@ -115,13 +115,15 @@ def admin_jail():
 @limiter.limit("20 per minute")
 @admin_required
 def admin_characters():
+    character = Character.query.filter_by(master_id=current_user.id).first()
     characters = Character.query.order_by(Character.id.desc()).all()
-    return render_template('admin/characters.html', characters=characters)
+    return render_template('admin/characters.html', characters=characters, character=character)
 
 @admin_bp.route('/character/<int:char_id>/edit', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
 @admin_required
 def admin_edit_character(char_id):
+
     character = Character.query.get_or_404(char_id)
     form = EditCharacterForm(obj=character)
     if form.validate_on_submit():
@@ -269,9 +271,11 @@ def admin_delete_shop_item(item_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_organized_crimes():
+    character= Character.query.filter_by(master_id=current_user.id).first()
+    
     crimes = OrganizedCrime.query.order_by(OrganizedCrime.id.desc()).all()
     crime_forms = [(crime, DeleteCrimeForm(prefix=str(crime.id))) for crime in crimes]
-    return render_template('admin/organized_crimes.html', crime_forms=crime_forms)
+    return render_template('admin/organized_crimes.html', crime_forms=crime_forms, crimes=crimes, character=character)
 
 @admin_bp.route('/organized_crimes/<int:crime_id>/edit', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -452,6 +456,7 @@ def admin_drugs_dashboard():
 @limiter.limit("20 per minute")
 @admin_required
 def reset_crime_cooldown():
+    character = Character.query.filter_by(master_id=current_user.id).first()
     form = ResetCrimeCooldownForm()
     if form.validate_on_submit():
         char_id = form.character_id.data
@@ -463,7 +468,7 @@ def reset_crime_cooldown():
         else:
             flash("Character not found.", "danger")
         return redirect(url_for('admin.reset_crime_cooldown'))
-    return render_template('admin/reset_crime_cooldown.html', form=form)
+    return render_template('admin/reset_crime_cooldown.html', form=form, character=character)
 
 # --- Admin Crews ---
 @admin_bp.route('/crews')
