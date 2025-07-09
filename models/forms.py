@@ -5,7 +5,7 @@ from wtforms import (
     SelectField, FileField, RadioField, TextAreaField, HiddenField
 )
 from wtforms.fields import DateTimeField
-from wtforms.validators import DataRequired, NumberRange, Optional, Length,ValidationError, Email, EqualTo
+from wtforms.validators import DataRequired, NumberRange, Optional, Length,ValidationError, Email, EqualTo, InputRequired
 from models.constants import CITIES
 from models.character import Character
 
@@ -269,6 +269,7 @@ class UserEditForm(SecureForm):
     premium = BooleanField('Premium User')
     premium_until = DateTimeField('Premium Until', format='%Y-%m-%d %H:%M:%S')
 class InviteForm(FlaskForm):
+    user_name = StringField('Username', validators=[DataRequired()])
     submit = SubmitField('Invite Member')
 class LeaveForm(FlaskForm):
     submit = SubmitField('Leave Crew')
@@ -298,7 +299,8 @@ class ComposeMessageForm(FlaskForm):
     recipient_name = StringField('Recipient Name', validators=[DataRequired()])
     content = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send')
-
+class MinigameRollForm(FlaskForm):
+    submit = SubmitField('Roll!')
 class EditUserForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[Optional()])
@@ -306,4 +308,41 @@ class EditUserForm(FlaskForm):
     is_admin = BooleanField('Is Admin')
     premium = BooleanField('Premium')
     submit = SubmitField('Save Changes')
+class LeaveCrewForm(FlaskForm):
+    submit = SubmitField('Leave Crew')
+class DeleteShopItemForm(FlaskForm):
+    submit = SubmitField('Delete')
 
+class DepositForm(FlaskForm):
+    amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Deposit')
+
+class WithdrawForm(FlaskForm):
+    amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Withdraw')
+
+class TransferForm(FlaskForm):
+    recipient = StringField('Recipient', validators=[DataRequired()])
+    amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Transfer')
+
+class GatherResourcesForm(FlaskForm):
+    submit = SubmitField('Gather Random Amount')
+class MinigameForm(FlaskForm):
+    guess1 = IntegerField('Attempt 1', validators=[InputRequired(), NumberRange(min=1, max=10)])
+    guess2 = IntegerField('Attempt 2', validators=[InputRequired(), NumberRange(min=1, max=10)])
+    guess3 = IntegerField('Attempt 3', validators=[InputRequired(), NumberRange(min=1, max=10)])
+    attempt = HiddenField()
+    finished = HiddenField()
+    submit = SubmitField('Submit Guess')
+class ContributeResourcesForm(FlaskForm):
+    resource_type = SelectField('Resource Type', choices=[('supplies', 'Supplies')], validators=[DataRequired()])
+    amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Contribute Resources')
+
+class GatherResourcesForm(FlaskForm):
+    submit = SubmitField('Gather Resources')
+class DummyRemoveForm(FlaskForm):
+    pass
+class DummyDisbandForm(FlaskForm):
+    pass

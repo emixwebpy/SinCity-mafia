@@ -11,12 +11,12 @@ from models.crew import Crew, CrewMember
 from extensions import db, limiter  # Limiter should be instantiated in extensions.py
 from datetime import datetime
 import os
-
+from datetime import timedelta
 from models.loggers import admin_logger
 from models.forms import (
     EditCharacterForm, EditForumForm, EditUserForm, AddShopItemForm, DeleteCrimeForm,
     AddDrugForm, EditShopItemForm, DeleteCrewForm, DeleteDealerForm, DeleteDrugForm, DeleteForm,
-    AddDealerForm, ResetCrimeCooldownForm
+    AddDealerForm, ResetCrimeCooldownForm, DeleteShopItemForm
 )
 from models.constants import CITIES
 
@@ -61,19 +61,28 @@ def admin_dashboard():
 @limiter.limit("20 per minute")
 @admin_required
 def admin_users():
+    character = Character.query.filter_by(master_id=current_user.id).first()
     users = User.query.order_by(User.id.desc()).all()
-    return render_template('admin/users.html', users=users)
+    return render_template('admin/users.html', users=users, character=character)
 
 # --- Admin Forums ---
 @admin_bp.route('/forums')
 @limiter.limit("20 per minute")
 @admin_required
 def admin_forums():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     forums = Forum.query.order_by(Forum.id.desc()).all()
     delete_forms = {forum.id: DeleteForm(prefix=str(forum.id)) for forum in forums}
     forum_names = ', '.join([forum.title for forum in forums])
     admin_logger.info(f"Admin {current_user.username} viewed forums: {forum_names} at {datetime.utcnow()}")
-    return render_template('admin/forums.html', forums=forums, delete_forms=delete_forms)
+    return render_template('admin/forums.html', forums=forums, delete_forms=delete_forms, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/forums/<int:forum_id>/edit', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -173,19 +182,44 @@ def admin_edit_user(user_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_shop():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     items = ShopItem.query.order_by(ShopItem.id.desc()).all()
-    return render_template('admin/shop.html', items=items)
+    delete_forms = {item.id: DeleteShopItemForm() for item in items}
+    return render_template('admin/shop.html', items=items, character=character, online_characters=online_characters, online_users=online_users, delete_forms=delete_forms)
 
 @admin_bp.route('/shop/add', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
 @admin_required
 def admin_add_shop_item():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
+
+
+
     form = AddShopItemForm()
     if form.validate_on_submit():
         gun = None
         if form.is_gun.data:
+            gun_name = form.gun_name.data.strip() or form.name.data.strip()
+            gun = Gun.query.filter_by(name=gun_name).first()
+            if gun:
+                flash("A gun with this name already exists. Please choose a different name.", "danger")
+                return redirect(url_for('admin.admin_add_shop_item'))
             gun = Gun(
-                name=form.gun_name.data.strip() or form.name.data.strip(),
+                name=gun_name,
                 damage=form.gun_damage.data or 0,
                 accuracy=float(form.gun_accuracy.data or 0.7),
                 rarity=form.gun_rarity.data or "Common",
@@ -205,10 +239,13 @@ def admin_add_shop_item():
         )
         db.session.add(item)
         db.session.commit()
+
+
+        
         admin_logger.info(f"Admin {current_user.username} added shop item {item.name} at {datetime.utcnow()}")
         flash("Shop item added!", "success")
         return redirect(url_for('admin.admin_shop'))
-    return render_template('admin/add_shop_item.html', form=form)
+    return render_template('admin/add_shop_item.html', form=form, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/shop/<int:item_id>/edit', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -271,11 +308,18 @@ def admin_delete_shop_item(item_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_organized_crimes():
-    character= Character.query.filter_by(master_id=current_user.id).first()
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     
     crimes = OrganizedCrime.query.order_by(OrganizedCrime.id.desc()).all()
     crime_forms = [(crime, DeleteCrimeForm(prefix=str(crime.id))) for crime in crimes]
-    return render_template('admin/organized_crimes.html', crime_forms=crime_forms, crimes=crimes, character=character)
+    return render_template('admin/organized_crimes.html', crime_forms=crime_forms, crimes=crimes, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/organized_crimes/<int:crime_id>/edit', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -312,24 +356,40 @@ def admin_delete_organized_crime(crime_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_search():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     q = request.args.get('q', '').strip()
     users = []
     characters = []
     if q:
         users = User.query.filter(User.username.ilike(f'%{q}%')).all()
         characters = Character.query.filter(Character.name.ilike(f'%{q}%')).all()
-    return render_template('admin/search_results.html', q=q, users=users, characters=characters)
+    return render_template('admin/search_results.html', q=q, users=users, characters=characters, character=character, online_characters=online_characters, online_users=online_users)
 
 # --- Admin Topics ---
 @admin_bp.route('/topics')
 @limiter.limit("20 per minute")
 @admin_required
 def admin_topics():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     topics = ForumTopic.query.order_by(ForumTopic.created_at.desc()).all()
     user_ids = {t.author_id for t in topics}
     users_map = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()}
     delete_form = DeleteForm()
-    return render_template('admin/topics.html', topics=topics, users_map=users_map, delete_form=delete_form)
+    return render_template('admin/topics.html', topics=topics, users_map=users_map, delete_form=delete_form, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/topics/<int:topic_id>/delete', methods=['POST'])
 @limiter.limit("20 per minute")
@@ -347,8 +407,16 @@ def admin_delete_topic(topic_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_drugs():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     drugs = Drug.query.order_by(Drug.id.desc()).all()
-    return render_template('admin/drugs.html', drugs=drugs)
+    return render_template('admin/drugs.html', drugs=drugs, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/drugs/add', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -423,6 +491,14 @@ def admin_delete_drug(drug_id):
 @limiter.limit("20 per minute")
 @admin_required
 def admin_drugs_dashboard():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     drugs = Drug.query.order_by(Drug.id.desc()).all()
     dealers = DrugDealer.query.order_by(DrugDealer.city, DrugDealer.drug_id).all()
     delete_drug_forms = {drug.id: DeleteDrugForm(prefix=f"drug_{drug.id}") for drug in drugs}
@@ -448,7 +524,10 @@ def admin_drugs_dashboard():
         drugs=drugs,
         dealers=dealers,
         delete_drug_forms=delete_drug_forms,
-        delete_dealer_forms=delete_dealer_forms
+        delete_dealer_forms=delete_dealer_forms,
+        character=character,
+        online_characters=online_characters,
+        online_users=online_users
     )
 
 # --- Admin Reset Crime Cooldown ---
@@ -457,6 +536,13 @@ def admin_drugs_dashboard():
 @admin_required
 def reset_crime_cooldown():
     character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     form = ResetCrimeCooldownForm()
     if form.validate_on_submit():
         char_id = form.character_id.data
@@ -468,16 +554,24 @@ def reset_crime_cooldown():
         else:
             flash("Character not found.", "danger")
         return redirect(url_for('admin.reset_crime_cooldown'))
-    return render_template('admin/reset_crime_cooldown.html', form=form, character=character)
+    return render_template('admin/reset_crime_cooldown.html', form=form, character=character, online_characters=online_characters, online_users=online_users)
 
 # --- Admin Crews ---
 @admin_bp.route('/crews')
 @limiter.limit("20 per minute")
 @admin_required
 def admin_crews():
+    character = Character.query.filter_by(master_id=current_user.id).first()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
     crews = Crew.query.all()
     crew_forms = [(crew, DeleteCrewForm()) for crew in crews]
-    return render_template('admin/crews.html', crew_forms=crew_forms)
+    return render_template('admin/crews.html', crew_forms=crew_forms, character=character, online_characters=online_characters, online_users=online_users)
 
 @admin_bp.route('/crews/<int:crew_id>/delete', methods=['POST'])
 @limiter.limit("20 per minute")

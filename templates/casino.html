@@ -2,225 +2,282 @@
 {% block title %}Casino{% endblock %}
 {% block content %}
 <style>
-/* Use the profile.html card layout for casino */
-.profile-card-container {
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-    gap: 36px;
-    margin-top: 15px;
-    flex-wrap: wrap;
+/* Casino new padded look */
+.casino-padded-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 60vh;
+  padding: 40px 0 60px 0;
+  background: none;
 }
-.profile-card {
-    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
-    border-radius: 18px;
-    box-shadow: 0 6px 32px #00000044;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
-    min-width: 340px;
-    max-width: 900px;
-    width: 100%;
+.casino-padded-card {
+  background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+  border-radius: 22px;
+  box-shadow: 0 8px 40px #00000055;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  min-width: 340px;
+  max-width: 950px;
+  width: 100%;
+  padding: 36px 36px 36px 36px;
+  gap: 32px;
 }
-.profile-card-sidebar {
-    background: #181824;
-    padding: 36px 28px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 260px;
-    border-right: 1px solid #23243a;
+.casino-padded-sidebar {
+  background: #181824;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 220px;
+  border-radius: 16px 0 0 16px;
+  box-shadow: 0 2px 12px #ffd70022;
+  margin-right: 18px;
+  gap: 18px;
 }
-.profile-avatar {
-    width: 170px;
-    height: 170px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid #ffd70055;
-    box-shadow: 0 2px 16px #ffd70033;
-    margin-bottom: 18px;
-    background: #23243a;
+.casino-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffd70088;
+  box-shadow: 0 2px 12px #ffd70033;
+  margin-bottom: 12px;
+  background: #23243a;
 }
-.profile-card-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 24px 18px;
+.casino-padded-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 24px;
+  padding: 0 0 0 0;
 }
-.profile-card-header {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 12px;
+.casino-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 10px;
+  font-family: 'Cinzel', serif;
 }
-.profile-card-header h1 {
-    color: #ffd700;
-    font-size: 2.2rem;
-    margin: 0;
-    letter-spacing: 2px;
+.casino-header h1 {
+  color: #ffd700;
+  font-size: 2.3rem;
+  margin: 0;
+  letter-spacing: 2px;
 }
 .casino-tabs {
-    display: flex;
-    gap: 50px;
-    margin: 0 auto 18px auto;
-    justify-content: center;
+  display: flex;
+  gap: 30px;
+  margin: 0 auto 18px auto;
+  justify-content: center;
+  padding: 10px 0 0 0;
 }
 .casino-tab {
-    color: #ffd700;
-    background: #181824;
-    border-radius: 8px 8px 0 0 ;
-    font-weight: bold;
-    font-size: 1.1em;
-    text-decoration: none;
-    padding: 0.5em 1.5em;
-    border-bottom: none;
-    transition: background 0.2s, color 0.2s;
+  color: #ffd700;
+  background: #181824;
+  border-radius: 10px 10px 0 0 ;
+  font-weight: bold;
+  font-size: 1.13em;
+  text-decoration: none;
+  padding: 0.7em 2em;
+  border-bottom: none;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #ffd70011;
 }
 .casino-tab.active, .casino-tab:hover {
-    background: #ffd700;
-    color: #232526;
-    border-color: #ffd700;
-    text-decoration: none;
+  background: #ffd700;
+  color: #232526;
+  border-color: #ffd700;
+  text-decoration: none;
+  box-shadow: 0 4px 16px #ffd70033;
 }
 .casino-result {
-    color: #ffd700;
-    font-weight: bold;
-    font-size: 1.1em;
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1.15em;
+  padding: 10px 0 0 0;
 }
 .casino-hand-label {
-    color: #8be9fd;
-    font-weight: bold;
-    margin-top: 0.5em;
+  color: #8be9fd;
+  font-weight: bold;
+  margin-top: 0.5em;
+  padding-left: 2px;
 }
 .casino-cards {
-    display: flex;
-    gap: 8px;
-    margin: 0.5em 0 1em 0;
+  display: flex;
+  gap: 10px;
+  margin: 0.5em 0 1em 0;
 }
 .casino-card {
-    background: #181824;
-    color: #ffd700;
-    border: 2px solid #ffd70055;
-    border-radius: 6px;
-    padding: 0.5em 1em;
-    font-size: 1.2em;
-    font-family: 'Fira Mono', monospace;
-    box-shadow: 0 1px 6px #ffd70022;
+  background: #181824;
+  color: #ffd700;
+  border: 2px solid #ffd70055;
+  border-radius: 8px;
+  padding: 0.7em 1.3em;
+  font-size: 1.25em;
+  font-family: 'Fira Mono', monospace;
+  box-shadow: 0 1px 8px #ffd70022;
+}
+.casino-money {
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 1.15em;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.casino-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+  margin-top: 10px;
+  background: none;
+}
+.casino-table th, .casino-table td {
+  padding: 18px 18px;
+  background: #23243a;
+  color: #ffd700;
+  font-size: 1.08em;
+  border: none;
+}
+.casino-table th:first-child {
+  border-radius: 10px 0 0 0;
+}
+.casino-table th:last-child {
+  border-radius: 0 10px 0 0;
+}
+.casino-table tr:last-child td:first-child {
+  border-radius: 0 0 0 10px;
+}
+.casino-table tr:last-child td:last-child {
+  border-radius: 0 0 10px 0;
+}
+.casino-table th {
+  background: #181824;
+  color: #8be9fd;
+  font-size: 1.13em;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.casino-table .btn-primary {
+  margin-top: 8px;
+  width: 100%;
 }
 @media (max-width: 900px) {
-    .profile-card-container { flex-direction: column; align-items: center; }
-    .profile-card { flex-direction: column; min-width: 0; }
-    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
-    .profile-card-main { padding: 24px 12px; }
+  .casino-padded-container { padding: 18px 0 30px 0; }
+  .casino-padded-card { flex-direction: column; min-width: 0; padding: 18px 8px; gap: 18px; }
+  .casino-padded-sidebar { border-radius: 16px 16px 0 0; border-right: none; border-bottom: 1px solid #23243a; width: 100%; margin-right: 0; padding: 24px 8px; }
+  .casino-padded-main { padding: 0; }
+  .casino-header h1 { font-size: 1.3rem; }
+  .casino-tabs { gap: 10px; padding: 0; }
+  .casino-table th, .casino-table td { padding: 10px 6px; font-size: 1em; }
+  .casino-card { font-size: 1em; padding: 0.5em 0.7em; }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-<div class="profile-card-container">
-    <div class="profile-card">
-        <div class="profile-card-sidebar">
-            {% if character and character.profile_image %}
-                <img class="profile-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
-            {% else %}
-                <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
-            {% endif %}
-            <div class="profile-quick-actions">
-                <div class="profile-premium">
-                    <i class="fas fa-dice"></i> Casino
-                </div>
-                <div class="profile-crew-link" style="margin-top:10px;">
-                    <span>Money: </span>
-                    <span style="color:#ffd700;font-weight:600;">${{ character.money }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="profile-card-main">
-            <div class="profile-card-header">
-                <h1><i class="fas fa-dice"></i> Casino</h1>
-            </div>
-            <div class="casino-tabs">
-                <a href="{{ url_for('casino', table='blackjack') }}" class="casino-tab{% if table == 'blackjack' %} active{% endif %}">
-                    Blackjack
-                </a>
-                <a href="{{ url_for('casino', table='coinflip') }}" class="casino-tab{% if table == 'coinflip' %} active{% endif %}">
-                    Coin Flip
-                </a>
-                <a href="{{ url_for('casino', table='roulette') }}" class="casino-tab{% if table == 'roulette' %} active{% endif %}">
-                    Roulette
-                </a>
-            </div>
-            <table class="profile-table">
-                <tr>
-                    <th style="width:20%;">Your Money</th>
-                    <th style="width:20%;">Play</th>
-                    <th style="width:20%;">Result</th>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="profile-value">
-                            ${{ character.money }}
-                        </div>
-                    </td>
-                    <td>
-                        {% if table == 'blackjack' %}
-                        <form method="post" class="forum-actions">
-                            <input type="hidden" name="table" value="blackjack">
-                            {{ blackjack_form.hidden_tag() }}
-                            {{ blackjack_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
-                            {{ blackjack_form.submit(class_="btn-primary") }}
-                        </form>
-                        {% elif table == 'coinflip' %}
-                        <form method="post" class="forum-actions">
-                            <input type="hidden" name="table" value="coinflip">
-                            {{ coinflip_form.hidden_tag() }}
-                            {{ coinflip_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
-                            {{ coinflip_form.coin_choice(class_="form-control") }}
-                            {{ coinflip_form.submit(class_="btn-primary") }}
-                        </form>
-                        {% elif table == 'roulette' %}
-                        <form method="post" class="forum-actions">
-                            <input type="hidden" name="table" value="roulette">
-                            {{ roulette_form.hidden_tag() }}
-                            {{ roulette_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
-                            {{ roulette_form.roulette_choice(class_="form-control") }}
-                            {{ roulette_form.submit(class_="btn-primary") }}
-                        </form>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if result %}
-                        <div class="casino-result">
-                            {{ result }}
-                            {% if table == 'coinflip' and flip %}
-                                <br>Result: <b>{{ flip|capitalize }}</b>
-                            {% elif table == 'roulette' and roulette_result %}
-                                <br>Result: <b>{{ roulette_result|capitalize }}</b>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% if result and table == 'blackjack' %}
-                <tr>
-                    <td colspan="3">
-                        <div class="casino-hand-label">Your hand:</div>
-                        <div class="casino-cards">
-                            {% for card in hand %}
-                                <div class="casino-card">{{ card }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="casino-hand-label">Dealer's hand:</div>
-                        <div class="casino-cards">
-                            {% for card in dealer_hand %}
-                                <div class="casino-card">{{ card }}</div>
-                            {% endfor %}
-                        </div>
-                    </td>
-                </tr>
-                {% endif %}
-            </table>
-        </div>
+<div class="casino-padded-container">
+  <div class="casino-padded-card">
+    <div class="casino-padded-sidebar">
+      {% if character and character.profile_image %}
+        <img class="casino-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+      {% else %}
+        <img class="casino-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+      {% endif %}
+      <div class="casino-header" style="margin-bottom:0;">
+        <i class="fas fa-dice"></i>
+        <h1 style="font-size:1.2em;margin:0;">Casino</h1>
+      </div>
+      <div class="casino-money">
+        <span>Money: </span>
+        <span style="color:#ffd700;font-weight:600;">${{ character.money }}</span>
+      </div>
     </div>
+    <div class="casino-padded-main">
+      <div class="casino-header">
+        <h1><i class="fas fa-dice"></i> Casino</h1>
+      </div>
+      <div class="casino-tabs">
+        <a href="{{ url_for('casino', table='blackjack') }}" class="casino-tab{% if table == 'blackjack' %} active{% endif %}">
+          Blackjack
+        </a>
+        <a href="{{ url_for('casino', table='coinflip') }}" class="casino-tab{% if table == 'coinflip' %} active{% endif %}">
+          Coin Flip
+        </a>
+        <a href="{{ url_for('casino', table='roulette') }}" class="casino-tab{% if table == 'roulette' %} active{% endif %}">
+          Roulette
+        </a>
+      </div>
+      <table class="casino-table">
+        <tr>
+          <th style="width:20%;">Your Money</th>
+          <th style="width:20%;">Play</th>
+          <th style="width:20%;">Result</th>
+        </tr>
+        <tr>
+          <td>
+            <div class="casino-money">${{ character.money }}</div>
+          </td>
+          <td>
+            {% if table == 'blackjack' %}
+            <form method="post" class="forum-actions">
+              <input type="hidden" name="table" value="blackjack">
+              {{ blackjack_form.hidden_tag() }}
+              {{ blackjack_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+              {{ blackjack_form.submit(class_="btn-primary") }}
+            </form>
+            {% elif table == 'coinflip' %}
+            <form method="post" class="forum-actions">
+              <input type="hidden" name="table" value="coinflip">
+              {{ coinflip_form.hidden_tag() }}
+              {{ coinflip_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+              {{ coinflip_form.coin_choice(class_="form-control") }}
+              {{ coinflip_form.submit(class_="btn-primary") }}
+            </form>
+            {% elif table == 'roulette' %}
+            <form method="post" class="forum-actions">
+              <input type="hidden" name="table" value="roulette">
+              {{ roulette_form.hidden_tag() }}
+              {{ roulette_form.bet(min=1, max=character.money, placeholder="Enter your bet", class_="form-control") }}
+              {{ roulette_form.roulette_choice(class_="form-control") }}
+              {{ roulette_form.submit(class_="btn-primary") }}
+            </form>
+            {% endif %}
+          </td>
+          <td>
+            {% if result %}
+            <div class="casino-result">
+              {{ result }}
+              {% if table == 'coinflip' and flip %}
+                <br>Result: <b>{{ flip|capitalize }}</b>
+              {% elif table == 'roulette' and roulette_result %}
+                <br>Result: <b>{{ roulette_result|capitalize }}</b>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% if result and table == 'blackjack' %}
+        <tr>
+          <td colspan="3">
+            <div class="casino-hand-label">Your hand:</div>
+            <div class="casino-cards">
+              {% for card in hand %}
+                <div class="casino-card">{{ card }}</div>
+              {% endfor %}
+            </div>
+            <div class="casino-hand-label">Dealer's hand:</div>
+            <div class="casino-cards">
+              {% for card in dealer_hand %}
+                <div class="casino-card">{{ card }}</div>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}

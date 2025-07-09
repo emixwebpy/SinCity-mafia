@@ -226,18 +226,23 @@
             <div class="profile-card-header" style="justify-content: space-between;">
                 <h1>{{ crew.name }}</h1>
                 <div class="forum-actions" style="align-items:flex-end;">
-                    {% if current_user_role == 'leader' or current_user_role in ['right_hand', 'left_hand'] %}
+                    {% if character == current_user.character %}
+                        {% set current_user_role = current_user.crew_member.role if current_user.crew_member else 'member' %}
+                        {% if current_user_role|lower|replace(' ', '') in ['leader','righthand','lefthand'] %}
+                            <form method="POST" action="{{ url_for('invite_to_crew') }}">
+                                {{ invite_form.hidden_tag() }}
+                                {{ invite_form.submit(class_="btn btn-primary") }}
+                            </form>
+                        {% endif %}
                         <form method="POST" action="{{ url_for('invite_to_crew') }}">
                             {{ invite_form.hidden_tag() }}
                             {{ invite_form.submit(class_="btn btn-primary") }}
                         </form>
+                        
                     {% endif %}
-                    {% if current_user.crew_id == crew.id %}
-                        <form method="POST" action="{{ url_for('leave_crew') }}">
-                            {{ leave_form.hidden_tag() }}
-                            {{ leave_form.submit(class_="btn btn-danger") }}
-                        </form>
-                    {% endif %}
+                    
+                            <a href="{{ url_for('crew_management') }}" class="btn btn-warning">Crew Management</a>
+                    
                 </div>
             </div>
             {% if crew.description %}
@@ -277,14 +282,14 @@
                 {% for member, role_form in member_forms %}
                 <tr>
                     <td>
-                        {% set character = member.user.character if member.user and member.user.character else None %}
+                        {% set character = user_char_map[member.user_id] %}
                         {% if character and character.profile_image %}
-                          <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;">
+                        <img src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" class="crew-avatar" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;">
                         {% else %}
-                          <span class="crew-avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;"><i class="fas fa-user"></i></span>
+                        <span class="crew-avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px;"><i class="fas fa-user"></i></span>
                         {% endif %}
                         <strong>
-                          {{ character.name if character else "Unknown user (ID " ~ member.user_id ~ ")" }}
+                        {{ character.name if character else 'No character' }}
                         </strong>
                     </td>
                     <td>
@@ -308,8 +313,30 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% if member.user and current_user.id == member.user.id and member.role != 'leader' %}
+                <form method="POST" action="{{ url_for('leave_crew', crew_id=crew.id) }}" style="display:inline;">
+                    {{ leave_crew_forms[member.user_id].hidden_tag() }}
+                    {{ leave_crew_forms[member.user_id].submit(class_="btn btn-danger", onclick="return confirm('Leave crew for $250,000 fee?');") }}
+                </form>
+                {% endif %}
+                
                 {% endfor %}
             </table>
+            
+
+            {% if crew.territories %}
+                <div style="margin-top:18px;">
+                    <div class="profile-label" style="color:#ffd700;">Controlled Territories</div>
+                    <ul style="padding-left:18px;">
+                        {% for t in crew.territories %}
+                            <li style="color:#8be9fd;">
+                                {{ t.city }} <span style="color:#ffd700;">(Payout: ${{ t.payout }})</span>
+                                <a href="{{ url_for('gather_resources', territory_id=t.id) }}" class="btn btn-secondary" style="margin-left:10px;">Gather Resources</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

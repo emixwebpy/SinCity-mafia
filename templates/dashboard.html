@@ -297,11 +297,15 @@
                     <span class="dashboard-value">{{ character.kills if character.kills is defined else 0 }}</span>
                 </div>
             </div>
+            <div id="cooldowns-list" class="dashboard-stat" style="margin-top: 24px;">
+                <span class="dashboard-label">Cooldowns</span>
+                <ul id="cooldowns-ul" style="list-style:none;padding:0;margin:0;"></ul>
+            </div>
             <div style="margin-top:32px;">
                 <form action="{{ url_for('earn') }}" method="post" class="earn-form" id="earn-form">
                     {{ earn_form.hidden_tag() }}
                     <button type="submit" class="btn btn-primary" id="earn-btn">
-                        <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}<span id="earn-timer"></span>
+                        <i class="fas fa-hand-holding-usd"></i> {{ earn_form.submit.label }}</span>
                     </button>
                 </form>
                 <br>
@@ -317,6 +321,51 @@
 </div>
 
 <script>
+let cooldownIntervals = {};
+
+async function updateAllCooldowns() {
+  try {
+    const res = await fetch('/cooldowns_status');
+    const data = await res.json();
+    const ul = document.getElementById('cooldowns-ul');
+    ul.innerHTML = '';
+
+    Object.entries(data).forEach(([key, seconds]) => {
+      let li = document.createElement('li');
+      li.id = `cooldown-${key}`;
+      li.textContent = `${key.charAt(0).toUpperCase() + key.slice(1)}: `;
+      let span = document.createElement('span');
+      span.id = `cooldown-timer-${key}`;
+      li.appendChild(span);
+      ul.appendChild(li);
+
+      if (cooldownIntervals[key]) clearInterval(cooldownIntervals[key]);
+      if (seconds > 0) {
+        let s = seconds;
+        function updateTimer() {
+          if (s <= 0) {
+            span.textContent = 'Ready!';
+            clearInterval(cooldownIntervals[key]);
+            cooldownIntervals[key] = null;
+          } else {
+            let min = Math.floor(s / 60);
+            let sec = s % 60;
+            span.textContent = `Wait ${min}:${sec.toString().padStart(2, '0')}`;
+            s--;
+          }
+        }
+        updateTimer();
+        cooldownIntervals[key] = setInterval(updateTimer, 1000);
+      } else {
+        span.textContent = 'Ready!';
+      }
+    });
+  } catch (err) {
+    console.error("Error updating cooldowns:", err);
+  }
+}
+document.addEventListener('DOMContentLoaded', updateAllCooldowns);
+setInterval(updateAllCooldowns, 10000); // Refresh every 10s
 let earnTimerInterval = null;
 
 async function updateEarnButton() {

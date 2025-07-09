@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}{{ crew.name if crew else "Crew Management" }}{% endblock %}
+{% block content %}
+<style>
+    .profile-card-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 1px;
+        margin-top: 5px;
+        flex-wrap: wrap;
+    }
+    .profile-card, .profile-section-card {
+        background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+        border-radius: 18px;
+        box-shadow: 0 6px 32px #00000044;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+        min-width: 340px;
+        max-width: 900px;
+        width: 100%;
+        margin-bottom: 24px;
+    }
+    .profile-section-card {
+        flex-direction: column;
+        padding: 24px 18px;
+    }
+    .profile-card-sidebar {
+        background: #181824;
+        padding: 36px 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 260px;
+        border-right: 1px solid #23243a;
+    }
+    .profile-avatar {
+        width: 170px;
+        height: 170px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #ffd70055;
+        box-shadow: 0 2px 16px #ffd70033;
+        margin-bottom: 18px;
+        background: #23243a;
+    }
+    .profile-card-main {
+        flex: 1;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .profile-card-header {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 12px;
+    }
+    .profile-card-header h1 {
+        color: #ffd700;
+        font-size: 2.2rem;
+        margin: 0;
+        letter-spacing: 2px;
+    }
+    .profile-table {
+        width: 100%;
+        color: #f5f6fa;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-family: 'Cinzel', serif;
+    }
+    .profile-table th, .profile-table td {
+        padding: 1.1rem 1rem;
+        text-align: left;
+        vertical-align: middle;
+        border: none;
+        background: none;
+    }
+    .profile-table th {
+        color: #ffd700;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-bottom: 2px solid #8be9fd55;
+        text-shadow: 0 1px 8px #000;
+    }
+    .profile-table tr {
+        background: rgba(40,42,54,0.85);
+        transition: background 0.2s;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px #00000022;
+    }
+    .profile-table tr.current-user {
+        background: rgba(255,215,0,0.13);
+        color: #ffd700;
+        font-weight: 900;
+    }
+    .profile-table tr:hover {
+        background: #34355b;
+    }
+    @media (max-width: 900px) {
+        .profile-card-container { flex-direction: column; align-items: center; }
+        .profile-card, .profile-section-card { flex-direction: column; min-width: 0; }
+        .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+        .profile-card-main { padding: 24px 12px; }
+    }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <!-- Main Crew Info Card -->
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            <div style="text-align:center;">
+                <h2 style="color:#ffd700;">{{ crew.name }}</h2>
+                <div style="color:#8be9fd; font-size:1.1em; margin-bottom:10px;">{{ crew.motto or '' }}</div>
+                <div style="color:#fff; font-size:1em; margin-bottom:10px;">Leader: {{ member_char_map[leader_member].name if leader_member in member_char_map else 'Unknown' }}</div>
+                <div style="color:#fff; font-size:1em; margin-bottom:10px;">Members: {{ members|length }}</div>
+                <div style="color:#fff; font-size:1em; margin-bottom:10px;">Territories: {{ crew_territories|length }}</div>
+            </div>
+            <form method="post" action="{{ url_for('disband_crew', crew_id=crew.id) }}" style="margin-top:30px;">
+                {{ disband_form.hidden_tag() }}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to disband your crew? This cannot be undone.')">Disband Crew</button>
+            </form>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1><i class="fas fa-crown"></i> Crew Management</h1>
+            </div>
+            <h3>Invitations</h3>
+            <form method="post" action="{{ url_for('invite_to_crew') }}" class="mb-3">
+                {{ invite_form.hidden_tag() }}
+                {{ invite_form.user_name.label }} {{ invite_form.user_name(size=20) }}
+                <button type="submit" class="btn btn-success">Invite</button>
+            </form>
+            <ul>
+            {% for invite in invitations %}
+                <li>{{ invite.invitee_name }} (Pending)</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Members Table -->
+    <div class="profile-section-card">
+        <h3>Members</h3>
+        <table class="profile-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for member, char in member_char_map.items() %}
+                <tr{% if member.id == leader_member.id %} class="current-user"{% endif %}>
+                    <td>{{ char.name if char else 'Unknown' }}</td>
+                    <td>{{ member.role|capitalize }}</td>
+                    <td>
+                        {% if member.id != leader_member.id %}
+                            <form method="post" action="{{ url_for('update_crew_role', crew_member_id=member.id) }}" style="display:inline;">
+                                {{ role_forms[member.id].hidden_tag() }}
+                                {{ role_forms[member.id].new_role() }}
+                                <button type="submit" class="btn btn-sm btn-primary">Update Role</button>
+                            </form>
+                            <form method="post" action="{{ url_for('remove_crew_member', crew_member_id=member.id) }}" style="display:inline;">
+                                {{ remove_forms[member.id].hidden_tag() }}
+                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                            </form>
+                        {% else %}
+                            <span class="badge bg-warning">Leader</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    
+    <!-- Territories Table -->
+    <div class="profile-section-card">
+        <h3>Territories</h3>
+        <table class="profile-table">
+            <thead>
+                <tr>
+                    
+                    <th>Status/Contesting</th>
+                    <th>Payout</th>
+                    <th>Payout Status</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+            {% for territory in crew_territories %}
+                <tr>
+                    <td>
+                        {% if territory.contested_until and territory.contested_until > now() %}
+                            Contested (ends in {{ (territory.contested_until - now()).seconds // 60 }}m)
+                        {% else %}
+                            Stable
+                        {% endif %}
+                    </td>
+                    <td>
+                        ${{ territory.payout|int|default(0) }}
+                    </td>
+                    <td>
+                        {% if territory.last_payout %}
+                            {% set next_payout = territory.last_payout + timedelta(hours=24) %}
+                            {% if now() >= next_payout %}
+                                <span style="color: #ffd700;">Ready for payout</span>
+                            {% else %}
+                                <span style="color: #8be9fd;">Paid {{ (now() - territory.last_payout).seconds // 3600 }}h ago</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #ff5555;">Never paid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

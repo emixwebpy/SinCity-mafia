@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Gather Crew Resources{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px; margin: 2em auto;">
+    <h2>Gather Resources for {{ territory.custom_name or '(' ~ territory.x ~ ',' ~ territory.y ~ ')' }}</h2>
+    <p>Current resources gathered: <strong>{{ resource.amount }}</strong> / {{ resource.required }}</p>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {{ form.submit(class_="btn btn-primary") }}
+    </form>
+    {% if gathered_amount is defined %}
+        <p style="margin-top:1em;color:#ffd700;">You gathered <strong>{{ gathered_amount }}</strong> resources!</p>
+    {% endif %}
+</div>
+{% endblock %}

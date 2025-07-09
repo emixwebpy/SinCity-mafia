@@ -43,7 +43,7 @@
 }
 .profile-card-main {
     flex: 1;
-    
+    padding: 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -343,7 +343,7 @@
                     </form>
                 {% else %}
                     <div class="profile-bio-content">
-                        {{ character.bio|default('No bio set yet.', true)|e }}
+                        {{ rendered_bio|safe }}
                     </div>
                 {% endif %}
             </div>

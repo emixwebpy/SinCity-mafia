@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from flask import current_app as app
+
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session
 from flask_mail import Mail, Message
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -38,6 +39,7 @@ migrate.init_app(app, db)
 csrf.init_app(app)
 
 
+from models import user
 from models.user import User, CrewRequest
 from models.character import Character, Godfather
 from models.crew import Crew, CrewMember, CrewInvitation, CrewMessage
@@ -50,12 +52,14 @@ from models.forum import Forum, ForumTopic, ForumPost
 from models.chat import ChatMessage
 from models.admin import admin_bp
 from models.forms import *
-from models.constants import CITIES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, BODYGUARD_NAMES, BODYGUARD_LASTNAMES, DRUG_LIST
+from models.forms import MinigameForm
+from models.constants import *
 from models.loggers import admin_logger
-from models.utils import notify_admin_duplicate_ip, allowed_file, is_safe_url, limiter_key_func, generate_unique_invite_code, is_on_crime_cooldown, seed_drugs, randomize_all_drug_prices, update_crew_member_count, seed_territories, maybe_trigger_city_event
+from models.utils import *
 from models.background_tasks import start_jail_release_thread
-from models.territory import Territory
+from models.territory import *
 from models.event import CityEvent
+from models.bank import *
 
 
 
@@ -65,6 +69,7 @@ with app.app_context():
     db.create_all()
     seed_territories()
     seed_drugs()
+    seed_territory_claimers()
     randomize_all_drug_prices()
     start_jail_release_thread(app)
     update_crew_member_count(Crew)
@@ -261,7 +266,159 @@ def send_beer():
         return redirect(url_for('dashboard'))
 
     return render_template('send_beer.html', form=form,character=character)
+@app.route('/crew_management', methods=['GET', 'POST'])
+@login_required
+def crew_management():
+    process_territory_payouts()
+    all_territories = Territory.query.all()
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    
+    crew_total_payout = 0
+    if character and character.crew_id:
+        crew_total_payout = sum(
+            t.payout for t in all_territories if t.owner_crew_id == character.crew_id
+        )
+    if not character or not character.crew_id:
+        flash('You are not in a crew.', 'danger')
+        return redirect(url_for('dashboard'))
+    crew = Crew.query.get(character.crew_id)
+    member = CrewMember.query.filter_by(user_id=current_user.id, crew_id=crew.id).first()
+    if not member or member.role != 'leader':
+        flash('Only the crew leader can access the management panel.', 'danger')
+        return redirect(url_for('crew_page', crew_id=crew.id))
 
+    # Members and forms
+    members = CrewMember.query.filter_by(crew_id=crew.id).all()
+    member_char_map = {m: Character.query.filter_by(master_id=m.user_id, is_alive=True).first() for m in members}
+    leader_member = member
+    
+    role_forms = {m.id: CrewRoleForm(prefix=str(m.id)) for m in members}
+    # RemoveCrewMemberForm and DisbandCrewForm do not exist, so use a generic FlaskForm for both
+    
+    
+    remove_forms = {m.id: DummyRemoveForm(prefix=str(m.id)) for m in members}
+    invite_form = InviteForm()
+    disband_form = DummyDisbandForm()
+
+    # Invitations
+    invitations = CrewInvitation.query.filter_by(crew_id=crew.id).all()
+    for inv in invitations:
+        char = Character.query.filter_by(master_id=inv.invitee_id).first()
+        inv.invitee_name = char.name if char else 'Unknown'
+
+    # Territories
+    crew_territories = Territory.query.filter_by(owner_crew_id=crew.id).all()
+
+    return render_template(
+        'crew_management.html',
+        crew=crew,
+        members=members,
+        member_char_map=member_char_map,
+        leader_member=leader_member,
+        role_forms=role_forms,
+        remove_forms=remove_forms,
+        invite_form=invite_form,
+        invitations=invitations,
+        crew_territories=crew_territories,
+        disband_form=disband_form,
+        now=datetime.utcnow,
+        crew_total_payout=crew_total_payout,timedelta=timedelta
+    )
+@app.route('/cooldowns_status')
+@login_required
+def cooldowns_status():
+    # Example: Replace with your actual cooldown logic
+    def get_earn_cooldown(user):
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        if not character or not character.last_earned:
+            return 0
+        cooldown = 120  # seconds
+        now = datetime.utcnow()
+        elapsed = (now - character.last_earned).total_seconds()
+        remaining = max(0, cooldown - elapsed)
+        return int(remaining)
+
+    def get_steal_cooldown(user):
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        if not character or not character.steal_cooldown:
+            return 0
+        now = datetime.utcnow()
+        remaining = (character.steal_cooldown - now).total_seconds()
+        return int(remaining) if remaining > 0 else 0
+
+    def get_crime_cooldown(user):
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        if not character or not hasattr(character, 'last_crime_time') or not character.last_crime_time:
+            return 0
+        cooldown = 360 * 60  # 6 hours in seconds (adjust as needed)
+        now = datetime.utcnow()
+        elapsed = (now - character.last_crime_time).total_seconds()
+        remaining = max(0, cooldown - elapsed)
+        return int(remaining)
+
+    
+
+    def get_oc_cooldown(user):
+        character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
+        if not character or not hasattr(character, 'last_oc_time') or not character.last_oc_time:
+            return 0
+        cooldown = 360 * 60  # 6 hours in seconds (adjust as needed)
+        now = datetime.utcnow()
+        elapsed = (now - character.last_oc_time).total_seconds()
+        remaining = max(0, cooldown - elapsed)
+        return int(remaining)
+
+    cooldowns = {
+        "earn": get_earn_cooldown(current_user),
+        "steal": get_steal_cooldown(current_user),
+        "crime": get_crime_cooldown(current_user),
+        "oc": get_oc_cooldown(current_user)
+        
+    }
+    # Each value should be seconds remaining (int)
+    return jsonify(cooldowns)
+@app.route('/remove_crew_member/<int:crew_member_id>', methods=['POST'])
+@login_required
+def remove_crew_member(crew_member_id):
+    member = CrewMember.query.get_or_404(crew_member_id)
+    crew = Crew.query.get(member.crew_id)
+    leader = CrewMember.query.filter_by(user_id=current_user.id, crew_id=crew.id).first()
+    if not leader or leader.role != 'leader':
+        flash('Only the leader can remove members.', 'danger')
+        return redirect(url_for('crew_management'))
+    if member.role == 'leader':
+        flash('Cannot remove the leader.', 'danger')
+        return redirect(url_for('crew_management'))
+    char = Character.query.filter_by(master_id=member.user_id, is_alive=True).first()
+    if char:
+        char.crew_id = None
+    db.session.delete(member)
+    db.session.commit()
+    flash('Member removed.', 'success')
+    return redirect(url_for('crew_management'))
+
+@app.route('/disband_crew/<int:crew_id>', methods=['POST'])
+@login_required
+def disband_crew(crew_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    crew = Crew.query.get_or_404(crew_id)
+    member = CrewMember.query.filter_by(user_id=current_user.id, crew_id=crew.id).first()
+    if not member or member.role != 'leader':
+        flash('Only the leader can disband the crew.', 'danger')
+        return redirect(url_for('crew_management'))
+    # Remove all members and update their characters
+    members = CrewMember.query.filter_by(crew_id=crew.id).all()
+    for m in members:
+        char = Character.query.filter_by(master_id=m.user_id, is_alive=True).first()
+        if char:
+            char.crew_id = None
+        db.session.delete(m)
+    # Remove all invitations
+    CrewInvitation.query.filter_by(crew_id=crew.id).delete()
+    db.session.delete(crew)
+    db.session.commit()
+    flash('Crew disbanded.', 'success')
+    return redirect(url_for('dashboard'))
 @app.route('/forum/<int:forum_id>/new_topic', methods=['GET', 'POST'])
 @login_required
 def new_topic(forum_id):
@@ -616,9 +773,10 @@ def crew_page(crew_id):
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
-    for m in members:
-        if m.user_id == current_user.id:
-            current_user_role = m.role
+    user_char_map = {}
+    for member in members:
+        latest_char = Character.query.filter_by(master_id=member.user_id, is_alive=True).order_by(Character.id.desc()).first()
+        user_char_map[member.user_id] = latest_char  # store the character object
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -629,6 +787,9 @@ def crew_page(crew_id):
         form = CrewRoleForm(prefix=str(member.id))
         form.new_role.data = member.role  # Set default
         member_forms.append((member, form))
+    leave_crew_forms = {}
+    for member in members:
+        leave_crew_forms[member.user_id] = LeaveCrewForm(prefix=f"leave_{member.user_id}")
     return render_template(
         'crew_page.html',
         crew=crew,
@@ -639,7 +800,9 @@ def crew_page(crew_id):
         current_user_role=current_user_role,
         character=character,
         online_characters=online_characters,
-        online_users=online_users
+        online_users=online_users,
+        user_char_map=user_char_map,
+        leave_crew_forms=leave_crew_forms
     )
 
 @app.route('/crew_member/<int:crew_member_id>/update_role', methods=['POST'])
@@ -877,7 +1040,7 @@ def travel():
         if not can_travel:
             mins, secs = divmod(int(time_left.total_seconds()), 60)
             hours, mins = divmod(mins, 60)
-            flash(f"You must wait {hours}h {mins}m before traveling again.", "warning")
+            flash(f"You must wait {hours}h {mins}m {secs}s before traveling again.", "warning")
         elif new_city not in CITIES:
             flash("Invalid city selected.", "danger")
         elif new_city == character.city:
@@ -1395,26 +1558,26 @@ def breakout(char_id):
 @login_required
 def join_crew():
     if request.method == 'POST':
-        crew = Crew.query.get(crew_id)
         try:
             crew_id = int(request.form['crew_id'])
         except (ValueError, KeyError):
             flash("Invalid crew selected.", "danger")
             return redirect(url_for('join_crew'))
-            
-        # Optionally check if user is already in a crew
-        if current_user.crew_id:
+
+        character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+        if not character:
+            flash("No active character found.", "danger")
+            return redirect(url_for('dashboard'))
+        if character.crew_id:
             flash("You're already in a crew.", "warning")
             return redirect(url_for('dashboard'))
-            
-        # Check if the crew exists
+
+        crew = Crew.query.get(crew_id)
         if not crew:
             flash("Crew not found.", "danger")
             return redirect(url_for('join_crew'))
 
-        # Update the user's crew
-        current_user.crew_id = crew_id
-        # If using CrewMember, create that record too
+        character.crew_id = crew_id
         db.session.add(CrewMember(crew_id=crew_id, user_id=current_user.id, role='member'))
         db.session.commit()
         flash("You joined the crew!", "success")
@@ -1424,37 +1587,42 @@ def join_crew():
     invitations = CrewInvitation.query.filter_by(invitee_id=current_user.id).all()
     return render_template('notifications.html', crews=crews, invitations=invitations)
 
-@app.route('/leave_crew', methods=['POST', 'GET'])
+@app.route('/leave_crew/<int:crew_id>', methods=['POST'])
 @login_required
-def leave_crew():
-    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-
+def leave_crew(crew_id):
+    user = current_user
+    character = Character.query.filter_by(master_id=user.id, is_alive=True).first()
     if not character or not character.crew_id:
-        flash("You are not in a crew.", "warning")
+        flash('No active character or not in a crew.', 'danger')
         return redirect(url_for('dashboard'))
-    crew = Crew.query.get(character.crew_id)
-    leader_member = CrewMember.query.filter_by(crew_id=crew.id, role='leader').first()
-    if leader_member and leader_member.user_id == current_user.id:
-        flash("You must assign a new leader before leaving the crew.", "danger")
-        return redirect(url_for('dashboard'))
-    
-    # Remove the character from the crew
-    crew_member = CrewMember.query.filter_by(user_id=current_user.id, crew_id=character.crew_id).first()
-    if crew_member:
-        db.session.delete(crew_member)
-        db.session.commit()  # Commit immediately to avoid NOT NULL constraint error
-        character.crew_id = None
-        character.crime_group_id = None
-        db.session.commit()
-    else:
-        flash("You are not a member of this crew.", "warning")
-        return redirect(url_for('dashboard'))
-    
-    # Optionally: remove the crew if it's empty
-    if not CrewMember.query.filter_by(crew_id=crew.id).count():
-        db.session.delete(crew)
-        db.session.commit()
-    flash("You left the crew.", "success")
+    crew_id = character.crew_id
+    member = CrewMember.query.filter_by(user_id=user.id, crew_id=crew_id).first()
+    if not member or member.role == 'leader':
+        flash('You cannot leave as leader.', 'danger')
+        return redirect(url_for('crew_page', crew_id=crew_id))
+    leave_fee = 250000  # Example fee
+    if character.money < leave_fee:
+        flash('Not enough money to leave the crew.', 'danger')
+        return redirect(url_for('crew_page', crew_id=crew_id))
+    character.money -= leave_fee
+    character.crew_id = None
+    db.session.delete(member)
+    db.session.commit()
+    # Notify leader, right hand, left hand
+    crew = Crew.query.get(crew_id)
+    # Notify all CrewMember objects with the correct roles
+    crew_members = CrewMember.query.filter_by(crew_id=crew_id).all()
+    for m in crew_members:
+        if hasattr(m, 'role') and m.role in ['leader', 'right hand', 'left hand']:
+            send_notification(
+                user_id=m.user_id,
+                message=f"{character.name if character else user.username} has left the crew and paid a fee of ${leave_fee}."
+            )
+    form = LeaveCrewForm()
+    if not form.validate_on_submit():
+        flash("Invalid form submission.", "danger")
+        return redirect(url_for('crew_page', crew_id=crew_id))
+    flash('You have left the crew.', 'success')
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
@@ -1661,42 +1829,35 @@ def refresh_shop():
 @login_required
 def invite_to_crew():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-
     if not character or not character.crew_id:
         flash("You must be in a crew to invite others.")
         return redirect(url_for('dashboard'))
-
-    crew = Crew.query.get(character.crew_id)
+    crew_id = character.crew_id
+    crew = Crew.query.get(crew_id)
     form = InviteToCrewForm()
-
     if form.validate_on_submit():
         username = form.username.data.strip()
         invitee = Character.query.filter_by(name=username, is_alive=True).first()
         if not invitee:
             flash("Character not found.")
             return redirect(url_for('invite_to_crew'))
-
         if invitee.crew_id:
             flash("This character is already in a crew.")
             return redirect(url_for('invite_to_crew'))
-
-        existing_invite = CrewInvitation.query.filter_by(invitee_id=invitee.id, crew_id=crew.id).first()
+        existing_invite = CrewInvitation.query.filter_by(invitee_id=invitee.id, crew_id=crew_id).first()
         if existing_invite:
             flash("An invite has already been sent to this character.")
             return redirect(url_for('invite_to_crew'))
-
         new_invite = CrewInvitation(
             inviter_id=current_user.id,
             invitee_id=invitee.master_id,
-            crew_id=crew.id
+            crew_id=crew_id
         )
         db.session.add(new_invite)
         db.session.commit()
-
         flash(f"Invite sent to {invitee.name}!", "success")
         return redirect(url_for('dashboard'))
-
-    return render_template('invite_to_crew.html', crew=crew, form=form,character=character)
+    return render_template('invite_to_crew.html', crew=crew, form=form, character=character)
 
 @app.route('/claim_godfather/<city>', methods=['POST'])
 @login_required
@@ -1819,132 +1980,424 @@ def join_crime():
             return redirect(url_for('crime_group'))
     return render_template('join_crime.html', join_crime_form=form, character=character)
 
-
+@app.route('/contribute_resources', methods=['POST'])
+@login_required
+def contribute_resources():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
+        flash("You must be in a crew to contribute.", "danger")
+        return redirect(url_for('territories'))
+    crew_id = character.crew_id
+    amount = int(request.form.get('amount', 0))
+    if amount <= 0:
+        flash("Invalid contribution amount.", "danger")
+        return redirect(url_for('territories'))
+    if amount >= 500:
+        flash("You cannot contribute more than 500 supplies at once.", "danger")
+        return redirect(url_for('territories'))
+    resource = TerritoryResource.query.filter_by(
+        crew_id=crew_id,
+        resource_type='supplies'
+    ).first()
+    if not resource:
+        resource = TerritoryResource(
+            crew_id=crew_id,
+            resource_type='supplies',
+            amount=0,
+            required=100
+        )
+        db.session.add(resource)
+    resource.amount += amount
+    db.session.commit()
+    flash(f"Contributed {amount} supplies to the crew's claim effort!", "success")
+    return redirect(url_for('territories'))
 
 @app.route('/territories', methods=['GET', 'POST'])
 @login_required
 def territories():
+    MIN_PAYOUT = 25000
+    MAX_PAYOUT = 100000
+    all_territories = Territory.query.all()
+    for t in all_territories:
+        if not t.payout or t.payout < MIN_PAYOUT:
+            t.payout = random.randint(MIN_PAYOUT, MAX_PAYOUT)
     
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    territories = Territory.query.all()
-    crews = Crew.query.all()
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
-    crews_by_id = {c.id: c for c in crews}
-    
-    claim_forms = {t.id: ClaimTerritoryForm(prefix=f"claim_{t.id}") for t in territories}
-    takeover_forms = {t.id: StartTakeoverForm(prefix=f"takeover_{t.id}") for t in territories}
-    resolve_forms = {t.id: ResolveTakeoverForm(prefix=f"resolve_{t.id}") for t in territories}
+    grid_size = 20
+    all_territories = Territory.query.all()
+    grid = [[None for _ in range(grid_size)] for _ in range(grid_size)]
+    territory_map = {(t.x, t.y): t for t in all_territories}
+    for x in range(grid_size):
+        for y in range(grid_size):
+            grid[x][y] = territory_map.get((x, y))
+    crew = Crew.query.all()
+    crew_by_id = {c.id: c for c in crew}
+    # Forms for CSRF protection
+    takeover_forms = {t.id: StartTakeoverForm(prefix=f"takeover_{t.id}") for t in all_territories}
+    resolve_forms = {t.id: ResolveTakeoverForm(prefix=f"resolve_{t.id}") for t in all_territories}
     payout_form = CrewPayoutForm(prefix="payout")
+    is_crew_leader = False
+    if character and character.crew_id:
+        leader_member = CrewMember.query.filter_by(crew_id=character.crew_id, role='leader').first()
+        if leader_member and leader_member.user_id == current_user.id:
+            is_crew_leader = True
+    resources = {}
+    for t in all_territories:
+        resources[t.id] = TerritoryResource.query.filter_by(
+            crew_id=character.crew_id if character else None,
+            resource_type='supplies'
+        ).first()
+    resource = TerritoryResource.query.filter_by(
+        crew_id=character.crew_id if character else None,
+        resource_type='supplies'
+    ).first()
+    contribute_form = ContributeResourcesForm()
+    gather_form = GatherResourcesForm()
     
+    db.session.commit()
     return render_template(
         'territories.html',
-        territories=territories,
+        grid=grid,
+        territories=all_territories,
         character=character,
-        crews_by_id=crews_by_id,
-        claim_forms=claim_forms,
+        crew_by_id=crew_by_id,
         takeover_forms=takeover_forms,
         resolve_forms=resolve_forms,
-        payout_form=payout_form
+        payout_form=payout_form,
+        now=datetime.utcnow,
+        is_crew_leader=is_crew_leader,
+        resources=resources,
+        gather_form=gather_form,
+        resource=resource,
+        contribute_form=contribute_form
     )
-@app.route('/territory_minigame/<city>', methods=['POST', 'GET'])
+
+
+@app.route('/territory_minigame/<int:x>/<int:y>', methods=['GET', 'POST'])
 @login_required
-def territory_minigame(city):
+def territory_minigame(x, y):
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    territory = Territory.query.filter_by(city=city).first()
+    territory = Territory.query.filter_by(x=x, y=y).first()
     if not character or not character.crew_id or not territory:
         flash("Invalid request.", "danger")
         return redirect(url_for('territories'))
-
-    # Only allow if territory is being contested and your crew is the challenger
     if territory.contesting_crew_id != character.crew_id:
         flash("Your crew is not contesting this territory.", "danger")
         return redirect(url_for('territories'))
-
-    # Only allow after contest period is over
     if not territory.contested_until or territory.contested_until > datetime.utcnow():
         flash("The contest is not over yet!", "warning")
         return redirect(url_for('territories'))
 
-    # Minigame: Each crew rolls a dice (1-100), highest wins
-    
-    challenger_roll = random.randint(1, 100)
-    defender_roll = random.randint(1, 100)
+      # Make sure this is your new form with guess1, guess2, guess3
+    form = MinigameForm()
+    owner_crew = Crew.query.get(territory.owner_crew_id) if territory.owner_crew_id else None
+    challenger_crew = Crew.query.get(character.crew_id)
+    guesses = []
+    result = None
+    challenger_roll = None
+    defender_roll = None
     winner = None
-    if territory.owner_crew_id:
-        defender_crew = Crew.query.get(territory.owner_crew_id)
-    else:
-        defender_crew = None
 
-    if challenger_roll > defender_roll:
-        # Challenger wins
-        territory.owner_crew_id = character.crew_id
-        winner = "challenger"
-        flash(f"Your crew rolled {challenger_roll} vs {defender_roll} and WON the territory!", "success")
-    elif defender_roll > challenger_roll:
-        winner = "defender"
-        flash(f"Your crew rolled {challenger_roll} vs {defender_roll} and LOST the territory.", "danger")
+    # Use session to store minigame state
+    session_key = f"minigame_{x}_{y}_{current_user.id}"
+    state = session.get(session_key)
+    if not state:
+        # Start new minigame
+        secret_numbers = [random.randint(1, 10) for _ in range(3)]
+        state = {
+            'secret_numbers': secret_numbers,
+            'finished': False,
+            'guesses': [],
+            'bonus': 0
+        }
+        session[session_key] = state
     else:
-        winner = "tie"
-        flash(f"It's a tie! Both crews rolled {challenger_roll}. Try again.", "info")
+        secret_numbers = state['secret_numbers']
+        guesses = state.get('guesses', [])
 
-    # End contest
-    territory.contesting_crew_id = None
-    territory.contested_until = None
-    db.session.commit()
-    return redirect(url_for('territories'))
-@app.route('/start_takeover/<city>', methods=['POST'])
+    if form.validate_on_submit() and not state['finished']:
+        # Collect all three guesses
+        guesses = [
+            form.guess1.data,
+            form.guess2.data,
+            form.guess3.data
+        ]
+        state['guesses'] = guesses
+
+        # Calculate bonus: +20 for each correct guess
+        bonus = 0
+        for i, guess in enumerate(guesses):
+            if guess == secret_numbers[i]:
+                bonus += 20
+        state['bonus'] = bonus
+
+        # Mark as finished
+        state['finished'] = True
+
+        # Roll for challenger and defender
+        challenger_roll = random.randint(1, 100) + bonus
+        defender_roll = random.randint(1, 100)
+        state['challenger_roll'] = challenger_roll
+        state['defender_roll'] = defender_roll
+
+        # Determine winner
+        if challenger_roll > defender_roll:
+            winner = 'challenger'
+            result = f"Congratulations! Your crew ({challenger_crew.name}) won the territory!"
+            # Transfer ownership
+            territory.owner_crew_id = challenger_crew.id
+            territory.contesting_crew_id = None
+            territory.contested_until = None
+            db.session.commit()
+        elif defender_roll > challenger_roll:
+            winner = 'defender'
+            result = f"{owner_crew.name if owner_crew else 'Defender'} defended the territory!"
+        else:
+            winner = 'draw'
+            result = "It's a draw! No one wins the territory."
+
+        state['result'] = result
+        state['winner'] = winner
+        session[session_key] = state
+    elif state.get('finished'):
+        guesses = state.get('guesses', [])
+        bonus = state.get('bonus', 0)
+        challenger_roll = state.get('challenger_roll', 0)
+        defender_roll = state.get('defender_roll', 0)
+        result = state.get('result')
+        winner = state.get('winner')
+
+    return render_template(
+        'territory_minigame.html',
+        territory=territory,
+        owner_crew=owner_crew,
+        challenger_crew=challenger_crew,
+        form=form,
+        guesses=guesses,
+        result=result,
+        challenger_roll=challenger_roll,
+        defender_roll=defender_roll,
+        winner=winner,
+        character=character
+    )
+
+@app.route('/bank', methods=['GET', 'POST'])
 @login_required
-def start_takeover(city):
+def bank():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No active character found.", "danger")
+        return redirect(url_for('dashboard'))
+    # Ensure bank account exists
+    if not character.bank_account:
+        account = BankAccount(character_id=character.id, balance=0)
+        db.session.add(account)
+        db.session.commit()
+    else:
+        account = BankAccount.query.filter_by(character_id=character.id).first()
+
+    deposit_form = DepositForm()
+    withdraw_form = WithdrawForm()
+    transfer_form = TransferForm()
+
+    # Handle deposit
+    if deposit_form.validate_on_submit() and deposit_form.submit.data:
+        amount = deposit_form.amount.data
+        if character.money == amount:
+            character.money -= amount
+            account.balance += amount
+            db.session.add(BankTransaction(account_id=account.id, type='deposit', amount=amount, details='Deposit'))
+            db.session.commit()
+            flash(f"Deposited ${amount} to your bank account.", "success")
+        else:
+            flash("Not enough cash.", "danger")
+        return redirect(url_for('bank'))
+
+    # Handle withdraw
+    if withdraw_form.validate_on_submit() and withdraw_form.submit.data:
+        amount = withdraw_form.amount.data
+        if account.balance >= amount:
+            character.money += amount
+            account.balance -= amount
+            db.session.add(BankTransaction(account_id=account.id, type='withdraw', amount=amount, details='Withdraw'))
+            db.session.commit()
+            flash(f"Withdrew ${amount} from your bank account.", "success")
+        else:
+            flash("Not enough bank balance.", "danger")
+        return redirect(url_for('bank'))
+
+    # Handle transfer
+    if transfer_form.validate_on_submit() and transfer_form.submit.data:
+        recipient_name = transfer_form.recipient.data.strip()
+        amount = transfer_form.amount.data
+        recipient = Character.query.filter_by(name=recipient_name, is_alive=True).first()
+        if not recipient or not recipient.bank_account:
+            flash("Recipient not found.", "danger")
+        elif account.balance < amount:
+            flash("Not enough bank balance.", "danger")
+        else:
+            account.balance -= amount
+            recipient.bank_account.balance += amount
+            db.session.add(BankTransaction(account_id=account.id, type='transfer', amount=amount, details=f'Transfer to {recipient_name}'))
+            db.session.add(BankTransaction(account_id=recipient.bank_account.id, type='transfer', amount=amount, details=f'Transfer from {character.name}'))
+            db.session.commit()
+            flash(f"Transferred ${amount} to {recipient_name}.", "success")
+        return redirect(url_for('bank'))
+
+    transactions = BankTransaction.query.filter_by(account_id=account.id).order_by(BankTransaction.timestamp.desc()).limit(20).all()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(success=True, message="Deposited!")
+    return render_template('bank.html', character=character, account=account, deposit_form=deposit_form, withdraw_form=withdraw_form, transfer_form=transfer_form, transactions=transactions)
+
+@app.route('/start_takeover/<int:x>/<int:y>', methods=['POST'])
+@login_required
+def start_takeover(x, y):
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crew_id:
         flash("You must be in a crew to start a takeover.", "danger")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     crew = Crew.query.get(character.crew_id)
-    territory = Territory.query.filter_by(city=city).first()
+    territory = Territory.query.filter_by(x=x, y=y).first()
     if not territory:
         flash("No such territory.", "danger")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
+    # Resource check
+    resource = TerritoryResource.query.filter_by(
+        crew_id=crew.id, territory_id=None, resource_type='supplies'
+    ).first()
+    if not resource or resource.amount < resource.required:
+        flash("Your crew hasn't gathered enough resources to start a takeover!", "warning")
+        return redirect(url_for('territories'))
     if territory.owner_crew_id == crew.id:
         flash("You already own this territory.", "info")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     if territory.contested_until and territory.contested_until > datetime.utcnow():
         flash("This territory is already being contested!", "warning")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
+
+    # --- ADJACENCY OR TRADE CHECK START ---
+    owned_territories = Territory.query.filter_by(owner_crew_id=crew.id).all()
+    is_leader = CrewMember.query.filter_by(crew_id=crew.id, user_id=current_user.id, role='leader').first() is not None
+    if owned_territories:
+        # Standard adjacency check
+        adjacent = False
+        for t in owned_territories:
+            if (abs(t.x - x) == 1 and t.y == y) or (abs(t.y - y) == 1 and t.x == x):
+                adjacent = True
+                break
+        if not adjacent:
+            flash("You can only claim a territory adjacent to one you already own.", "danger")
+            return redirect(url_for('territories'))
+    else:
+        # No owned territories: only allow crew leader to claim/trade
+        if not is_leader:
+            flash("Only the crew leader can claim the first territory for your crew.", "danger")
+            return redirect(url_for('territories'))
+        # Optionally, you can add extra logic here for "trading" (e.g., select from available territories)
+    # --- ADJACENCY OR TRADE CHECK END ---
+
     # Start contest (e.g., 30 minutes)
-    territory.contested_until = datetime.utcnow() + timedelta(minutes=30)
+    territory.contested_until = datetime.utcnow() + timedelta(minutes=1)
     territory.contesting_crew_id = crew.id
     db.session.commit()
-    flash(f"Takeover started! Your crew must win the contest in 30 minutes.", "success")
-    return redirect(url_for('dashboard'))
-@app.route('/resolve_takeover/<city>', methods=['POST'])
+    flash(f"Takeover started! Your crew must win the contest in 1 minute.", "success")
+    return redirect(url_for('territories'))
+@app.route('/gather_resources_random')
 @login_required
-def resolve_takeover(city):
+def gather_resources_random():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
+        flash("You must be in a crew to gather resources.", "danger")
+        return redirect(url_for('dashboard'))
+    crew = Crew.query.get(character.crew_id)
+    territories = Territory.query.filter_by(owner_crew_id=crew.id).all() if crew else []
+    if not territories:
+        flash("Your crew controls no territories.", "warning")
+        return redirect(url_for('territories'))
+    territory = random.choice(territories)
+    return redirect(url_for('gather_resources', territory_id=territory.id))
+
+GATHER_COOLDOWN_SECONDS = 1  # 1 second cooldown
+@app.route('/gather_resources', methods=['POST'])
+@login_required
+def gather_resources():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.crew_id:
+        flash("You must be in a crew to gather resources.", "danger")
+        return redirect(url_for('territories'))
+
+    form = GatherResourcesForm()
+    if not form.validate_on_submit():
+        flash("Invalid form submission.", "danger")
+        return redirect(url_for('territories'))
+
+    crew_id = character.crew_id
+
+    # Shared resource pool for the crew (territory_id=None)
+    resource = TerritoryResource.query.filter_by(
+        crew_id=crew_id,
+        territory_id=None,
+        resource_type='supplies'
+    ).first()
+    if not resource:
+        resource = TerritoryResource(
+            crew_id=crew_id,
+            territory_id=None,
+            resource_type='supplies',
+            amount=0,
+            required=100
+        )
+        db.session.add(resource)
+
+    # Gather resources
+    gathered_amount = random.randint(5, 25)
+    resource.amount += gathered_amount
+    db.session.commit()
+
+    flash(f"You gathered {gathered_amount} resources for your crew!", "success")
+    notif = Notification(
+        user_id=current_user.id,
+        message=f"You gathered {gathered_amount} resources for your crew!",
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(notif)
+    db.session.commit()
+    return redirect(url_for('territories'))
+
+    
+
+@app.route('/resolve_takeover/<int:x>/<int:y>', methods=['POST'])
+@login_required
+def resolve_takeover(x, y):
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crew_id:
         flash("You must be in a crew.", "danger")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     crew = Crew.query.get(character.crew_id)
-    territory = Territory.query.filter_by(city=city).first()
+    territory = Territory.query.filter_by(x=x, y=y).first()
     if not territory or not territory.contesting_crew_id:
         flash("No ongoing contest for this territory.", "info")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     if territory.contesting_crew_id != crew.id:
         flash("Your crew is not contesting this territory.", "danger")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     if not territory.contested_until or territory.contested_until > datetime.utcnow():
         flash("The contest is not over yet!", "warning")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('territories'))
     # Transfer ownership
     territory.owner_crew_id = crew.id
     territory.contesting_crew_id = None
     territory.contested_until = None
     db.session.commit()
-    flash(f"Your crew has taken over {city}!", "success")
-    return redirect(url_for('dashboard'))
+    flash(f"Your crew has taken over ({x}, {y})!", "success")
+    return redirect(url_for('territories'))
+
+
 @app.route('/crime_group', methods=['GET', 'POST'])
 @login_required
 def crime_group():
@@ -2139,6 +2592,16 @@ def godfathers_page():
     cities = CITIES
     claim_forms = {city: ClaimGodfatherForm(prefix=city.replace(" ", "_")) for city in cities}
     step_down_form = StepDownGodfatherForm()
+    #check if godfather is dead if so remove character from godfather
+    crew = Crew.query.get(character.crew_id) if character and character.crew_id else None
+    if crew:
+        godfather = Godfather.query.filter_by(city=crew.city).first()
+        if not godfather:
+            character.crew_id = None
+            character.crime_group_id = None
+            db.session.commit()
+            flash("Your crew's Godfather is no longer active. You have been removed from the crew.", "warning")
+            return redirect(url_for('dashboard'))
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -2334,13 +2797,12 @@ def earn():
     # Jail chance: 10% chance to be sent to jail for 1-5 minutes
     jail_chance = 0.50
     if random.random() < jail_chance:
-        jail_minutes = random.randint(2, 15)
+        jail_minutes = random.randint(0, 0)
         character.in_jail = True
-        character.jail_until = now + timedelta(minutes=jail_minutes)
-        character.last_earned = now
+        character.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
         db.session.commit()
         flash(f"You got caught and are in jail for {jail_minutes} minutes!", "danger")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('jail'))
     
     # Premium bonus
     
@@ -2411,6 +2873,24 @@ def steal_status():
 def user_settings():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     all_characters = Character.query.filter_by(master_id=current_user.id).order_by(Character.is_alive.desc(), Character.id.desc()).all()
+    online_timeout = datetime.utcnow() - timedelta(minutes=5)
+    online_users = User.query.filter(User.last_seen >= online_timeout).all()
+    online_characters = []
+    for u in online_users:
+        char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
+        if char:
+            online_characters.append(char)
+
+    # Define is_readonly for this route
+    is_readonly = not character.is_alive if character else True
+
+    # Only check for jail if the character is alive
+    if not is_readonly and character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
+        remaining = character.jail_until - datetime.utcnow()
+        mins, secs = divmod(int(remaining.total_seconds()), 60)
+        flash(f"You are in jail for {mins}m {secs}s.", "danger")
+        return redirect(url_for('jail'))
+
     form = UserSettingsForm()
     kill_form = KillCharacterForm()
     user = User.query.get(current_user.id)
@@ -2432,7 +2912,7 @@ def user_settings():
             flash("Password updated.", "success")
         db.session.commit()
         return redirect(url_for('user_settings'))
-    return render_template('user_settings.html', form=form, user=user, character=character, all_characters=all_characters, kill_form=kill_form)
+    return render_template('user_settings.html', form=form, user=user, character=character, all_characters=all_characters, kill_form=kill_form, online_characters=online_characters, online_users=online_users)
 
 @app.route('/steal', methods=['GET', 'POST'])
 @login_required
@@ -2583,8 +3063,13 @@ def upgrade():
 @app.route('/profile/id/<int:char_id>', methods=['GET', 'POST'])
 def profile_by_id(char_id):
     character = Character.query.get_or_404(char_id)
+    
     user = User.query.filter_by(id=character.master_id).first()
     crew = db.session.get(Crew, character.crew_id) if character.crew_id else None
+
+
+
+
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
     online_characters = []
@@ -2592,12 +3077,21 @@ def profile_by_id(char_id):
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
+
+
+
+
     form = EditBioForm(obj=character)
     if form.validate_on_submit() and current_user.id == user.id:
         character.bio = form.bio.data
         db.session.commit()
         flash('Bio updated!', 'success')
         return redirect(url_for('profile_by_id', char_id=character.id))
+    
+    rendered_bio = render_bio(character.bio)
+
+
+
     return render_template('profile.html', 
                         user=user, 
                         character=character,
@@ -2606,7 +3100,8 @@ def profile_by_id(char_id):
                         crew=crew, 
                         form=form, 
                         online_characters=online_characters, 
-                        online_users=online_users)
+                        online_users=online_users,
+                        rendered_bio=rendered_bio)
 
 @app.route('/step_down_godfather', methods=['POST'])
 @login_required
@@ -2637,7 +3132,7 @@ def send_public_message():
             username=character.name,
             message=message,
             channel='public',
-            user_id=current_user.id
+            user_id=character.master_id
         )
         db.session.add(chat_msg)
         db.session.commit()
@@ -2680,7 +3175,7 @@ def drug_dashboard():
                 return redirect(url_for('drug_dashboard'))
             character.money -= total_price
             dealer.stock -= quantity
-            inv = inventory.get(drug.id)
+            inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=drug.id).first()
             if not inv:
                 inv = CharacterDrugInventory(character_id=character.id, drug_id=drug.id, quantity=0)
                 db.session.add(inv)
@@ -2707,7 +3202,6 @@ def drug_dashboard():
             db.session.commit()
             flash(f"You sold {quantity}x {drug.name} for ${total_price}.", "success")
             return redirect(url_for('drug_dashboard'))
-
     return render_template(
         'drug_dashboard.html',
         character=character,
@@ -2717,6 +3211,7 @@ def drug_dashboard():
         buy_forms=buy_forms,
         sell_forms=sell_forms
     )
+
 
 @app.route('/public_messages')
 @limiter.limit("1000 per minute")
@@ -2738,6 +3233,7 @@ def public_messages():
         })
     return jsonify(result)
 
+
 @app.route('/buy_drug/<int:dealer_id>', methods=['POST'])
 @login_required
 def buy_drug_form(dealer_id, form=None):
@@ -2746,12 +3242,9 @@ def buy_drug_form(dealer_id, form=None):
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     dealer = DrugDealer.query.get_or_404(dealer_id)
     quantity = form.quantity.data
-
-    # Fix: Ensure quantity is valid
     if quantity is None:
         flash("Please enter a quantity.", "danger")
         return redirect(url_for('drug_dashboard'))
-
     if dealer.city != character.city:
         flash("Dealer not in your city.", "danger")
         return redirect(url_for('drug_dashboard'))
@@ -2773,6 +3266,7 @@ def buy_drug_form(dealer_id, form=None):
     flash(f"You bought {quantity}x {dealer.drug.name} for ${total_price}.", "success")
     return redirect(url_for('drug_dashboard'))
 
+
 @app.route('/sell_drug/<int:drug_id>', methods=['POST'])
 @login_required
 def sell_drug_form(drug_id, form=None):
@@ -2780,12 +3274,9 @@ def sell_drug_form(drug_id, form=None):
         form = SellDrugForm(request.form, prefix=f'sell_{drug_id}')
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     quantity = form.quantity.data
-
-    # Fix: Ensure quantity is valid
     if quantity is None:
         flash("Please enter a quantity.", "danger")
         return redirect(url_for('drug_dashboard'))
-
     inv = CharacterDrugInventory.query.filter_by(character_id=character.id, drug_id=drug_id).first()
     if not inv or inv.quantity < quantity or quantity < 1:
         flash("Not enough drugs to sell.", "danger")
@@ -2801,6 +3292,8 @@ def sell_drug_form(drug_id, form=None):
     db.session.commit()
     flash(f"You sold {quantity}x {dealer.drug.name} for ${total_price}.", "success")
     return redirect(url_for('drug_dashboard'))
+
+
 @app.route('/kill_character', methods=['POST'])
 @login_required
 def kill_character():
@@ -2818,6 +3311,8 @@ def kill_character():
         return redirect(url_for('create_character'))
     flash("Invalid request.", "danger")
     return redirect(url_for('user_settings'))
+
+
 @app.route('/city/<city_name>')
 @login_required
 def city_characters(city_name):
@@ -2835,26 +3330,32 @@ def city_characters(city_name):
     characters = Character.query.filter_by(city=city_name, is_alive=True).filter(Character.master_id != 0).all()
     return render_template('city_characters.html', city=city_name, characters=characters, character=character)
 
-@app.route('/claim_territory/<city>', methods=['POST'])
+@app.route('/claim_territory/<int:x>/<int:y>', methods=['POST'])
 @login_required
-def claim_territory(city):
-    
+def claim_territory(x, y):
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crew_id:
-        flash("You must be in a crew to claim a city.", "danger")
+        flash("You must be in a crew to claim a territory.", "danger")
+        return redirect(url_for('territories'))
+    # Only allow the crew leader to claim
+    leader_member = CrewMember.query.filter_by(crew_id=character.crew_id, role='leader').first()
+    if not leader_member or leader_member.user_id != current_user.id:
+        flash("Only the crew leader can claim a territory.", "danger")
         return redirect(url_for('territories'))
     crew = Crew.query.get(character.crew_id)
-    territory = Territory.query.filter_by(city=city).first()
+    territory = Territory.query.filter_by(x=x, y=y).first()
     if not territory:
-        flash("No such city.", "danger")
+        flash("No such territory.", "danger")
         return redirect(url_for('territories'))
     if territory.owner_crew_id:
-        flash("This city is already claimed.", "warning")
+        flash("This territory is already claimed.", "warning")
         return redirect(url_for('territories'))
     territory.owner_crew_id = crew.id
     db.session.commit()
-    flash(f"{city} is now controlled by your crew!", "success")
+    flash(f"Territory ({x}, {y}) is now controlled by your crew!", "success")
     return redirect(url_for('territories'))
+
+
 @app.route('/territory/<int:territory_id>/customize', methods=['GET', 'POST'])
 @login_required
 def customize_territory(territory_id):
@@ -2871,6 +3372,8 @@ def customize_territory(territory_id):
         flash("Territory updated!", "success")
         return redirect(url_for('territories'))
     return render_template('customize_territory.html', form=form, territory=territory)
+
+
 @app.route('/crew_payout', methods=['POST'])
 @login_required
 def crew_payout():
@@ -2893,6 +3396,9 @@ def crew_payout():
     db.session.commit()
     flash(f"Crew territory payout distributed! Each member received ${split}.", "success")
     return redirect(url_for('crew_page', crew_id=crew.id))
+
+
+
 # Create Flask app and configure it
 
 @app.context_processor

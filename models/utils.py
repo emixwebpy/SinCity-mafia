@@ -1,5 +1,5 @@
 import random
-import string
+import string, re
 from datetime import datetime, timedelta
 from urllib.parse import urlparse, urljoin
 from flask import request
@@ -14,6 +14,24 @@ from flask_login import current_user
 from extensions import db
 from flask import flash, redirect, url_for
 from models.event import CityEvent
+from markupsafe import escape, Markup
+from models.notification import Notification
+from models.territory import Territory
+
+
+def urlize(text, nofollow=True, target='_blank'):
+    # Simple urlize implementation
+    def repl(match):
+        url = match.group(0)
+        attrs = []
+        if nofollow:
+            attrs.append('rel="nofollow"')
+        if target:
+            attrs.append(f'target="{target}"')
+        attr_str = ' '.join(attrs)
+        return f'<a href="{url}" {attr_str}>{url}</a>'
+    return re.sub(r'(https?://[^\s]+)', repl, text)
+
 
 def maybe_trigger_city_event():
     # 5% chance to trigger an event on dashboard load
@@ -35,14 +53,54 @@ def maybe_trigger_city_event():
         db.session.add(event)
         db.session.commit()
 
-def seed_territories():
+#check if the territory claimer failed to claim the territory
+def seed_territory_claimers():
     from models.territory import Territory
-    from models.constants import CITIES
-    for city in CITIES:
-        if not Territory.query.filter_by(city=city).first():
-            t = Territory(city=city)
-            db.session.add(t)
+    from models.territory_claimers import TerritoryClaimer
+    from extensions import db
+
+    for territory in Territory.query.all():
+        if territory.is_claimed() or territory.is_contested():
+            continue
+        
+        # Check if there's a claimer for this territory
+        claimer = TerritoryClaimer.query.filter_by(territory_id=territory.id).first()
+        if not claimer:
+            continue
+        
+        # Randomly decide if the claim fails (70% chance)
+        if random.random() < 0.7:
+            db.session.delete(claimer)
+            db.session.commit()
+
+
+
+def process_territory_payouts():
+    """
+    Pays out territory income to the owning crew's bank_balance every 24 hours.
+    Only pays if 24 hours have passed since last_payout.
+    Updates last_payout timestamp.
+    """
+    now = datetime.utcnow()
+    territories = Territory.query.all()
+    for territory in territories:
+        # Only pay out if territory has an owner crew and a payout value
+        if not territory.owner_crew_id or not hasattr(territory, 'payout'):
+            continue
+
+        # Check if 24 hours have passed since last payout (or never paid out)
+        if territory.last_payout is None or (now - territory.last_payout) >= timedelta(hours=24):
+            crew = Crew.query.get(territory.owner_crew_id)
+            if crew:
+                # Ensure bank_balance is not None
+                if crew.bank_balance is None:
+                    crew.bank_balance = 0
+                # Ensure payout is a valid number
+                payout_amount = getattr(territory, 'payout', 0) or 0
+                crew.bank_balance += payout_amount
+                territory.last_payout = now
     db.session.commit()
+
 
 def randomize_all_drug_prices():
     
@@ -72,7 +130,16 @@ def update_crew_member_count(Crew):
             db.session.delete(cm)
     db.session.commit()
 
-
+def seed_territories():
+    from models.territory import Territory
+    from extensions import db
+    grid_size = 20
+    for x in range(grid_size):
+        for y in range(grid_size):
+            if not Territory.query.filter_by(x=x, y=y).first():
+                t = Territory(x=x, y=y)
+                db.session.add(t)
+    db.session.commit()
 
 
 def seed_drugs():
@@ -153,3 +220,15 @@ def admin_required(f):
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+def render_bio(bio):
+    if not bio:
+        return "No bio set yet."
+    lines = escape(bio).split('\n')
+    lines = [Markup(urlize(line, nofollow=True, target='_blank')) for line in lines]
+    return Markup('<br>').join(lines)
+
+def send_notification(user_id, message):
+    notif = Notification(user_id=user_id, message=message)
+    db.session.add(notif)
+    db.session.commit()

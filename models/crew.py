@@ -7,6 +7,7 @@ class Crew(db.Model):
     name = db.Column(db.String(150), unique=True, nullable=False)
     members = db.relationship('User', backref='crew', lazy=True)
     city = db.Column(db.String(64), nullable=False)
+    bank_balance = db.Column(db.Integer, default=0, nullable=False)
 
 class CrewMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)

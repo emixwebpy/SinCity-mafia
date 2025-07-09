@@ -7,3 +7,5 @@ class Notification(db.Model):
     message = db.Column(db.String(512), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+
+

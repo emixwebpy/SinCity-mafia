@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}Bank{% endblock %}
+
+{% block content %}
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.profile-quick-actions {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
+}
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+}
+.profile-label {
+    color: #8be9fd;
+    font-size: 0.92em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.profile-value {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #fff;
+}
+.bank-form-section {
+    margin-top: 32px;
+}
+.bank-form-section h3 {
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+.bank-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+}
+.bank-form label {
+    color: #8be9fd;
+    font-weight: 600;
+}
+.bank-form input, .bank-form select {
+    background: #23243a;
+    color: #fff;
+    border: 1px solid #8be9fd55;
+    border-radius: 5px;
+    padding: 8px;
+}
+.bank-form button, .bank-form input[type="submit"] {
+    background: #ffd700;
+    color: #181824;
+    font-weight: 700;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 0;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.bank-form button:hover, .bank-form input[type="submit"]:hover {
+    background: #ffe066;
+}
+.bank-transactions-section {
+    margin-top: 32px;
+}
+.bank-transactions-section h3 {
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+.bank-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.bank-table th, .bank-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.bank-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.bank-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.bank-table tr:hover {
+    background: #34355b;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            {% if character.profile_image %}
+                <img class="profile-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="profile-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <h2 class="profile-name">{{ character.name }}</h2>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1>Bank</h1>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="profile-stat">
+                    <span class="profile-label">Bank Balance</span>
+                    <span class="profile-value">${{ account.balance }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Cash on Hand</span>
+                    <span class="profile-value">${{ character.money }}</span>
+                </div>
+            </div>
+            <div class="bank-form-section">
+                <h3>Deposit</h3>
+                <form class="bank-form" method="post" action="{{ url_for('bank') }}">
+                    {{ deposit_form.hidden_tag() }}
+                    <label for="deposit-amount">Amount</label>
+                    {{ deposit_form.amount(class_="form-control", id="deposit-amount") }}
+                    {{ deposit_form.submit(class_="btn btn-primary") }}
+                </form>
+                <h3>Withdraw</h3>
+                <form class="bank-form" method="post" action="{{ url_for('bank') }}">
+                    {{ withdraw_form.hidden_tag() }}
+                    <label for="withdraw-amount">Amount</label>
+                    {{ withdraw_form.amount(class_="form-control", id="withdraw-amount") }}
+                    {{ withdraw_form.submit(class_="btn btn-primary") }}
+                </form>
+                <h3>Transfer</h3>
+                <form class="bank-form" method="post" action="{{ url_for('bank') }}">
+                    {{ transfer_form.hidden_tag() }}
+                    <label for="transfer-recipient">Recipient</label>
+                    {{ transfer_form.recipient(class_="form-control", id="transfer-recipient") }}
+                    <label for="transfer-amount">Amount</label>
+                    {{ transfer_form.amount(class_="form-control", id="transfer-amount") }}
+                    {{ transfer_form.submit(class_="btn btn-primary") }}
+                </form>
+            </div>
+            <div class="bank-transactions-section">
+                <h3>Recent Transactions</h3>
+                <table class="bank-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ tx.type|capitalize }}</td>
+                            <td>${{ tx.amount }}</td>
+                            <td>{{ tx.details }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align:center;">No transactions yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const depositForm = document.querySelector('.bank-form[action="{{ url_for("bank") }}"]');
+    if (depositForm) {
+        depositForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch(depositForm.action, {
+                method: 'POST',
+                body: new FormData(depositForm),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update balance, show message, etc.
+                    location.reload(); // Or update the DOM manually for a true SPA feel
+                } else {
+                    alert(data.message || "Error");
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

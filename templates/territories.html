@@ -3,36 +3,50 @@
 
 {% block content %}
 <style>
-.content-area {
-    background: none !important;
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
 }
-.territory-bgbb {
-    background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=900&q=80') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    position: fixed !important;
-    top: 0; left: 0; width: 100vw; height: 100vh !important;
-    z-index: -2 !important;
-    filter: grayscale(0.15) brightness(0.7) blur(1px) !important;
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
 }
-
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    font-size: 8px;
+}
 .territory-header {
-    background: rgba(40,42,54,0.92);
-    padding: 2rem 2rem 1rem 2rem;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    margin-bottom: 0;
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 2px;
-    border-bottom: 2px solid #ffd70055;
-}
-.territory-header h1 {
     color: #ffd700;
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     margin-bottom: 0.5rem;
     text-shadow: 0 2px 8px #000, 0 0px 24px #ffd70044;
-    letter-spacing: 4px;
+    letter-spacing: 2px;
+    font-family: 'Cinzel', serif;
+    text-align: center;
 }
 .territory-header-desc {
     color:#8be9fd;
@@ -40,210 +54,327 @@
     margin-top:0.5em;
     font-family: 'Cinzel', serif;
     opacity: 0.8;
+    text-align: center;
+    margin-bottom: 1.5em;
 }
-.territory-list {
-    background: rgba(35,36,58,0.92);
-    border-radius: 0 0 18px 18px;
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    max-width: 900px;
-    margin: 0 auto 2rem auto;
-    border-top: none;
-}
-.territory-table {
-    width: 100%;
-    color: #f5f6fa;
+.territory-map-table {
+    max-width: 100%;
     border-collapse: separate;
-    border-spacing: 0;
-    font-family: 'Cinzel', serif;
-}
-.territory-table th, .territory-table td {
-    padding: 1.1rem 1rem;
-    text-align: left;
-    vertical-align: middle;
-    border: none;
-    background: none;
-}
-.territory-table th {
-    color: #ffd700;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-    text-shadow: 0 1px 8px #000;
-}
-.territory-table tr {
-    background: rgba(40,42,54,0.85);
-    transition: background 0.2s;
+    border-spacing: 2px;
+    margin: 1rem auto;
+    background-image: url('static/uploads/ChatGPT Image Jul 9, 2025, 11_44_28 AM.png');
     border-radius: 12px;
-    box-shadow: 0 2px 8px #00000022;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    overflow-x: auto;
+    padding: 4px;
 }
-.territory-table tr.owned-by-user {
-    background: rgba(255,215,0,0.13);
-    color: #ffd700;
-    font-weight: 900;
+.territory-map-table td, .territory-map-table th {
+    padding: 0;
+    border: none;
+    width: 28px;
+    height: 28px;
+    min-width: 24px;
+    min-height: 24px;
+    text-align: center;
+    vertical-align: middle;
+    background: none;
+    transition: width 0.2s, height 0.2s;
 }
-.territory-table tr:hover {
-    background: #34355b;
+.territory-card {
+    background: linear-gradient(120deg, #23243a41 60%, #1818243f 100%);
+    box-shadow: 0 1px 2px #00000011;
+    padding: 0.1rem 0.1rem;
+    min-width: 12px;
+    min-height: 24px;
+    max-width: 60px;
+    max-height: 60px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid #2d2e3e;
+    align-items: center;
+    justify-content: center;
+    transition: border 0.12s, box-shadow 0.12s, background 0.12s, width 0.2s, height 0.2s;
 }
-.territory-name {
-    font-weight: 700;
-    color: #8be9fd;
-    font-size: 1.08em;
-    letter-spacing: 0.2px;
+.territory-card.owned-by-user {
+    border: 2px solid #ffd700;
+    box-shadow: 0 2px 24px #ffd70033;
+}
+.territory-placeholder {
+    background: #23243a;
+    border-radius: 6px;
+    opacity: 0.3;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-.territory-icon {
+    justify-content: center;
+    color: #888;
     font-size: 1.2em;
-    margin-right: 6px;
+    font-weight: bold;
+    margin: 0 auto;
+}
+.territory-card .territory-title {
+    font-size: 1.1em;
     color: #ffd700;
-    filter: drop-shadow(0 1px 2px #000);
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    margin-bottom: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
 }
-.territory-theme {
-    color: #b8b8ff;
+.territory-card .territory-owner {
+    color: #8be9fd;
     font-size: 0.98em;
+    margin-bottom: 0.1em;
 }
-.territory-status {
-    font-size: 1em;
+.territory-card .territory-payout {
+    color: #ffd700;
+    font-size: 0.98em;
+    margin-bottom: 0.1em;
 }
-.territory-actions form, .territory-actions button, .territory-actions a {
-    display: inline-block;
-    margin: 0 0.2em;
+.territory-card .territory-status {
+    font-size: 0.95em;
+    margin-bottom: 0.1em;
 }
-.territory-actions .btn {
+.territory-card .territory-actions {
+    margin-top: 0.2em;
+}
+.territory-card .btn {
     border-radius: 6px;
     font-weight: 700;
-    padding: 0.5em 1.2em;
-    background: linear-gradient(120deg, #23243a 60%, #181824 100%);
+    padding: 0.3em 0.7em;
+    background: linear-gradient(120deg, #23243a52 60%, #18182452 100%);
     color: #ffd700;
     border: none;
-    font-size: 1em;
+    font-size: 0.95em;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
     box-shadow: 0px 0px 10px 0px #ffd70022;
     margin-bottom: 2px;
     text-decoration: none;
     cursor: pointer;
 }
-.territory-actions .btn:hover, .territory-actions .btn:focus {
-    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+.territory-card .btn:hover, .territory-card .btn:focus {
+    background: linear-gradient(120deg, #1818244f 60%, #23243a38 100%);
     color: #ffd700;
     box-shadow: 0 0px 5px #ffd700;
 }
-@media (max-width: 700px) {
-    .territory-list {
-        padding: 1rem 0.5rem;
-        max-width: 98vw;
+.territory-card .btn-secondary {
+    background: #23243a;
+    color: #888;
+    cursor: default;
+}
+.territory-resource-ui {
+    margin-top: 1em;
+    background: #23243a;
+    border-radius: 8px;
+    padding: 1em 1.5em;
+    box-shadow: 0 2px 8px #00000022;
+    color: #ffd700;
+    text-align: center;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.territory-resource-ui input[type="number"] {
+    width: 60px;
+    border-radius: 4px;
+    border: 1px solid #ffd700;
+    background: #181824;
+    color: #ffd700;
+    padding: 0.2em 0.5em;
+    margin-right: 0.5em;
+}
+.territory-resource-ui button {
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 0.3em 0.7em;
+    background: linear-gradient(120deg, #23243a52 60%, #18182452 100%);
+    color: #ffd700;
+    border: none;
+    font-size: 0.95em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    box-shadow: 0px 0px 10px 0px #ffd70022;
+    margin-bottom: 2px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.territory-resource-ui button:hover, .territory-resource-ui button:focus {
+    background: linear-gradient(120deg, #1818244f 60%, #23243a38 100%);
+    color: #ffd700;
+    box-shadow: 0 0px 5px #ffd700;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+    .territory-map-table td, .territory-map-table th {
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 40px;
+        max-height: 40px;
     }
-    .territory-header {
-        padding: 1rem 0.5rem 0.5rem 0.5rem;
-    }
-    .territory-header h1 {
-        font-size: 1.2em;
+    .territory-card {
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 40px;
+        max-height: 40px;
+        font-size: 0.7em;
     }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
-<div class="territory-bgbb"></div>
 
-
-<div class="territory-header">
-    <h1><i class="fas fa-flag"></i> Crew Territories <i class="fas fa-flag"></i></h1>
-    <div class="territory-header-desc">
-        <i class="fas fa-users"></i> Control the city, claim your turf, and show your crew's dominance! <i class="fas fa-users"></i>
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-main">
+            <div class="territory-header-desc">
+                <i class="fas fa-users"></i> Control the city, claim your turf, and show your crew's dominance! <i class="fas fa-users"></i>
+            </div>
+            <table class="territory-map-table">
+                <tbody>
+                {% for x in range(20) %}
+                    <tr>
+                    {% for y in range(20) %}
+                        {% set territory = grid[x][y] %}
+                        <td>
+                            {% if territory %}
+                                {% if territory.contesting_crew_id == character.crew_id and territory.contested_until and territory.contested_until <= now() %}
+                                    <div style="position: relative; display: inline-block; width: 100%; height: 100%;">
+                                        <form method="post" action="{{ url_for('territory_minigame', x=territory.x, y=territory.y) }}" style="position: absolute; top: 0; left: 0; width: 100%; z-index: 2; text-align: center; ">
+                                            {{ resolve_forms[territory.id].hidden_tag() if territory.id in resolve_forms else '' }}
+                                            <button type="submit" class="btn btn-primary" style="padding: 0.1em 0.3em; font-size: 0.7em; border-radius: 5px 5px 0 0; width: 90%; margin: 0 auto; position: relative; top: -2px;">Resolve</button>
+                                        </form>
+                                        <div class="territory-card" style="pointer-events: none;">
+                                            <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                            <span style="color:#8be9fd;font-size:0.7em;">
+                                                {% if not territory.owner_crew_id %}
+                                                    Unclaimed
+                                                {% elif territory.owner_crew_id == character.crew_id %}
+                                                    Owned
+                                                {% else %}
+                                                    Claimed
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% if not territory.owner_crew_id %}
+                                        {% if is_crew_leader and (not territory.contested_until) %}
+                                            <form method="post" action="{{ url_for('start_takeover', x=territory.x, y=territory.y) }}" style="margin:0;font-size: 7px;overflow: hidden;">
+                                                {{ takeover_forms[territory.id].hidden_tag() if territory.id in takeover_forms else '' }}
+                                                <button type="submit" class="territory-card territory-card-clickable btn-territory-claim" data-action="claim" data-territory-id="{{ territory.id }}">
+                                                    <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                                    <span style="color:#0d003a;">Unclaimed</span>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <div class="territory-card">
+                                                <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                                <span style="color:#00242c;font-size: 7px;overflow: hidden;">Unclaimed</span>
+                                            </div>
+                                        {% endif %}
+                                    {% elif territory.owner_crew_id == character.crew_id %}
+                                        <div class="territory-card owned-by-user">
+                                            <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                            <span style="color:#ffd700;font-size: 7px;overflow: hidden;">Owned</span>
+                                        </div>
+                                    {% elif territory.owner_crew_id %}
+                                        {% if is_crew_leader and not territory.contested_until %}
+                                            <form method="post" action="{{ url_for('start_takeover', x=territory.x, y=territory.y) }}" style="margin:0;">
+                                                {{ takeover_forms[territory.id].hidden_tag() if territory.id in takeover_forms else '' }}
+                                                <button type="submit" class="territory-card territory-card-clickable btn-territory-contest" data-action="contest" data-territory-id="{{ territory.id }}">
+                                                    <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                                    <span style="color:#8be9fd;font-size:0.7em;">{{ territory.owner_crew.name }}</span>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <div class="territory-card">
+                                                <span>{{ territory.custom_name if territory.custom_name else '({},{})'.format(territory.x, territory.y) }}</span>
+                                                <span style="color:#8be9fd;font-size:0.7em;">Claimed</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="territory-resource-ui">
+                <p>Crew Resources: {{ resource.amount if resource else 0 }}</p>
+                <form method="post" action="{{ url_for('contribute_resources') }}">
+                    {{ contribute_form.hidden_tag() }}
+                    <label for="resource-type">Resource Type:</label>
+                    {{ contribute_form.resource_type(class_="form-control", id="resource-type")| safe }}
+                    <label for="amount">Amount:</label>
+                    {{ contribute_form.amount(class_="form-control", id="amount") }}
+                    <button type="submit" class="btn btn-primary">Contribute Resources</button>
+                </form>
+                <form method="post" action="{{ url_for('gather_resources') }}">
+                    {{ gather_form.hidden_tag() }}
+                    <button type="submit">Gather Resources</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
-<div class="territory-list">
-    <table class="territory-table">
-        <thead>
-            <tr>
-                <th><i class="fas fa-map-marker-alt"></i> Name</th>
-                <th><i class="fas fa-users"></i> Owner Crew</th>
-                <th><i class="fas fa-coins"></i> Payout</th>
-                <th><i class="fas fa-bolt"></i> Status</th>
-                <th><i class="fas fa-cogs"></i> Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for territory in territories %}
-            <tr class="{% if character.crew_id and territory.owner_crew_id == character.crew_id %}owned-by-user{% endif %}">
-                <td class="territory-name">
-                    <span class="territory-icon"><i class="fas fa-flag"></i></span>
-                    <strong>
-                        {{ territory.custom_name if territory.custom_name else territory.city }}
-                    </strong>
-                    {% if territory.theme %}
-                        <br><span class="territory-theme">Theme: {{ territory.theme }}</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if territory.owner_crew %}
-                        <a href="{{ url_for('crew_page', crew_id=territory.owner_crew.id) }}">{{ territory.owner_crew.name }}</a>
-                    {% else %}
-                        <span style="color:#8be9fd;">Unclaimed</span>
-                    {% endif %}
-                </td>
-                <td>${{ territory.payout }}</td>
-                <td class="territory-status">
-                    {% if territory.contested_until and territory.contested_until > now() %}
-                        <span style="color:#ffb347;">
-                            Contested by 
-                            {% if territory.contesting_crew_id %}
-                                {{ crews_by_id[territory.contesting_crew_id].name }}
-                            {% else %}
-                                Unknown
-                            {% endif %}
-                            <br>
-                            (ends in 
-                            {% set remaining = territory.contested_until - now() %}
-                            {{ remaining.seconds // 60 }}m {{ remaining.seconds % 60 }}s)
-                        </span>
-                    {% else %}
-                        <span style="color:#8be9fd;">Stable</span>
-                    {% endif %}
-                </td>
-                <td class="territory-actions">
-                    {% if character.crew_id %}
-                        {% if not territory.owner_crew_id %}
-                            <form method="post" action="{{ url_for('claim_territory', city=territory.city) }}">
-                                {{ claim_forms[territory.id].hidden_tag() }}
-                                {{ claim_forms[territory.id].submit(class_="btn btn-success") }}
-                            </form>
-                        {% elif territory.owner_crew_id != character.crew_id and (not territory.contested_until or territory.contested_until < now()) %}
-                            <form method="post" action="{{ url_for('start_takeover', city=territory.city) }}">
-                                {{ takeover_forms[territory.id].hidden_tag() }}
-                                {{ takeover_forms[territory.id].submit(class_="btn btn-warning") }}
-                            </form>
-                        {% elif territory.contesting_crew_id == character.crew_id and territory.contested_until and territory.contested_until <= now() %}
-                            <form method="post" action="{{ url_for('resolve_takeover', city=territory.city) }}">
-                                {{ resolve_forms[territory.id].hidden_tag() }}
-                                {{ resolve_forms[territory.id].submit(class_="btn btn-primary") }}
-                            </form>
-                        {% elif territory.owner_crew_id == character.crew_id %}
-                            <span class="btn btn-secondary" style="cursor:default;">Owned</span>
-                        {% endif %}
-                        {% if territory.owner_crew_id == character.crew_id %}
-                            <a href="{{ url_for('customize_territory', territory_id=territory.id) }}" class="btn btn-info">Customize</a>
-                        {% endif %}
-                    {% else %}
-                        <span style="color:#888;">Join a crew to participate</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% if territory.contesting_crew_id == character.crew_id and territory.contested_until and territory.contested_until <= now() %}
-                <form action="{{ url_for('territory_minigame', city=territory.city) }}" method="post">
-                    {{ csrf_token() }}
-                    <button type="submit" class="btn btn-warning">Play Minigame to Resolve!</button>
-                </form>
-            {% endif %}
-        {% endfor %}
-        </tbody>
-    </table>
-    {% if character.crew_id %}
-    <form method="post" action="{{ url_for('crew_payout') }}" style="margin-top:2em;">
-        {{ payout_form.hidden_tag() }}
-        {{ payout_form.submit(class_="btn btn-lg btn-success") }}
-    </form>
-    {% endif %}
-</div>
+<script>
+// Make the entire territory card clickable for claim/contest
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.territory-card-clickable').forEach(function(card) {
+        var form = card.closest('form');
+        if (form && card.dataset.action !== 'none') {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', function(e) {
+                // Only submit if not clicking a button, link, or input inside
+                if (!['BUTTON','A','INPUT','LABEL','SELECT','TEXTAREA'].includes(e.target.tagName)) {
+                    e.preventDefault();
+                    form.querySelector('input[type="submit"],button[type="submit"]').click();
+                }
+            });
+        } else {
+            card.style.cursor = 'default';
+        }
+    });
+});
+// Responsive grid cell sizing
+function resizeTerritoryGrid() {
+    const table = document.querySelector('.territory-map-table');
+    if (!table) return;
+    const container = table.parentElement;
+    const numCols = 20;
+    const padding = 0;
+    let availableWidth = container.offsetWidth - padding;
+    if (availableWidth > 1200) availableWidth = 1200; // Maximum width for larger screens
+    // Adjust for mobile view   
+    if (window.innerWidth < 600) availableWidth = window.innerWidth - 24;
+    let cellSize = Math.floor(availableWidth / numCols);
+    cellSize = Math.max(24, Math.min(cellSize, 24)); // clamp between 24px and 24px
+    table.style.setProperty('--cell-size', cellSize + 'px');
+    table.querySelectorAll('td, th').forEach(td => {
+        td.style.width = cellSize + 'px';
+        td.style.height = cellSize + 'px';
+        td.style.minWidth = cellSize + 'px';
+        td.style.minHeight = cellSize + 'px';
+        td.style.maxWidth = cellSize + 'px';
+        td.style.maxHeight = cellSize + 'px';
+    });
+    table.querySelectorAll('.territory-card').forEach(card => {
+        card.style.width = cellSize + 'px';
+        card.style.height = cellSize + 'px';
+        card.style.minWidth = cellSize + 'px';
+        card.style.minHeight = cellSize + 'px';
+        card.style.maxWidth = cellSize + 'px';
+        card.style.maxHeight = cellSize + 'px';
+    });
+}
+window.addEventListener('resize', resizeTerritoryGrid);
+window.addEventListener('DOMContentLoaded', resizeTerritoryGrid);
+</script>
 {% endblock %}

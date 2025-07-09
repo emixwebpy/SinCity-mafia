@@ -14,7 +14,7 @@
       html, body {
         font-family: "Fira Sans", sans-serif;
         font-size:0.85em;
-        background: linear-gradient(135deg, #181824 0%, #23243a 100%);
+        background-color: #181818;
         color: #f8f8ff;
         margin: 0;
         padding: 0;
@@ -52,31 +52,35 @@
       }
 
       /* Sidebar */
+      /* Sidebar - Modern Sleek Restyle */
       .sidebar {
-        width: 215px;
-        background: linear-gradient(135deg, #181824 0%, #23243a 100%);
+        width: 220px;
+        background: linear-gradient(120deg, #181824 60%, #23243a 100%);
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        z-index: 100;
+        z-index: 300;
         transition: width 0.22s cubic-bezier(.4,2,.6,1), background 0.22s;
         border-right: none;
         height: 100vh;
         position: sticky;
-        
         top: 0;
-        font-size: 12px;
+        font-size: 13px;
         padding: 0;
         
+        border-right: 1px solid #ffd70033;
+        overflow: hidden;
       }
       .sidebar-header {
         color: #ffd700;
-        font-size: 2.2em;
+        font-size: 2.3em;
         font-weight: 900;
-        padding: 32px 0 18px 0;
+        padding: 0 0 20px 0;
         text-align: center;
         letter-spacing: 2px;
         text-shadow: 0 2px 16px #23243a;
+        background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+        border-bottom: 1.5px solid #ffd70022;
       }
       .sidebar-user {
         color: #f8f8ff;
@@ -86,63 +90,70 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #2d2e4a;
-        margin-bottom: 8px;
-        margin-top: 15px;
+        padding-bottom: 12px;
+        background: #181824;
+        border-bottom: 1px solid #23243a;
+        padding-top: 15px;
+        
+        
+        
       }
       .sidebar-user i {
-        font-size: 12px;
+        font-size: 1.5em;
         margin-bottom: 4px;
         color: #ffd700;
         filter: drop-shadow(0 2px 8px #23243a);
       }
       .sidebar-nav {
         width: 100%;
-        flex: 1;
+        flex: 1 1 0;
+        
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         padding: 0 0 18px 0;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #ffd70033 #23243a;
       }
       .sidebar-category {
-        
         margin-bottom: 0;
-        overflow-y: hidden;
+        overflow-y: visible;
         scrollbar-width: thin;
         scrollbar-color: #ffd70033 #23243a;
         
         
-        box-shadow: 0 1px 8px #8be9fd11;
-        transition: background 0.18s;
+        
+        transition: background 0.18s, box-shadow 0.18s;
+        margin: 8px 10px 0 10px;
+        display: flex;
+        flex-direction: column;
       }
       .sidebar-category-title {
-        
         color: #ffd700;
-        font-size: 14px;
+        font-size: 1em;
         font-weight: 700;
         padding: 15px 26px 10px 26px;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        opacity: 0.95;
+        opacity: 0.97;
         cursor: pointer;
         user-select: none;
         display: flex;
         align-content: stretch;
         justify-content: space-between;
-        background: linear-gradient(120deg, #23243a 60%, #181824 100%);
-        transition: background 0.18s;
-        box-shadow: 0 1px 0 #8be9fd11;
+        
+        transition: background 0.18s, color 0.18s;
+       
         
       }
       .sidebar-category-title:hover {
-        background: rgba(255,215,0,0.13);
+        background: linear-gradient(90deg, #ffd70033 0%, #23243a 100%);
+        color: #8be9fd;
       }
       .collapse-arrow {
         margin-left: 8px;
         transition: transform 0.2s;
+        color: #8be9fd;
       }
       .sidebar-category.collapsed .collapse-arrow {
         transform: rotate(-90deg);
@@ -160,6 +171,7 @@
         max-height: 500px;
         opacity: 1;
         background: none;
+        
       }
       .sidebar-category.collapsed .sidebar-subnav {
         max-height: 0;
@@ -168,61 +180,74 @@
       }
       .sidebar-nav a {
         color: #b8b8ff;
-        font-size: 1.05em;
+        font-size: 1.08em;
         font-weight: 500;
-        padding: 13px 12px;
+        padding: 13px 18px;
         width: 100%;
         display: flex;
         align-items: center;
         gap: 14px;
         text-decoration: none;
-        transition: background 0.18s, color 0.18s , padding-left 0.18s;
+        transition: background 0.18s, color 0.18s , padding-left 0.18s, box-shadow 0.18s;
         position: relative;
         letter-spacing: 0.2px;
         white-space: nowrap;
         background: none;
         
+        margin: 2px 8px;
       }
-      .sidebar-nav a.active,
-      .sidebar-nav a:hover {
-        background: linear-gradient(90deg, #ffd700 0%, #23243a 100%);
+      .sidebar-nav a.active{
+        background: #8be9fd;
         color: #23243a;
         width: 100%;
-        padding-left: 18px;
-        box-shadow: 0 2px 8px #ffd70033;
+        
+        
+        
+      }
+      .sidebar-nav a:hover {
+        background: #ffd700;
+        color: #23243a;
+        width: 100%;
+        padding-left: 24px;
+        
+        
       }
       .sidebar-footer {
-        padding: 10px 12px 12px 12px;
-        border-top: 2px solid #2d2e4a;
-        background: rgba(139,233,253,0.06);
+        padding: 12px 16px 16px 16px;
+        border-top: 1px solid #23243a;
+        
         margin-top: 10px;
+        
+        
       }
       .sidebar-footer .btn {
         width: 100%;
         text-align: center;
         font-weight: 700;
-        background: linear-gradient(90deg, #ffd700 0%, #23243a 100%);
+        background: #ffd700;
         color: #23243a;
         border: none;
         transition: background 0.18s, color 0.18s;
-        box-shadow: 0 1px 4px #ffd70022;
-        letter-spacing: 0.5px;
-        font-size: 14px;
         
+        letter-spacing: 0.5px;
+        font-size: 15px;
+        
+        margin-top: 6px;
       }
       .sidebar-footer .btn:hover {
         background: #8be9fd;
         color: #23243a;
-        transition: background 1s, color 1s, box-shadow 0.18s;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
         box-shadow: 0 2px 8px #8be9fd55;
       }
 
       /* Topbar */
       .topbar {
         
+        width: 100vw;
+        min-width: 100vw;
         max-width: 100vw;
         height: auto;
-        
         background: linear-gradient(135deg, #181824 0%, #23243a 100%);
         display: flex;
         align-items: center;
@@ -230,13 +255,14 @@
         box-sizing: border-box;
         z-index: 10;
         position: sticky;
+        left: 0;
         top: 0;
         border-bottom: 2px solid #ffd70033;
         font-size: 12px;
         color: #f8f8ff;
         transition: background 0.2s, box-shadow 0.2s;
-        
         box-shadow: 0 2px 16px #23243a33;
+        overflow-x: hidden;
       }
       .topbar-title {
         
@@ -265,13 +291,13 @@
         
       }
       .topbar-actions {
-        margin-left: auto;
+        margin-left: 24px;
         display: flex;
         align-items: center;
-        gap: 18px;
+        gap: 65px;
+        justify-content: flex-start;
       }
       .topbar-actions .btn {
-        
         font-weight: 700;
         background: #ffd700;
         color: #23243a;
@@ -281,6 +307,12 @@
         box-shadow: 0 2px 8px #ffd70033;
         letter-spacing: 0.5px;
         font-size: 1.05em;
+        white-space: nowrap;
+        min-width: 0;
+        max-width: 100vw;
+        width: auto;
+        margin-bottom: 0;
+        margin-right: 0;
       }
       .topbar-actions .btn:hover {
         background: #8be9fd;
@@ -290,7 +322,6 @@
       .topbar-actions .badge {
         background: linear-gradient(90deg, #23243a 0%, #ffd700 100%);
         color: #23243a;
-        
         padding: 7px 16px;
         font-size: 1.05em;
         font-weight: 700;
@@ -298,6 +329,30 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        white-space: nowrap;
+        min-width: 0;
+        max-width: 100vw;
+        width: auto;
+        margin-bottom: 0;
+        margin-right: 0;
+      }
+      @media (max-width: 900px) {
+        .topbar-actions .btn,
+        .topbar-actions .badge {
+          font-size: 1em !important;
+          padding: 9px 10px !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          width: 100%;
+          min-width: 0;
+          max-width: 100vw;
+          box-sizing: border-box;
+          justify-content: center;
+        }
+        .topbar-actions {
+          gap: 6px !important;
+          margin-left: 0 !important;
+        }
       }
       .topbar-actions .badge i {
         color: #ffd700;
@@ -498,7 +553,58 @@
         outline: none;
         transition: box-shadow 0.18s;
       }
-
+      .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 900px;
+        margin: 0 auto 24px auto;
+        padding: 24px 32px;
+        background: #23243a;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px #23243a55;
+        color: #f8f8ff;
+      }
+      .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+        color: #ffd700;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+      }
+      .markdown-body a { color: #8be9fd; }
+      .markdown-body code, .markdown-body pre {
+        background: #181824;
+        color: #ffd700;
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+      .markdown-body pre {
+        padding: 12px;
+        overflow-x: auto;
+      }
+      .markdown-body blockquote {
+        border-left: 4px solid #ffd700;
+        background: #181824;
+        color: #ffd700;
+        padding: 8px 18px;
+        border-radius: 8px;
+      }
+      .markdown-body table {
+        background: #181824;
+        color: #f8f8ff;
+        border-radius: 8px;
+        margin-bottom: 1em;
+      }
+      .markdown-body th, .markdown-body td {
+        border: 1px solid #ffd70033;
+        padding: 8px 12px;
+      }
+      .markdown-body ul, .markdown-body ol {
+        margin-left: 2em;
+      }
+      .markdown-body hr {
+        border: none;
+        border-top: 2px solid #ffd70033;
+        margin: 2em 0;
+      }
       #chat-input:focus {
         box-shadow: 0 0 0 2px #ffd70055;
       }
@@ -521,7 +627,7 @@
         position: fixed;
         bottom: 15px;
         right: 32px;
-        z-index: 10000;
+        z-index: 150; /* Lower than sidebar (z-index: 200/300) so it goes behind */
         background: #ffd700;
         color: #23243a;
         border: none;
@@ -541,12 +647,13 @@
         color: #23243a;
         box-shadow: 0 4px 16px #8be9fd55;
       }
+      /* --- Profile styles from profile.html for card look --- */
       .online-card-container {
           display: flex;
           justify-content: center;
-          align-items: flex-start;
+          align-items: stretch;
           gap: 36px;
-          margin: 40px 0;
+          margin-top: 15px;
           flex-wrap: wrap;
       }
       .online-card {
@@ -554,48 +661,19 @@
           border-radius: 18px;
           box-shadow: 0 6px 32px #00000044;
           display: flex;
-          flex-direction: row;
+          flex-direction: column;
           overflow: hidden;
           min-width: 340px;
-          max-width: 1100px;
+          max-width: 900px;
           width: 100%;
-      }
-      .online-card-sidebar {
-          background: #181824;
-          padding: 36px 28px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-width: 260px;
-          border-right: 1px solid #23243a;
-      }
-      .online-avatar {
-          width: 170px;
-          height: 170px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 4px solid #ffd70055;
-          box-shadow: 0 2px 16px #ffd70033;
-          margin-bottom: 18px;
-          background: #23243a;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 4em;
-          color: #ffd700;
-      }
-      .online-card-main {
-          flex: 1;
-          padding: 36px 32px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
+          margin-bottom: 32px;
       }
       .online-card-header {
           display: flex;
           align-items: center;
           gap: 18px;
           margin-bottom: 12px;
+          justify-content: center;
       }
       .online-card-header h1 {
           color: #ffd700;
@@ -603,90 +681,33 @@
           margin: 0;
           letter-spacing: 2px;
       }
-      .online-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-          gap: 18px;
-          margin: 24px 0 0 0;
-      }
-      .online-stat {
-          background: rgba(139,233,253,0.08);
-          border-radius: 8px;
-          color: #fff;
-          font-size: 1.08em;
-          font-weight: 500;
-          box-shadow: 0 1px 5px #8be9fd22;
-          border: 1px solid #8be9fd22;
-          padding: 16px 18px;
-          text-align: center;
-      }
-      .online-label {
-          color: #8be9fd;
-          font-size: 0.92em;
-          font-weight: 700;
-          margin-bottom: 4px;
-          letter-spacing: 0.5px;
-          display: block;
-      }
-      .online-value {
-          font-size: 1.25em;
-          font-weight: 700;
-          color: #fff;
-      }
-      .online-table {
-          width: 100%;
-          color: #f5f6fa;
-          border-collapse: separate;
-          border-spacing: 0;
-          font-family: 'Cinzel', serif;
-      }
-      .online-table th, .online-table td {
-          padding: 1.1rem 1rem;
-          text-align: left;
-          vertical-align: middle;
-          border: none;
-          background: none;
-      }
-      .online-table th {
-          color: #ffd700;
-          font-size: 1.2rem;
-          font-weight: bold;
-          border-bottom: 2px solid #8be9fd55;
-          text-shadow: 0 1px 8px #000;
-      }
-      .online-table tr {
-          background: rgba(40,42,54,0.85);
-          transition: background 0.2s;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px #00000022;
-      }
-      .online-table tr.current-user {
-          background: rgba(255,215,0,0.13);
-          color: #ffd700;
-          font-weight: 900;
-      }
-      .online-table tr:hover {
-          background: #34355b;
-      }
-      .online-name {
-          font-weight: 700;
-          color: #8be9fd;
-          font-size: 1.08em;
-          letter-spacing: 0.2px;
+      .online-card-list {
           display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
           align-items: center;
-          gap: 8px;
+          justify-content: center;
+          padding-bottom: 10px;
       }
-      .online-icon {
-          font-size: 1.2em;
-          margin-right: 6px;
-          color: #b8b8ff;
-          filter: drop-shadow(0 1px 2px #000);
+      .online-badge {
+          background: #23243a;
+          color: #8be9fd;
+          font-weight: 600;
+          border-radius: 8px;
+          padding: 7px 16px;
+          margin-bottom: 4px;
+          text-decoration: none;
+          box-shadow: 0 1px 4px #8be9fd22;
+          transition: background 0.18s, color 0.18s;
+          display: inline-block;
       }
-      .online-level {
-          color: #fff;
-          font-size: 1em;
+      .online-badge.current-user {
+          background: #ffd70022;
+          color: #ffd700;
+          font-weight: 700;
+          box-shadow: 0 1px 4px #ffd70022;
       }
+      
       .btn-primary {
           background: linear-gradient(90deg, #ffb347 0%, #ffd700 100%);
           color: #232526;
@@ -724,45 +745,150 @@
           color: #fff;
       }
       /* Responsive */
+      /* --- Extra Mobile Responsive Tweaks --- */
+      @media (max-width: 900px) {
+        .main-area {
+          margin-left: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+        }
+        #topbar-logout-btn {
+            display: none !important;
+          }
+        #topbar-logout-btn {
+            display: inline-block !important;
+          }
+        .topbar {
+          left: 0 !important;
+          width: 100vw !important;
+          min-width: 0 !important;
+          max-width: 100vw !important;
+          padding: 0 10px !important;
+        }
+        .content-area {
+          padding: 10px 2vw !important;
+          margin-top: 60px !important;
+        }
+        footer {
+          font-size: 0.95em;
+          padding: 12px 0 8px 0;
+        }
+        .online-card {
+          min-width: 0 !important;
+          width: 98vw !important;
+          max-width: 100vw !important;
+          margin-bottom: 18px !important;
+          border-radius: 10px !important;
+          padding: 10px 6px !important;
+        }
+        .online-card-header h1 {
+          font-size: 1.1rem !important;
+        }
+        .online-card-list, .online-card-header {
+          gap: 8px !important;
+        }
+        .markdown-body {
+          padding: 10px 4vw !important;
+          font-size: 1em !important;
+        }
+      }
+      @media (max-width: 600px) {
+        .main-area, .content-area, .topbar {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          min-width: 0 !important;
+        }
+        .topbar {
+          font-size: 1em !important;
+          padding: 0 2vw !important;
+        }
+        .sidebar {
+          width: 50vw !important;
+        }
+        .markdown-body {
+          padding: 6px 2vw !important;
+          font-size: 0.98em !important;
+        }
+        .online-card {
+          padding: 6px 2vw !important;
+        }
+        .sidebar-toggle-btn {
+          width: 38px !important;
+          height: 38px !important;
+          font-size: 1.1em !important;
+        }
+      }
+      @media (max-width: 400px) {
+        .topbar-title {
+          font-size: 1.1em !important;
+        }
+        .sidebar-toggle-btn {
+          width: 30px !important;
+          height: 30px !important;
+          font-size: 1em !important;
+        }
+        .markdown-body {
+          font-size: 0.92em !important;
+        }
+      }
       @media (max-width: 900px) {
         html, body { font-size: 15px; }
         .layout-root { flex-direction: column; }
         .sidebar {
-          width: 100vw;
+          width: 25vw;
           min-width: 0;
-          height: auto;
-          flex-direction: row;
-          position: static;
+          height: 100vh;
+          flex-direction: column;
+          position: fixed;
+          left: 0;
+          top: 0;
+          z-index: 200;
           border-right: none;
           
-          box-shadow: 0 2px 8px #ffd70022;
-          z-index: 100;
           padding: 0;
-          border-radius: 0;
+          
+          transition: transform 0.3s cubic-bezier(.4,2,.6,1), width 0.22s, background 0.22s;
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: translateX(0);
         }
         .sidebar-nav {
-          display: flex;
-          width: 100vw;
-          flex-direction: row;
+          
+          flex-direction: column;
+          width: 100%;
           gap: 0;
           padding: 0 4px;
           overflow-x: auto;
+          overflow-y: auto;
+          max-height: 100vh;
         }
         .sidebar-category {
           min-width: 60px;
           flex: 1 1 0;
           margin-bottom: 0;
           border-radius: 0;
+          display: flex;
+          flex-direction: column;
         }
         .sidebar-category-title {
-          font-size: 0.60em;
+          font-size: 0.95em;
           padding: 8px 8px 6px 8px;
           border-radius: 0;
         }
         .sidebar-subnav {
+          display: flex !important;
+          flex-direction: column !important;
           padding-left: 4px;
           border-left: none;
           gap: 0;
+          max-height: 500px;
+          opacity: 1;
+        }
+        .sidebar-category.collapsed .sidebar-subnav {
+          max-height: 0;
+          opacity: 0;
+          pointer-events: none;
         }
         .sidebar-subnav a {
           font-size: 0.95em;
@@ -775,9 +901,6 @@
         .sidebar .sidebar-user {
           display: none;
         }
-        .chat-header .chat-close:hover {
-          color: #ff5555;
-        }
         .sidebar-footer {
           display: none;
         }
@@ -789,262 +912,236 @@
         #floating-chat, .toggle-chat {
           right: 1vw !important;
           bottom: 10px !important;
-          width: 98vw !important;
-          max-width: 95vw !important;
+          width: 99vw !important;
+          max-width: 98vw !important;
           min-width: 0 !important;
           font-size: 0.98em;
           border-radius: 8px;
         }
+        .sidebar-toggle-btn {
+          display: block;
+        }
       }
       @media (max-width: 600px) {
-        html, body { font-size: 13px; }
-        
-        .sidebar, .sidebar-nav {
-          display: flex;
-          min-width: 0;
-          width: 100vw;
-        }
-        #floating-chat {
-          max-height: 40vh !important;
-        }
-        .toggle-chat {
-          right: 1vw !important;
-          margin: 0 auto;
-          font-size: 1.2em;
-          width: 40px;
-          height: 40px;
+        .sidebar {
+          width: 95vw;
+          max-height: 100vh;
+          overflow-y: auto;
         }
       }
-      @media (max-width: 500px) {
-        .sidebar-nav a span,
-        .sidebar-category-title span,
-        .sidebar-category-title .collapse-arrow {
-          display: none !important;
-        }
-        .sidebar-category-title {
-          
-          justify-content: center;
-          padding: 4px 2px;
-        }
-        .sidebar-subnav a {
-          justify-content: center;
-          padding: 4px 2px;
-        }
+      .sidebar-toggle-btn {
+        display: none;
+        position: fixed;
+        top: 47px;
+        left: 18px;
+        z-index: 300;
+        background: #ffd700;
+        color: #23243a;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.5em;
+        box-shadow: 0 2px 12px #ffd70044;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
       }
-      /* Custom scrollbar for Chrome, Edge, Safari */
-      .sidebar,
-      .sidebar-nav,
-      .sidebar-category,
-      .sidebar-subnav {
-        scrollbar-width: thin;
-        scrollbar-color: #ffd70033 #23243a;
+      .sidebar-toggle-btn:hover {
+        background: #8be9fd;
+        color: #23243a;
+        box-shadow: 0 4px 16px #8be9fd55;
       }
-      .sidebar::-webkit-scrollbar{
-        position: sticky;
-      }
-      /* Webkit browsers (Chrome, Edge, Safari) */
-      .sidebar::-webkit-scrollbar,
-      .sidebar-nav::-webkit-scrollbar,
-      .sidebar-category::-webkit-scrollbar,
-      .sidebar-subnav::-webkit-scrollbar {
-        width: 8px;
-        background: #23243a;
-      }
-
-      .sidebar::-webkit-scrollbar-thumb,
-      .sidebar-nav::-webkit-scrollbar-thumb,
-      .sidebar-category::-webkit-scrollbar-thumb,
-      .sidebar-subnav::-webkit-scrollbar-thumb {
-        background: #ffd70033;
-        border-radius: 6px;
-      }
-
-      .sidebar::-webkit-scrollbar-thumb:hover,
-      .sidebar-nav::-webkit-scrollbar-thumb:hover,
-      .sidebar-category::-webkit-scrollbar-thumb:hover,
-      .sidebar-subnav::-webkit-scrollbar-thumb:hover {
-        background: #ffd70077;
-      }
+      
   </style>
 
 </head>
 
-<body class="fade-in">
+<body style="background: #181824; color: #f5f6fa;" class="fade-in">
   
-  <div class="layout-root fade-in">
+  <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Open sidebar" aria-label="Open sidebar" aria-controls="sidebar" aria-expanded="false" style="display:none;">
+    <i class="fas fa-bars"></i>
+  </button>
+  <div class="layout-root fade-in" style="position:relative; z-index:1; min-height:100vh;">
     {% block sidebar %}
-    <div class="sidebar {% if request.endpoint in ['login', 'register'] %}d-none{% endif %}">
-      <nav class="sidebar">
-        {% if current_user.is_authenticated %}
-          <div class="sidebar-user">
-            {% set character = current_character %}
-            {% if character and character.profile_image %}
-              <img
-                src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}"
-                class="crew-avatar"
-                alt="avatar"
-                style="width:48px;height:48px;border-radius:50%;margin-bottom:6px;border:2px solid #ffd700;object-fit:cover;"
-              >
-            {% else %}
-              <i id="char-name" class="fas fa-user-circle"></i>
-            {% endif %}
-            {% if character %}
-              <a href="{{ url_for('profile_by_id', char_id=character.id) }}" style="color:inherit; text-decoration: underline;">
-                <strong>{{ character.name }}</strong>
-              </a>
-            {% else %}
-              <span><strong>No character</strong></span>
-            {% endif %}
+    {% set hide_sidebar = request.endpoint in ['login', 'register'] %}
+    {% if not hide_sidebar %}
+    <div class="sidebar" id="sidebar" style="z-index:300; position:fixed; left:0; top:0; height:100vh;">
+      {% if current_user.is_authenticated %}
+        <div class="sidebar-user">
+          {% set character = current_character %}
+          {% if character and character.profile_image %}
+            <img
+              src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}"
+              class="crew-avatar"
+              alt="avatar"
+              style="width:48px;height:48px;border-radius:50%;margin-bottom:6px;border:2px solid #ffd700;object-fit:cover;"
+            >
+          {% else %}
+            <i id="char-name" class="fas fa-user-circle"></i>
+          {% endif %}
+          {% if character %}
+            <a href="{{ url_for('profile_by_id', char_id=character.id) }}" style="color:inherit; text-decoration: underline;">
+              <strong>{{ character.name }}</strong>
+            </a>
+          {% else %}
+            <span><strong>No character</strong></span>
+          {% endif %}
+        </div>
+      {% endif %}
+      <div class="sidebar-nav" style="width:100%;height:100%;overflow-y:auto;">
+        <!-- Admin -->
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-tools"></i>&nbsp;Admin
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
           </div>
+          <div class="sidebar-subnav" style="display:flex;flex-direction:column;">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
+              <i class="fas fa-tools"></i> <span>Admin</span>
+            </a>
+          </div>
+        </div>
         {% endif %}
-        <div class="sidebar-nav">
-          <!-- Admin -->
-          {% if current_user.is_authenticated and current_user.is_admin %}
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-tools"></i>&nbsp;Admin
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('admin.admin_dashboard') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">
-                <i class="fas fa-tools"></i> <span>Admin</span>
-              </a>
-            </div>
+        {% if current_character.in_jail == 0 %}
+        <!-- Player management -->
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-box"> </i>&nbsp;Character
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
           </div>
-          {% endif %}
-          {% if current_character.in_jail == 0 %}
-          <!-- Player management -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-box"> </i>&nbsp;Character
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-home"></i> <span>Dashboard</span>
-              </a>
-              <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
-                <i class="fas fa-concierge-bell"></i> <span>Notifications</span>
-              </a>
-              <a href="{{ url_for('hire_bodyguard') }}" class="{% if request.endpoint == 'hire_bodyguard' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Hire Bodyguard</span>
-              </a>
-              <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
-                <i class="fas fa-inbox"></i> <span>Inbox</span>
-              </a>
-              <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
-                <i class="fas fa-box"></i> <span>Inventory</span>
-              </a>
-              <a href="{{ url_for('send_beer') }}" class="{% if request.endpoint == 'send_beer' %}active{% endif %}">
-                <i class="fas fa-box"></i> <span>Bar</span>
-              </a>
-            </div>
+          <div class="sidebar-subnav" style="display:flex;flex-direction:column;">
+            <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+              <i class="fas fa-home"></i> <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
+              <i class="fas fa-concierge-bell"></i> <span>Notifications</span>
+            </a>
+            <a href="{{ url_for('hire_bodyguard') }}" class="{% if request.endpoint == 'hire_bodyguard' %}active{% endif %}">
+              <i class="fas fa-crosshairs"></i> <span>Hire Bodyguard</span>
+            </a>
+            <a href="{{ url_for('inbox') }}" class="{% if request.endpoint == 'inbox' %}active{% endif %}">
+              <i class="fas fa-inbox"></i> <span>Inbox</span>
+            </a>
+            <a href="{{ url_for('bank') }}" class="{% if request.endpoint == 'bank' %}active{% endif %}">
+              <i class="fas fa-piggy-bank"></i> <span>Bank</span>
+            </a>
+            <a href="{{ url_for('inventory') }}" class="{% if request.endpoint == 'inventory' %}active{% endif %}">
+              <i class="fas fa-box"></i> <span>Inventory</span>
+            </a>
+            <a href="{{ url_for('send_beer') }}" class="{% if request.endpoint == 'send_beer' %}active{% endif %}">
+              <i class="fas fa-box"></i> <span>Bar</span>
+            </a>
           </div>
-          {% endif %}
-          {% if current_character.in_jail == 0 %}
-          <!-- Dealings -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-user-alt"></i>&nbsp;Dealings
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
+        </div>
+        {% endif %}
+        {% if current_character.in_jail == 0 %}
+        <!-- Dealings -->
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-user-alt"></i>&nbsp;Dealings
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+          </div>
+          <div class="sidebar-subnav">
+            <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
+              <i class="fas fa-crosshairs"></i> <span>Forums</span>
+            </a>
+            <a href="{{ url_for('graveyard') }}" class="{% if request.endpoint == 'graveyard' %}active{% endif %}">
+              <i class="fas fa-crosshairs"></i> <span>Graveyard</span>
+            </a>
+            <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
+              <i class="fas fa-crosshairs"></i> <span>Player Search</span>
+            </a>
+            {% if character %}
+            <a href="{{ url_for('city_characters', city_name=character.city) }}" class="{% if request.endpoint == 'city_characters' %}active{% endif %}">
+              <i class="fas fa-crosshairs"></i> <span>City Characters</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
+              <i class="fas fa-plane"></i> <span>Travel</span>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+        <!-- Crime -->
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-mask"></i>&nbsp;Crime
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+          </div>
+          <div class="sidebar-subnav">
+            {% if current_character.in_jail == 0 %}
+            <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
+              <i class="fas fa-store"></i> <span>Shop</span>
+            </a>
+            <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
+              <i class="fas fa-mask"></i> <span>Organized Crime</span>
+            </a>
+            <a href="{{ url_for('drug_dashboard') }}" class="{% if request.endpoint == 'drug_dashboard' %}active{% endif %}">
+              <i class="fas fa-capsules"></i> <span>Drug Market</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
+              <i class="fas fa-handcuffs"></i> <span>Jail</span>
+            </a>
+            {% if current_character.in_jail == 0 %}
+            <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
+              <i class="fas fa-plane"></i> <span>Casino</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% if current_character.in_jail == 0 %}
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-home"></i>&nbsp;Manage Crew
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+          </div>
+          <div class="sidebar-subnav">
+            {% if current_user.is_authenticated and current_character and current_character.crew_id %}
+            <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
+              <i class="fas fa-users"></i> <span>Crew</span>
+            </a>
+            {% endif %}
+            {% if is_godfather %}
+              <a href="{{ url_for('crew_requests') }}">
+                <i class='fas fa-people-arrows'></i><span> Crew Requests</span>
+              </a>
+            {% endif %}
+            <a href="{{ url_for('crews', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crews' %}active{% endif %}">
+              <i class="fas fa-users"></i> <span>Crews</span>
+            </a>
+            {% if current_character and current_character.level > 40 %}
+            <a href="{{ url_for('godfathers_page') }}" class="{% if request.endpoint == 'godfathers_page' %}active{% endif %}">
+                <i class="fas fa-crown"></i> <span>Godfathers</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('territories') }}" class="{% if request.endpoint == 'territories' %}active{% endif %}">
+                <i class="fas fa-map"></i> <span>Territories</span>
+            </a>
             
-            <div class="sidebar-subnav">
-              <a href="{{ url_for('forums') }}" class="{% if request.endpoint == 'forums' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Forums</span>
-              </a>
-              <a href="{{ url_for('graveyard') }}" class="{% if request.endpoint == 'graveyard' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Graveyard</span>
-              </a>
-              <a href="{{ url_for('player_search') }}" class="{% if request.endpoint == 'player_search' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>Player Search</span>
-              </a>
-              {% if character %}
-              <a href="{{ url_for('city_characters', city_name=character.city) }}" class="{% if request.endpoint == 'city_characters' %}active{% endif %}">
-                <i class="fas fa-crosshairs"></i> <span>City Characters</span>
-              </a>
-              {% endif %}
-              <a href="{{ url_for('travel') }}" class="{% if request.endpoint == 'travel' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Travel</span>
-              </a>
-              
-            </div>
           </div>
-          {% endif %}
-          <!-- Crime -->
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-mask"></i>&nbsp;Crime
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              {% if current_character.in_jail == 0 %}
-              <a href="{{ url_for('shop') }}" class="{% if request.endpoint == 'shop' %}active{% endif %}">
-                <i class="fas fa-store"></i> <span>Shop</span>
-              </a>
-              <a href="{{ url_for('create_crime') }}" class="{% if request.endpoint == 'create_crime' %}active{% endif %}">
-                <i class="fas fa-mask"></i> <span>Organized Crime</span>
-              </a>
-              <a href="{{ url_for('drug_dashboard') }}" class="{% if request.endpoint == 'drug_dashboard' %}active{% endif %}">
-                <i class="fas fa-capsules"></i> <span>Drug Market</span>
-              </a>
-              {% endif %}
-              <a href="{{ url_for('jail') }}" class="{% if request.endpoint == 'jail' %}active{% endif %}">
-                <i class="fas fa-handcuffs"></i> <span>Jail</span>
-              </a>
-              {% if current_character.in_jail == 0 %}
-              <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
-                <i class="fas fa-plane"></i> <span>Casino</span>
-              </a>
-              {% endif %}
-            </div>
-          </div>
-          {% if current_character.in_jail == 0 %}
-          <div class="sidebar-category">
-            <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
-              <i class="fas fa-home"></i>&nbsp;Manage Crew
-              <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <div class="sidebar-subnav">
-              {% if current_user.is_authenticated and current_character and current_character.crew_id %}
-              <a href="{{ url_for('crew_page', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crew_page' %}active{% endif %}">
-                <i class="fas fa-users"></i> <span>Crew</span>
-              </a>
-              {% endif %}
-              {% if is_godfather %}
-                <a href="{{ url_for('crew_requests') }}">
-                  <i class='fas fa-people-arrows'></i><span> Crew Requests</span>
-                </a>
-              {% endif %}
-              <a href="{{ url_for('crews', crew_id=current_character.crew_id) }}" class="{% if request.endpoint == 'crews' %}active{% endif %}">
-                <i class="fas fa-users"></i> <span>Crews</span>
-              </a>
-              {% if current_character and current_character.level > 40 %}
-              <a href="{{ url_for('godfathers_page') }}" class="{% if request.endpoint == 'godfathers_page' %}active{% endif %}">
-                  <i class="fas fa-crown"></i> <span>Godfathers</span>
-              </a>
-              <a href="{{ url_for('territories') }}" class="{% if request.endpoint == 'territories' %}active{% endif %}">
-                  <i class="fas fa-map"></i> <span>Territories</span>
-              </a>
-              {% endif %}
-            </div>
-          </div>
-          {% endif %}
-          
-          
-          
-          
         </div>
-        <div class="sidebar-footer">
-          {% if current_user.is_authenticated %}
-          <a href="{{ url_for('logout') }}" class="btn"><i id="fas-fa" class="fas fa-sign-out-alt"></i><span>Logout</span> </a>
-          {% endif %}
-        </div>
-      </nav>
+        {% endif %}
+      </div>
+      <div class="sidebar-footer">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('logout') }}" class="btn"><i id="fas-fa" class="fas fa-sign-out-alt"></i><span>Logout</span> </a>
+        {% endif %}
+      </div>
     </div>
-    {% endblock %}
-    <div class="main-area">
-      <header class="topbar">
+    <div class="sidebar-overlay" id="sidebar-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(24,24,36,0.7);z-index:199;transition:opacity 0.2s;opacity:0;"></div>
+    {% endif %}
+    {% set main_area_style = 'min-height:100vh;' + (' margin-left:220px;' if not hide_sidebar else '') %}
+    {% if not hide_sidebar %}
+      {% set topbar_style = 'position:fixed; top:0; z-index:100; left:220px; width:calc(100vw - 220px);' %}
+    {% else %}
+      {% set topbar_style = 'position:fixed; top:0; z-index:100; left:0; width:100vw;' %}
+    {% endif %}
+    <div class="main-area" style="{{ main_area_style }}">
+      <header class="topbar" style="{{ topbar_style }}">
         <span class="topbar-title">
           <i class="fas fa-city"></i> <a href="/"> {%block topbar_title %}Underworld Tycoon{% endblock %}</a>
         </span>
@@ -1060,10 +1157,16 @@
             <i class="fas fa-crown"></i> Premium
           </span>
           {% endif %}
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}" class="btn d-none d-md-inline-block" id="topbar-logout-btn" style="margin-left:10px;">
+              <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+          {% endif %}
           {% endblock %}
+      
         </div>
       </header>
-      <main class="content-area">
+      <main class="content-area" style="margin-top:70px;">
         <div class="graveyard-bgbb"></div>
         <div class="graveyard-overlay"></div>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -1075,48 +1178,36 @@
             </ul>
           {% endif %}
         {% endwith %}
-        {% block content %}{% endblock %}
-        {% if current_user.is_authenticated %}
-        <div class="online-card-container" style="margin-top: 24px;">
-          <div class="online-card" style="flex-direction: column; max-width: 900px;">
-              <div class="online-card-main" style="width:100%;">
-                  <div class="online-card-header">
-                      <h1 style="font-size:1.5rem;"><i class="fas fa-users"></i> Online Players</h1>
-                  </div>
-                  <div style="overflow-x:auto;">
-                      <table class="online-table" style="width:100%;">
-                          <thead>
-                              <tr>
-                                  <th><i class="fas fa-user"></i> Name</th>
-                                  <th><i class="fas fa-layer-group"></i> Level</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              <tr class="current-user">
-                                  <td class="online-name">
-                                      <span class="online-icon"><i class="fas fa-user"></i></span>
-                                      {{ character.name }}
-                                  </td>
-                                  <td class="online-level">{{ character.level }}</td>
-                              </tr>
-                              {% for char in online_characters %}
-                              {% if char.id != character.id %}
-                              <tr>
-                                  <td class="online-name">
-                                      <span class="online-icon"><i class="fas fa-user"></i></span>
-                                      <a href="{{ url_for('profile_by_id', char_id=char.id) }}" class="forum-link">{{ char.name }}</a>
-                                  </td>
-                                  <td class="online-level">{{ char.level }}</td>
-                              </tr>
-                              {% endif %}
-                              {% endfor %}
-                          </tbody>
-                      </table>
-                  </div>
-              </div>
+
+        {# --- MARKDOWN SUPPORT --- #}
+        {% if markdown_content %}
+          <div class="markdown-body">
+            {{ markdown_content|safe }}
           </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown.min.css">
+  
+{% if current_user.is_authenticated %}
+  <div class="online-card-container" style="margin-top: 24px; justify-content: center;">
+    <div class="online-card" style="flex-direction: column; max-width: 900px; background: rgba(24,24,36,0.92); box-shadow: 0 2px 12px #23243a55; border-radius: 14px; padding: 18px 24px;">
+      <div class="online-card-header" style="margin-bottom: 10px; text-align: center;">
+        <h1 style="font-size:1.2rem; color:#ffd700; margin:0 0 8px 0;"><i class="fas fa-users"></i> Online Players</h1>
       </div>
-      {% endif %}
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;">
+        <span style="background: #ffd70022; color: #ffd700; font-weight: 700; border-radius: 8px; padding: 7px 16px; margin-bottom: 4px; box-shadow: 0 1px 4px #ffd70022;">{{ character.name }}</span>
+        {% for char in online_characters %}
+          {% if char.id != character.id %}
+            <a href="{{ url_for('profile_by_id', char_id=char.id) }}" style="background: #23243a; color: #8be9fd; font-weight: 600; border-radius: 8px; padding: 7px 16px; margin-bottom: 4px; text-decoration: none; box-shadow: 0 1px 4px #8be9fd22; transition: background 0.18s, color 0.18s; display: inline-block;">
+              {{ char.name }}
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}
       </main>
       <footer>
         &copy; {{ current_year if current_year else "2025" }} Underworld Tycoon - All rights reserved
@@ -1151,11 +1242,80 @@
     {% endif %}
   </div>
   {% block extra_body %}{% endblock %}
-<script>
+  <script>
+  // Sidebar toggle for mobile with overlay and hamburger logic
+  function updateSidebarMobileState() {
+    var sidebar = document.getElementById('sidebar');
+    var btn = document.querySelector('.sidebar-toggle-btn');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar || !btn || !overlay) return;
+    if (window.innerWidth <= 900) {
+      btn.style.display = 'block';
+      sidebar.classList.remove('open');
+      sidebar.style.transform = 'translateX(-100%)';
+      overlay.style.display = 'none';
+      overlay.style.opacity = 0;
+      document.body.style.overflow = '';
+    } else {
+      btn.style.display = 'none';
+      sidebar.classList.remove('open');
+      sidebar.style.transform = '';
+      overlay.style.display = 'none';
+      overlay.style.opacity = 0;
+      document.body.style.overflow = '';
+    }
+  }
+  function toggleSidebar(forceClose) {
+    var sidebar = document.getElementById('sidebar');
+    var btn = document.querySelector('.sidebar-toggle-btn');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar || !btn || !overlay) return;
+    if (window.innerWidth > 900) return; // Only allow on mobile
+    var isOpen = sidebar.classList.contains('open');
+    if (forceClose || isOpen) {
+      sidebar.classList.remove('open');
+      sidebar.style.transform = 'translateX(-100%)';
+      overlay.style.opacity = 0;
+      setTimeout(function(){ overlay.style.display = 'none'; }, 200);
+      document.body.style.overflow = '';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.style.display = 'block'; // Show hamburger when closed
+    } else {
+      sidebar.classList.add('open');
+      sidebar.style.transform = 'translateX(0)';
+      overlay.style.display = 'block';
+      setTimeout(function(){ overlay.style.opacity = 1; }, 10);
+      document.body.style.overflow = 'hidden';
+      btn.setAttribute('aria-expanded', 'true');
+      btn.style.display = 'none'; // Hide hamburger when open
+    }
+  }
+  // Overlay click closes sidebar
+  document.addEventListener('DOMContentLoaded', function() {
+    var overlay = document.getElementById('sidebar-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', function() { toggleSidebar(true); });
+    }
+    updateSidebarMobileState();
+  });
+  // Hide sidebar on resize if desktop, show hamburger only on mobile
+  window.addEventListener('resize', function() {
+    updateSidebarMobileState();
+  });
+  // Hide sidebar on ESC key (mobile)
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && window.innerWidth <= 900) {
+      toggleSidebar(true);
+    }
+  });
   function toggleSidebarCategory(el) {
     const category = el.parentElement;
     category.classList.toggle('collapsed');
     saveSidebarState();
+    // Removed: On mobile, close sidebar after selecting a category
+    // if (window.innerWidth <= 900) {
+    //   toggleSidebar(true);
+    // }
   }
   function saveSidebarState() {
     const states = [];
@@ -1184,6 +1344,17 @@
   window.addEventListener('resize', restoreSidebarState);
   document.addEventListener('DOMContentLoaded', function() {
     restoreSidebarState();
+    // Add event listeners to sidebar links to close sidebar on mobile after click
+    document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        if (window.innerWidth <= 900) {
+          // Let the navigation happen, then close the sidebar
+          setTimeout(function() {
+            toggleSidebar(true);
+          }, 150);
+        }
+      });
+    });
   });
 
   // Floating chat show/hide
@@ -1191,7 +1362,10 @@
     const chat = document.getElementById('floating-chat');
     const toggleBtn = document.querySelector('.toggle-chat');
     const isVisible = chat.style.display !== 'none';
-
+    window.addEventListener('DOMContentLoaded', function() {
+          var logDiv = document.getElementById('chat-messages');
+          if (logDiv) logDiv.scrollTop = logDiv.scrollHeight; // Scroll to bottom on toggle
+          });
     if (isVisible) {
       chat.style.display = 'none';
       toggleBtn.style.display = 'flex'; // Show the button when chat is hidden
@@ -1205,10 +1379,7 @@
       if (window.chatPollInterval) clearInterval(window.chatPollInterval);
       window.chatPollInterval = setInterval(fetchMessages, 30000); // Restart polling
     }
-    window.addEventListener('DOMContentLoaded', function() {
-      var logDiv = document.getElementById('chat-messages');
-      if (logDiv) logDiv.scrollTop = logDiv.scrollHeight; // Scroll to bottom on toggle
-      });
+    
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -1286,10 +1457,9 @@
         div.innerHTML = `<span class="chat-username">${msg.character_name}</span>: ${msg.message}`;
         messageBox.appendChild(div);
       });
-      // Always scroll to bottom after loading messages
-      messageBox.scrollTop = messageBox.scrollHeight;
+      if (isNearBottom) messageBox.scrollTop = messageBox.scrollHeight;
     } catch (err) {
-      console.error(`Failed to fetch ${currentTab} messages:`, err);
+      console.error("Error fetching messages:", err);
     }
   }
 
@@ -1345,3 +1515,4 @@
   </script>
 </body>
 </html>
+{% endblock %}
