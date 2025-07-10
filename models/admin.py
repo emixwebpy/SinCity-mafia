@@ -13,28 +13,16 @@ from datetime import datetime
 import os
 from datetime import timedelta
 from models.loggers import admin_logger
-from models.forms import (
-    EditCharacterForm, EditForumForm, EditUserForm, AddShopItemForm, DeleteCrimeForm,
-    AddDrugForm, EditShopItemForm, DeleteCrewForm, DeleteDealerForm, DeleteDrugForm, DeleteForm,
-    AddDealerForm, ResetCrimeCooldownForm, DeleteShopItemForm
-)
+from models.forms import *
 from models.constants import CITIES
-
+from models.utils import *
+from models.stock import Stock
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
-def admin_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
-            flash("Admin access required.", "danger")
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 # --- Admin Dashboard ---
 
-@admin_bp.route('/')
+@admin_bp.route('/', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
 @admin_required
 def admin_dashboard():
@@ -48,13 +36,66 @@ def admin_dashboard():
     if os.path.exists(log_path):
         with open(log_path, 'r', encoding='utf-8') as f:
             log_lines = f.readlines()[-50:]
+
+    form = AdminCommandForm()
+    command_result = None
+
+    if form.validate_on_submit():
+        cmd = form.command.data.strip()
+        try:
+            if cmd.startswith('/add stock '):
+                parts = cmd.split()
+                if len(parts) == 4:
+                    _, _, name, price = parts
+                    price = float(price)
+                    if Stock.query.filter_by(name=name).first():
+                        command_result = f"Stock {name} already exists."
+                    else:
+                        stock = Stock(name=name, price=price)
+                        db.session.add(stock)
+                        db.session.commit()
+                        command_result = f"Stock {name} added at price {price}."
+                else:
+                    command_result = "Usage: /add stock <name> <price>"
+            else:
+                command_result = "Unknown command."
+        
+        except Exception as e:
+            command_result = f"Error: {e}"
+
+
+    if form.validate_on_submit():
+        cmd = form.command.data.strip()
+        try:
+            if cmd.startswith('/remove stock '):
+                parts = cmd.split()
+                if len(parts) == 4:
+                    _, _, name, price = parts
+                    price = float(price)
+                    if Stock.query.filter_by(name=name).first():
+                        command_result = f"Stock {name} already exists."
+                    else:
+                        stock = Stock.query.filter_by(name=name).first()
+                        db.session.remove(stock)
+                        db.session.commit()
+                        command_result = f"Stock {name} removed."
+                else:
+                    command_result = "Usage: /remove stock <name> <price>"
+            else:
+                command_result = "Unknown command."
+        except Exception as e:
+            command_result = f"Error: {e}"
+
+
     return render_template('admin/dashboard.html',
                            user_count=user_count,
                            forum_count=forum_count,
                            topic_count=topic_count,
                            jailed_count=jailed_count,
                            admin_logs=log_lines,
-                           character=character)
+                           character=character,
+                           command_form=form,
+                           command_result=command_result)
 
 # --- Admin Users ---
 @admin_bp.route('/users')

@@ -8,7 +8,7 @@ from models.character import Character
 from models.organized_crime import OrganizedCrime
 from models.user import User
 from models.drug import Drug, DrugDealer
-from models.constants import CITIES
+from models.constants import *
 from models.crew import CrewMember, Crew
 from flask_login import current_user
 from extensions import db
@@ -17,6 +17,24 @@ from models.event import CityEvent
 from markupsafe import escape, Markup
 from models.notification import Notification
 from models.territory import Territory
+
+from models.stock import Stock
+
+
+
+
+def initialize_stocks():
+    for stock_def in STOCK_MARKETS:
+        stock = Stock.query.filter_by(symbol=stock_def['symbol']).first()
+        if not stock:
+            stock = Stock(
+                name=stock_def['name'],
+                symbol=stock_def['symbol'],
+                price=stock_def['price'],
+                # ... other fields
+            )
+            db.session.add(stock)
+    db.session.commit()
 
 
 def urlize(text, nofollow=True, target='_blank'):

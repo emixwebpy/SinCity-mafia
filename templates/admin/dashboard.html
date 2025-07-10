@@ -95,6 +95,11 @@
     
     border: 2px solid #ffd70044;
 }
+.admin-command-form {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+}
 .admin-action-btn {
     display: flex;
     align-items: center;
@@ -523,9 +528,33 @@
                     <span class="profile-value">{{ jailed_count }}</span>
                 </div>
             </div>
+            
             <div class="profile-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
                 Admin Actions
             </div>
+            <form class="admin-command-form" method="post">
+                {{ command_form.hidden_tag() }}
+                <div>
+                    {{ command_form.command.label }}<br>
+                    {{ command_form.command(size=60, list="admin-command-suggestions", autocomplete="off") }}
+                    <datalist id="admin-command-suggestions">
+                    <option value="/add stock MafiaCoin 3000">
+                    <option value="/remove stock MafiaCoin">
+                    <option value="/set stock MafiaCoin 5000">
+                    <option value="/list stocks">
+                    <option value="/ban user username">
+                    <option value="/unban user username">
+                    <option value="/reset password username">
+                    <option value="/promote user username">
+                    <option value="/demote user username">
+                    <!-- Add more as needed -->
+                    </datalist>
+                    {{ command_form.submit() }}
+                </div>
+            </form>
+            {% if command_result %}
+            <div class="alert alert-info">{{ command_result }}</div>
+            {% endif %}
             <div style="background:#131313; color:#ffd700; padding:1.5em; border-radius:5px; max-height:300px; width: 100%;  overflow:auto; font-family:monospace; font-size:0.95em; position: relative;">
                 {% if admin_logs %}
                     <table style="width:100%; border-collapse:collapse;">
@@ -552,7 +581,9 @@
                 {% else %}
                     <p>No admin actions logged yet.</p>
                 {% endif %}
+                
             </div>
+            
             <div class="profile-section-title" style="color:#ffd700;font-size:1.18em;font-weight:700;margin-bottom:16px;margin-top:24px;letter-spacing:0.5px;text-align:left;">
                 Quick Admin Tools
             </div>
@@ -574,10 +605,55 @@
 
 
 <script>
-  // Scroll the log container to the top on page load
-  window.addEventListener('DOMContentLoaded', function() {
-    var logDiv = document.querySelector('.profile-card-main [style*="overflow:auto"]');
-    if (logDiv) logDiv.scrollTop = 0;
-  });
+    const suggestions = [
+    "/add stock MafiaCoin 3000",
+    "/remove stock MafiaCoin",
+    "/set stock MafiaCoin 5000",
+    "/list stocks",
+    "/ban user username",
+    "/unban user username",
+    "/reset password username",
+    "/promote user username",
+    "/demote user username"
+    // Add more as needed
+    ];
+
+    const input = document.querySelector('input[name="command"]');
+    const datalist = document.getElementById('admin-command-suggestions');
+
+    input.addEventListener('input', function() {
+    const value = this.value.toLowerCase();
+    datalist.innerHTML = "";
+    if (!value) {
+        suggestions.forEach(cmd => {
+        const option = document.createElement('option');
+        option.value = cmd;
+        datalist.appendChild(option);
+        });
+        return;
+    }
+    suggestions
+        .filter(cmd => cmd.toLowerCase().includes(value))
+        .forEach(cmd => {
+        const option = document.createElement('option');
+        option.value = cmd;
+        datalist.appendChild(option);
+        });
+    });
+
+    // Populate all options on page load
+    window.addEventListener('DOMContentLoaded', function() {
+    datalist.innerHTML = "";
+    suggestions.forEach(cmd => {
+        const option = document.createElement('option');
+        option.value = cmd;
+        datalist.appendChild(option);
+    });
+    });
+    // Scroll the log container to the top on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        var logDiv = document.querySelector('.profile-card-main [style*="overflow:auto"]');
+        if (logDiv) logDiv.scrollTop = 0;
+    });
 </script>
 {% endblock %}

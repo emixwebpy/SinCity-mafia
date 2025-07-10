@@ -8,6 +8,14 @@ BODYGUARD_LASTNAMES = [
     "Vitale", "Ferraro", "Costa", "Giordano", "Mancini", "Silvestri", "DeLuca", "Conti", "Esposito", "Russo",
     "Caruso", "Santoro", "Bruno", "DeAngelis", "Sartori", "Caputo", "Martini", "Pellegrini", "Sorrentino", "Fiore"
 ]
+STOCK_MARKETS = [
+    {"name": "MafiaTech", "symbol": "MFT", "price": 100},
+    {"name": "CrimeBank", "symbol": "CBK", "price": 250},
+    {"name": "BlackMarket", "symbol": "BLK", "price": 75},
+    {"name": "GunsRUs", "symbol": "GRU", "price": 150},
+    {"name": "IllicitImports", "symbol": "IMP", "price": 200},
+    
+]
 DRUG_LIST = [
     ("Cocaine", "Cocaine"),
     ("Heroin", "Heroin"),

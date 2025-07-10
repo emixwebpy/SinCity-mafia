@@ -1087,6 +1087,9 @@
               <i class="fas fa-handcuffs"></i> <span>Jail</span>
             </a>
             {% if current_character.in_jail == 0 %}
+            <a href="{{ url_for('stock_market') }}" class="{% if request.endpoint == 'stock_market' %}active{% endif %}">
+              <i class="fas fa-chart-line"></i> <span>Stock Market</span>
+            </a>
             <a href="{{ url_for('casino') }}" class="{% if request.endpoint == 'casino' %}active{% endif %}">
               <i class="fas fa-plane"></i> <span>Casino</span>
             </a>

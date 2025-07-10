@@ -312,11 +312,22 @@ class LeaveCrewForm(FlaskForm):
     submit = SubmitField('Leave Crew')
 class DeleteShopItemForm(FlaskForm):
     submit = SubmitField('Delete')
-
+class AdminCommandForm(FlaskForm):
+    command = StringField('Command', validators=[DataRequired()])
+    submit = SubmitField('Execute')
 class DepositForm(FlaskForm):
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Deposit')
+class BuyStockForm(FlaskForm):
+    shares = IntegerField('Shares', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Buy')
 
+class SellStockForm(FlaskForm):
+    shares = IntegerField('Shares', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Sell')
+
+class RugStockForm(FlaskForm):
+    submit = SubmitField('Rug')
 class WithdrawForm(FlaskForm):
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Withdraw')

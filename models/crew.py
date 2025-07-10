@@ -33,3 +33,12 @@ class CrewMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
     user = db.relationship('User', backref='messages')
+    
+class CrewRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    crew_name = db.Column(db.String(150), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    city = db.Column(db.String(64), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User')

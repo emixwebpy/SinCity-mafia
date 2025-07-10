@@ -8,7 +8,7 @@ from flask_login import current_user
 import random
 from models.character import Character
 from extensions import db
-
+from apscheduler.schedulers.background import BackgroundScheduler
 
 def jail_release_background_task(app):
     with app.app_context():
@@ -20,7 +20,16 @@ def start_jail_release_thread(app):
     t = threading.Thread(target=jail_release_background_task, args=(app,), daemon=True)
     t.start()
 
-
+def start_scheduler(app):
+    from models.stock import update_all_stock_prices
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        func=lambda: app.app_context().push() or update_all_stock_prices(),
+        trigger="interval",
+        minutes=5,
+        id="update_stock_prices"
+    )
+    scheduler.start()
 
 def get_online_users():
     cutoff = datetime.utcnow() - timedelta(seconds=1)

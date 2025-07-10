@@ -40,28 +40,27 @@ csrf.init_app(app)
 
 
 from models import user
-from models.user import User, CrewRequest
-from models.character import Character, Godfather
-from models.crew import Crew, CrewMember, CrewInvitation, CrewMessage
+from models.user import *
+from models.character import *
+from models.crew import *
 from models.organized_crime import OrganizedCrime
 from models.private_message import PrivateMessage
-from models.shop import ShopItem, ShopItemModelView, UserInventory, Gun
-from models.drug import Drug, DrugDealer, CharacterDrugInventory
+from models.shop import *
+from models.drug import *
 from models.notification import Notification
-from models.forum import Forum, ForumTopic, ForumPost
+from models.forum import *
 from models.chat import ChatMessage
 from models.admin import admin_bp
 from models.forms import *
-from models.forms import MinigameForm
 from models.constants import *
 from models.loggers import admin_logger
 from models.utils import *
-from models.background_tasks import start_jail_release_thread
+from models.background_tasks import *
 from models.territory import *
 from models.event import CityEvent
 from models.bank import *
-
-
+from models.stock import *
+from models.record_stock_prices import *
 
 app.register_blueprint(admin_bp)
 logging.getLogger('flask_limiter').setLevel(logging.ERROR)
@@ -73,6 +72,8 @@ with app.app_context():
     randomize_all_drug_prices()
     start_jail_release_thread(app)
     update_crew_member_count(Crew)
+    initialize_stocks()
+    start_scheduler(app)
 
 
 # Database -------------------------------
@@ -2077,6 +2078,96 @@ def territories():
         contribute_form=contribute_form
     )
 
+@app.route('/stock_market', methods=['GET', 'POST'])
+@login_required
+def stock_market():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    stocks = Stock.query.all()
+    investments = StockInvestment.query.filter_by(character_id=character.id).all()
+    
+    buy_forms = {}
+    sell_forms = {}
+    rug_forms = {}
+
+    for stock in stocks:
+        buy_forms[stock.id] = BuyStockForm(prefix=f"buy_{stock.id}")
+        sell_forms[stock.id] = SellStockForm(prefix=f"sell_{stock.id}")
+        rug_forms[stock.id] = RugStockForm(prefix=f"rug_{stock.id}")
+
+    return render_template(
+        'stock_market.html',
+        stocks=stocks,
+        investments=investments,
+        character=character,
+        buy_forms=buy_forms,
+        sell_forms=sell_forms,
+        rug_forms=rug_forms
+    )
+
+
+@app.route('/api/stock/<symbol>/history')
+def stock_price_history(symbol):
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+    history = StockPriceHistory.query.filter_by(stock_id=stock.id).order_by(StockPriceHistory.timestamp).all()
+    data = [
+        {
+            "timestamp": h.timestamp.isoformat(),
+            "price": h.price,
+            "branch_id": h.branch_id if h.branch_id is not None else 1
+        }
+        for h in history
+    ]
+    return jsonify(data)
+
+
+@app.route('/buy_stock/<int:stock_id>', methods=['POST'])
+@login_required
+def buy_stock(stock_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    stock = Stock.query.get_or_404(stock_id)
+    form = BuyStockForm(prefix=f"buy_{stock_id}")
+    if not form.validate_on_submit():
+        flash("Invalid form submission.", "danger")
+        return redirect(url_for('stock_market'))
+    shares = form.shares.data
+    cost = shares * stock.price
+    if shares <= 0 or character.money < cost or stock.is_rugged:
+        flash("Invalid purchase.", "danger")
+        return redirect(url_for('stock_market'))
+    character.money -= cost
+    investment = StockInvestment.query.filter_by(character_id=character.id, stock_id=stock.id).first()
+    if investment:
+        investment.shares += shares
+    else:
+        investment = StockInvestment(character_id=character.id, stock_id=stock.id, shares=shares, buy_price=stock.price)
+        db.session.add(investment)
+    db.session.commit()
+    flash(f"Bought {shares} shares of {stock.name}.", "success")
+    return redirect(url_for('stock_market'))
+
+@app.route('/sell_stock/<int:stock_id>', methods=['POST'])
+@login_required
+def sell_stock(stock_id):
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    stock = Stock.query.get_or_404(stock_id)
+    form = SellStockForm(prefix=f"sell_{stock_id}")
+    if not form.validate_on_submit():
+        flash("Invalid form submission.", "danger")
+        return redirect(url_for('stock_market'))
+    investment = StockInvestment.query.filter_by(character_id=character.id, stock_id=stock.id).first()
+    shares = form.shares.data
+    if not investment or shares <= 0 or shares > investment.shares or stock.is_rugged:
+        flash("Invalid sale.", "danger")
+        return redirect(url_for('stock_market'))
+    proceeds = shares * stock.price
+    character.money += proceeds
+    investment.shares -= shares
+    if investment.shares == 0:
+        db.session.delete(investment)
+    db.session.commit()
+    flash(f"Sold {shares} shares of {stock.name}.", "success")
+    return redirect(url_for('stock_market'))
+
 
 @app.route('/territory_minigame/<int:x>/<int:y>', methods=['GET', 'POST'])
 @login_required
@@ -2279,7 +2370,10 @@ def start_takeover(x, y):
     if territory.contested_until and territory.contested_until > datetime.utcnow():
         flash("This territory is already being contested!", "warning")
         return redirect(url_for('territories'))
-
+    # Check if crew is contesting another territory
+    if Territory.query.filter_by(contesting_crew_id=crew.id).count() > 0:
+        flash("Your crew is already contesting another territory!", "warning")
+        return redirect(url_for('territories'))
     # --- ADJACENCY OR TRADE CHECK START ---
     owned_territories = Territory.query.filter_by(owner_crew_id=crew.id).all()
     is_leader = CrewMember.query.filter_by(crew_id=crew.id, user_id=current_user.id, role='leader').first() is not None
@@ -2382,6 +2476,10 @@ def resolve_takeover(x, y):
     territory = Territory.query.filter_by(x=x, y=y).first()
     if not territory or not territory.contesting_crew_id:
         flash("No ongoing contest for this territory.", "info")
+        return redirect(url_for('territories'))
+    #check if this crew is contesting another territory
+    if Territory.query.filter_by(contesting_crew_id=crew.id).count() > 1:
+        flash("You can only contest one territory at a time.", "warning")
         return redirect(url_for('territories'))
     if territory.contesting_crew_id != crew.id:
         flash("Your crew is not contesting this territory.", "danger")
@@ -2596,7 +2694,9 @@ def godfathers_page():
     crew = Crew.query.get(character.crew_id) if character and character.crew_id else None
     if crew:
         godfather = Godfather.query.filter_by(city=crew.city).first()
-        if not godfather:
+        # Only remove if there is no godfather, and the current user's character is NOT the godfather for this city
+        if not godfather or (godfather.character_id != character.id):
+            # Only remove if the current character is not the godfather for this city
             character.crew_id = None
             character.crime_group_id = None
             db.session.commit()
@@ -2797,7 +2897,7 @@ def earn():
     # Jail chance: 10% chance to be sent to jail for 1-5 minutes
     jail_chance = 0.50
     if random.random() < jail_chance:
-        jail_minutes = random.randint(0, 0)
+        jail_minutes = random.randint(1, 5)
         character.in_jail = True
         character.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
         db.session.commit()
@@ -3333,6 +3433,7 @@ def city_characters(city_name):
 @app.route('/claim_territory/<int:x>/<int:y>', methods=['POST'])
 @login_required
 def claim_territory(x, y):
+    claim_time = datetime.utcnow()
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character or not character.crew_id:
         flash("You must be in a crew to claim a territory.", "danger")
@@ -3342,6 +3443,9 @@ def claim_territory(x, y):
     if not leader_member or leader_member.user_id != current_user.id:
         flash("Only the crew leader can claim a territory.", "danger")
         return redirect(url_for('territories'))
+    #check if crew is claiming a territory
+    if Territory.query.filter_by(contesting_crew_id=crew.id).count() > 1:
+        flash("You can only contest one territory at a time.", "warning")
     crew = Crew.query.get(character.crew_id)
     territory = Territory.query.filter_by(x=x, y=y).first()
     if not territory:
@@ -3465,5 +3569,6 @@ def unauthorized_error(error):
 
 if __name__ == '__main__':
     with app.app_context():
+        
         db.create_all()
     app.run(debug=True)

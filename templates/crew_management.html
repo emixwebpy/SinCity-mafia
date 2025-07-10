@@ -114,7 +114,7 @@
         <div class="profile-card-sidebar">
             <div style="text-align:center;">
                 <h2 style="color:#ffd700;">{{ crew.name }}</h2>
-                <div style="color:#8be9fd; font-size:1.1em; margin-bottom:10px;">{{ crew.motto or '' }}</div>
+                <div style="color:#8be9fd; font-size:1.1em; margin-bottom:10px;">$ {{ crew.bank_balance or '' }}</div>
                 <div style="color:#fff; font-size:1em; margin-bottom:10px;">Leader: {{ member_char_map[leader_member].name if leader_member in member_char_map else 'Unknown' }}</div>
                 <div style="color:#fff; font-size:1em; margin-bottom:10px;">Members: {{ members|length }}</div>
                 <div style="color:#fff; font-size:1em; margin-bottom:10px;">Territories: {{ crew_territories|length }}</div>

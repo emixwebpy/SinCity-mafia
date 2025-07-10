@@ -311,7 +311,7 @@
                 <form method="post" action="{{ url_for('contribute_resources') }}">
                     {{ contribute_form.hidden_tag() }}
                     <label for="resource-type">Resource Type:</label>
-                    {{ contribute_form.resource_type(class_="form-control", id="resource-type")| safe }}
+                    {{ contribute_form.resource_type(class_="form-control", id="resource-type") }}
                     <label for="amount">Amount:</label>
                     {{ contribute_form.amount(class_="form-control", id="amount") }}
                     <button type="submit" class="btn btn-primary">Contribute Resources</button>

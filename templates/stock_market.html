@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Stock Market{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-sidebar {
+    background: #181824;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 260px;
+    border-right: 1px solid #23243a;
+}
+.dashboard-avatar {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffd70055;
+    box-shadow: 0 2px 16px #ffd70033;
+    margin-bottom: 18px;
+    background: #23243a;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+}
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 24px 0 0 0;
+}
+.profile-stat {
+    background: rgba(139,233,253,0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 5px #8be9fd22;
+    border: 1px solid #8be9fd22;
+    padding: 16px 18px;
+    text-align: center;
+}
+.profile-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+    margin-top: 24px;
+}
+.profile-table th, .profile-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.profile-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.profile-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.profile-table tr:hover {
+    background: #34355b;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-sidebar { border-right: none; border-bottom: 1px solid #23243a; width: 100%; }
+    .profile-card-main { padding: 24px 12px; }
+    .profile-table th, .profile-table td { padding: 0.5rem 0.5rem; font-size: 0.95em; }
+}
+</style>
+
+<div class="profile-card-container">
+    <div class="profile-card">
+        <div class="profile-card-sidebar">
+            {% if character.profile_image %}
+                <img class="dashboard-avatar" src="{{ url_for('static', filename=character.profile_image) if not character.profile_image.startswith('http') else character.profile_image }}" alt="avatar">
+            {% else %}
+                <img class="dashboard-avatar" src="{{ url_for('static', filename='default_avatar.png') }}" alt="avatar">
+            {% endif %}
+            <div style="margin-top:18px; color:#ffd700; font-size:1.2em; font-weight:700;">
+                <i class="fas fa-chart-line"></i> Stock Market
+            </div>
+            <div style="margin-top:10px; color:#8be9fd; font-size:1em;">
+                Invest, trade, and rug stocks!
+            </div>
+        </div>
+        <div class="profile-card-main">
+            <div class="profile-card-header">
+                <h1>Stock Market</h1>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="profile-stat">
+                    <span class="profile-label">Your Balance</span>
+                    <span class="profile-value">${{ '%.2f' % character.money }}</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-label">Your Investments</span>
+                    <span class="profile-value">{{ investments|length }}</span>
+                </div>
+            </div>
+            <table class="profile-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Buy</th>
+                    <th>Sell</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for stock in stocks %}
+                  <tr>
+                    <td>{{ stock.name }}</td>
+                    <td data-stock-symbol="{{ stock.symbol }}">${{ '%.2f' % stock.price }}</td>
+                    <td>
+                        {% if not stock.is_rugged %}
+                            <form method="post" action="{{ url_for('buy_stock', stock_id=stock.id) }}" style="display:inline;">
+                                {{ buy_forms[stock.id].hidden_tag() }}
+                                {{ buy_forms[stock.id].shares(class_="form-control", min=1, style="width:60px;display:inline-block;") }}
+                                {{ buy_forms[stock.id].submit(class_="btn btn-primary") }}
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set inv = investments|selectattr('stock_id', 'equalto', stock.id)|first %}
+                        {% if inv and inv.shares > 0 and not stock.is_rugged %}
+                            <form method="post" action="{{ url_for('sell_stock', stock_id=stock.id) }}" style="display:inline;">
+                                {{ sell_forms[stock.id].hidden_tag() }}
+                                {{ sell_forms[stock.id].shares(class_="form-control", min=1, max=inv.shares, style="width:60px;display:inline-block;") }}
+                                {{ sell_forms[stock.id].submit(class_="btn btn-primary") }}
+                            </form>
+                        {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="6">
+                      <canvas id="stockChart-{{ stock.symbol }}" height="80"></canvas>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script>
+const stockCharts = {};
+
+function updateStockPrices() {
+  {% for stock in stocks %}
+    fetch('/api/stock/{{ stock.symbol }}/history')
+      .then(res => res.json())
+      .then(data => {
+        // Update price in table
+        const priceCell = document.querySelector('td[data-stock-symbol="{{ stock.symbol }}"]');
+        if (priceCell && data.length > 0) {
+          priceCell.textContent = '$' + parseFloat(data[data.length - 1].price).toFixed(2);
+        }
+        // Group by branch_id
+        const branches = {};
+        data.forEach(d => {
+          const branch = d.branch_id || 1;
+          if (!branches[branch]) branches[branch] = [];
+          branches[branch].push(d);
+        });
+        // Build datasets for Chart.js
+        const branchColors = [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)'
+        ];
+        const datasets = Object.entries(branches).map(([branchId, branchData], idx) => ({
+          label: '{{ stock.name }} Branch ' + branchId,
+          data: branchData
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            .map(d => ({ x: d.timestamp, y: d.price })),
+          borderColor: branchColors[idx % branchColors.length],
+          fill: false,
+          tension: 0.1,
+          pointRadius: 2,
+          showLine: true,
+          type: 'line'
+        }));
+        // Update chart and preserve view
+        const chartId = 'stockChart-{{ stock.symbol }}';
+        const chart = stockCharts[chartId];
+        if (chart && datasets.length > 0) {
+          const prevMin = chart.options.scales.x.min;
+          const prevMax = chart.options.scales.x.max;
+          chart.data.labels = undefined; // Use x/y objects
+          chart.data.datasets = datasets;
+          chart.update('none');
+          if (prevMin !== undefined) chart.options.scales.x.min = prevMin;
+          if (prevMax !== undefined) chart.options.scales.x.max = prevMax;
+        }
+      });
+  {% endfor %}
+}
+
+// Initialize charts
+window.addEventListener('DOMContentLoaded', function() {
+  {% for stock in stocks %}
+    fetch('/api/stock/{{ stock.symbol }}/history')
+      .then(res => res.json())
+      .then(data => {
+        // Group by branch_id
+        const branches = {};
+        data.forEach(d => {
+          const branch = d.branch_id || 1;
+          if (!branches[branch]) branches[branch] = [];
+          branches[branch].push(d);
+        });
+        const branchColors = [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)'
+        ];
+        const datasets = Object.entries(branches).map(([branchId, branchData], idx) => ({
+          label: '{{ stock.name }} Branch ' + branchId,
+          data: branchData
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            .map(d => ({ x: d.timestamp, y: d.price })),
+          borderColor: branchColors[idx % branchColors.length],
+          fill: false,
+          tension: 0.1,
+          pointRadius: 2,
+          showLine: true,
+          type: 'line'
+        }));
+        const ctx = document.getElementById('stockChart-{{ stock.symbol }}').getContext('2d');
+        stockCharts['stockChart-{{ stock.symbol }}'] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: datasets
+          },
+          options: {
+            animation: false,
+            responsive: true,
+            plugins: {
+              legend: { display: true }
+            },
+            parsing: false,
+            scales: {
+              x: {
+                type: 'time',
+                time: { unit: 'hour' },
+                display: true
+              }
+            }
+          }
+        });
+      });
+  {% endfor %}
+
+  // Update every 5mins (300000 ms)
+  setInterval(updateStockPrices, 300000);
+});
+</script>
+{% endblock %}
