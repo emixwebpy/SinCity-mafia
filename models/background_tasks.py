@@ -26,7 +26,6 @@ def start_scheduler(app):
     scheduler.add_job(
         func=lambda: app.app_context().push() or update_all_stock_prices(),
         trigger="interval",
-        minutes=5,
         id="update_stock_prices"
     )
     scheduler.start()

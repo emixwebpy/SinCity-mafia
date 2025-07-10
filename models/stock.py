@@ -27,8 +27,8 @@ class StockPriceHistory(db.Model):
 def update_all_stock_prices():
     stocks = Stock.query.all()
     for stock in stocks:
-        # Allow price to go up or down: -10% to +10% random walk
-        pct_change = random.uniform(-0.10, 0.10)
+        # Allow price to go up or down: -50% to +50% random walk
+        pct_change = random.uniform(-0.99, 0.99)
         new_price = max(1, round(stock.price * (1 + pct_change), 2))
         stock.price = new_price
 

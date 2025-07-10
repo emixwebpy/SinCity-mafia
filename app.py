@@ -2085,6 +2085,8 @@ def stock_market():
     stocks = Stock.query.all()
     investments = StockInvestment.query.filter_by(character_id=character.id).all()
     
+
+
     buy_forms = {}
     sell_forms = {}
     rug_forms = {}
@@ -2131,7 +2133,7 @@ def buy_stock(stock_id):
         return redirect(url_for('stock_market'))
     shares = form.shares.data
     cost = shares * stock.price
-    if shares <= 0 or character.money < cost or stock.is_rugged:
+    if shares <= 0 or character.money < cost:
         flash("Invalid purchase.", "danger")
         return redirect(url_for('stock_market'))
     character.money -= cost
@@ -2158,6 +2160,9 @@ def sell_stock(stock_id):
     shares = form.shares.data
     if not investment or shares <= 0 or shares > investment.shares or stock.is_rugged:
         flash("Invalid sale.", "danger")
+        return redirect(url_for('stock_market'))
+    if stock.price <= 0:
+        flash("The stock is no longer available for resale. Stock market has either crashed or is in a state of disarray.", "danger")
         return redirect(url_for('stock_market'))
     proceeds = shares * stock.price
     character.money += proceeds

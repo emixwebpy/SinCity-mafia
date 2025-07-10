@@ -165,7 +165,7 @@
                         {% if not stock.is_rugged %}
                             <form method="post" action="{{ url_for('buy_stock', stock_id=stock.id) }}" style="display:inline;">
                                 {{ buy_forms[stock.id].hidden_tag() }}
-                                {{ buy_forms[stock.id].shares(class_="form-control", min=1, style="width:60px;display:inline-block;") }}
+                                {{ buy_forms[stock.id].shares(class_="form-control", min=1,max=character.level, style="width:60px;display:inline-block;") }}
                                 {{ buy_forms[stock.id].submit(class_="btn btn-primary") }}
                             </form>
                         {% endif %}
@@ -230,8 +230,8 @@ function updateStockPrices() {
             .map(d => ({ x: d.timestamp, y: d.price })),
           borderColor: branchColors[idx % branchColors.length],
           fill: false,
-          tension: 0.1,
-          pointRadius: 2,
+          tension: 1,
+          pointRadius: 1,
           showLine: true,
           type: 'line'
         }));
@@ -249,6 +249,8 @@ function updateStockPrices() {
         }
       });
   {% endfor %}
+  // Update every 60 seconds (60000 ms)
+  setTimeout(updateStockPrices, 60000);
 }
 
 // Initialize charts
@@ -279,8 +281,8 @@ window.addEventListener('DOMContentLoaded', function() {
             .map(d => ({ x: d.timestamp, y: d.price })),
           borderColor: branchColors[idx % branchColors.length],
           fill: false,
-          tension: 0.1,
-          pointRadius: 2,
+          tension: 1,
+          pointRadius: 1,
           showLine: true,
           type: 'line'
         }));
@@ -309,8 +311,8 @@ window.addEventListener('DOMContentLoaded', function() {
       });
   {% endfor %}
 
-  // Update every 5mins (300000 ms)
-  setInterval(updateStockPrices, 300000);
+  // Update every 60 seconds (60000 ms)
+  setTimeout(updateStockPrices, 60000);
 });
 </script>
 {% endblock %}
