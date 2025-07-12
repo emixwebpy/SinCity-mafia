@@ -31,7 +31,7 @@ def initialize_stocks():
                 name=stock_def['name'],
                 symbol=stock_def['symbol'],
                 price=stock_def['price'],
-                # ... other fields
+                branch_id=stock_def['branch_id']
             )
             db.session.add(stock)
     db.session.commit()

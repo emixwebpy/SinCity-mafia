@@ -37,7 +37,7 @@ class Character(db.Model):
     bio = db.Column(db.Text, default="")
     bodyguard_names = db.Column(db.Text, default="[]")  # Store as JSON list of names
     steal_cooldown = db.Column(db.DateTime, nullable=True)
-    
+    kills = db.Column(db.Integer, default=0)
 
 
     @property
@@ -57,6 +57,7 @@ class Character(db.Model):
         if self.master and getattr(self.master, "is_admin", False):
             return True
         return False
+    
 
 class Godfather(db.Model):
     id = db.Column(db.Integer, primary_key=True)

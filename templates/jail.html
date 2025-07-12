@@ -115,69 +115,6 @@
     border: 2px solid #8be9fd55;
     object-fit: cover;
 }
-.profile-list {
-    background: rgba(35,36,58,0.92);
-    border-radius: 0 0 18px 18px;
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    max-width: 700px;
-    margin: 0 auto 2rem auto;
-    border-top: none;
-}
-.profile-table {
-    width: 100%;
-    color: #f5f6fa;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-family: 'Cinzel', serif;
-}
-.profile-table th, .profile-table td {
-    padding: 1.1rem 1rem;
-    text-align: left;
-    vertical-align: middle;
-    border: none;
-    background: none;
-}
-.profile-table th {
-    color: #ffd700;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-bottom: 2px solid #8be9fd55;
-    text-shadow: 0 1px 8px #000;
-}
-.profile-table tr {
-    background: rgba(40,42,54,0.85);
-    transition: background 0.2s;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px #00000022;
-}
-.profile-table tr.current-user {
-    background: rgba(255,215,0,0.13);
-    color: #ffd700;
-    font-weight: 900;
-}
-.profile-table tr:hover {
-    background: #34355b;
-}
-.profile-name {
-    font-weight: 700;
-    color: #8be9fd;
-    font-size: 1.08em;
-    letter-spacing: 0.2px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.profile-icon {
-    font-size: 1.2em;
-    margin-right: 6px;
-    color: #b8b8ff;
-    filter: drop-shadow(0 1px 2px #000);
-}
-.profile-level, .profile-city, .profile-money, .profile-xp, .profile-kills, .profile-bodyguards, .profile-health {
-    color: #fff;
-    font-size: 1em;
-}
 @media (max-width: 900px) {
     .profile-card-container { flex-direction: column; align-items: center; }
     .profile-card { flex-direction: column; min-width: 0; }
@@ -196,6 +133,15 @@
             <div style="margin-top:18px; color:#ffd700; font-size:1.2em; font-weight:700;">
                 Jail
             </div>
+            <div class="gather-pool-section">
+                <h3>Jail Gather Pool</h3>
+                <p>Total credits in pool: {{ pool.total_credits }}</p>
+                <form method="post" action="{{ url_for('jail') }}">
+                    {{ form.hidden_tag() }}
+                    {{ form.credits.label }} {{ form.credits(class_="form-select", style="width:auto;display:inline-block;") }}
+                    {{ form.submit(class_="btn btn-success btn-sm") }}
+                </form>
+            </div>
         </div>
         <div class="profile-card-main">
             <div class="profile-card-header">
@@ -211,6 +157,13 @@
                         <th>Actions</th>
                     </tr>
                     {% for char in jailed_characters %}
+                    {% if current_user.is_authenticated and current_character and current_character.id == char.id and current_character.crew_id %}
+                        <form action="{{ url_for('notify_crew_jail') }}" method="post" style="display:inline;">
+                            {{ notify_crew_form.hidden_tag() }}
+                            {{ notify_crew_form.submit(class_="btn btn-warning btn-sm") }}
+                        </form>
+                    {% endif %}
+                    
                     <tr>
                         <td>
                             {% if char.profile_image %}
@@ -220,16 +173,12 @@
                                     <i class="fas fa-user-slash"></i>
                                 </span>
                             {% endif %}
+                            
                         </td>
                         <td>
                             <span class="jail-link">{{ char.name }}</span>
                         </td>
-                        <td>
-                            {% set remaining = (char.jail_until - now).total_seconds()|int %}
-                            {% set mins = remaining // 60 %}
-                            {% set secs = remaining % 60 %}
-                            {{ mins }}m {{ secs }}s
-                        </td>
+                        <td class="release-countdown" data-release="{{ char.jail_until.isoformat() if char.jail_until else '' }}"></td>
                         <td>
                             {% if current_user.is_authenticated and current_character and current_character.id != char.id and not current_character.in_jail %}
                                 <form action="{{ url_for('breakout', char_id=char.id) }}" method="post" style="display:inline;">
@@ -248,5 +197,33 @@
         </div>
     </div>
 </div>
-
+<script>
+function updateCountdowns() {
+  const now = new Date();
+  document.querySelectorAll('.release-countdown').forEach(function(cell) {
+    let releaseAttr = cell.getAttribute('data-release');
+    if (!releaseAttr) {
+      cell.textContent = "Unknown";
+      return;
+    }
+    // Ensure UTC parsing
+    if (!releaseAttr.endsWith('Z')) releaseAttr += 'Z';
+    const releaseTime = new Date(releaseAttr);
+    if (isNaN(releaseTime)) {
+      cell.textContent = "Unknown";
+      return;
+    }
+    let diff = Math.floor((releaseTime - now) / 1000);
+    if (diff > 0) {
+      const mins = Math.floor(diff / 60);
+      const secs = diff % 60;
+      cell.textContent = `${mins}m ${secs}s`;
+    } else {
+      cell.textContent = "Released";
+    }
+  });
+}
+setInterval(updateCountdowns, 1000);
+window.addEventListener('DOMContentLoaded', updateCountdowns);
+</script>
 {% endblock %}

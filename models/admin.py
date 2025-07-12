@@ -26,6 +26,7 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 @limiter.limit("20 per minute")
 @admin_required
 def admin_dashboard():
+    user= User.query.get(current_user.id)
     character = Character.query.filter_by(master_id=current_user.id).first()
     user_count = User.query.count()
     forum_count = Forum.query.count()
@@ -40,53 +41,74 @@ def admin_dashboard():
     form = AdminCommandForm()
     command_result = None
 
+    
+
+    #promote users to admin by id
     if form.validate_on_submit():
         cmd = form.command.data.strip()
         try:
-            if cmd.startswith('/add stock '):
+            user_to_promote = None
+            if cmd.startswith('/promote '):
                 parts = cmd.split()
-                if len(parts) == 4:
-                    _, _, name, price = parts
-                    price = float(price)
-                    if Stock.query.filter_by(name=name).first():
-                        command_result = f"Stock {name} already exists."
-                    else:
-                        stock = Stock(name=name, price=price)
-                        db.session.add(stock)
-                        db.session.commit()
-                        command_result = f"Stock {name} added at price {price}."
+                if len(parts) == 2:
+                    user_id = parts[1]
+                    try:
+                        user_id_int = int(user_id)
+                        user_to_promote = User.query.get(user_id_int)
+                    except ValueError:
+                        user_to_promote = None
+            if user_to_promote:
+                if user_to_promote.is_admin:
+                    command_result = f"User {user_id} is already an admin."
                 else:
-                    command_result = "Usage: /add stock <name> <price>"
+                    user_to_promote.is_admin = True
+                    db.session.commit()
+                    command_result = f"User {user_id} has been promoted to admin."
+            elif cmd.startswith('/demote '):
+                parts = cmd.split()
+                if len(parts) == 2:
+                    user_id = parts[1]
+                    try:
+                        user_id_int = int(user_id)
+                        user_to_demote = User.query.get(user_id_int)
+                    except ValueError:
+                        user_to_demote = None
+                if user_to_demote and user_to_demote.is_admin:
+                    user_to_demote.is_admin = False
+                    db.session.commit()
+                    command_result = f"User {user_id} has been demoted from admin."
+                elif user_to_demote and not user_to_demote.is_admin:
+                    command_result = f"User {user_id} is not an admin."
+            elif cmd.startswith('/ban '):
+                parts = cmd.split()
+                if len(parts) == 2:
+                    user_id = parts[1]
+                    try:
+                        user_id_int = int(user_id)
+                        user_to_ban = User.query.get(user_id_int)
+                    except ValueError:
+                        user_to_ban = None
+                    if user_to_ban:
+                        if user_to_ban.banned:
+                            command_result = f"User {user_id} is already banned."
+                        else:
+                            user_to_ban.banned = True
+                            db.session.commit()
+                            command_result = f"User {user_id} has been banned."
+                    else:
+                        command_result = f"User {user_id} not found."
             else:
-                command_result = "Unknown command."
-        
+                command_result = f"User {user_id} not found."
         except Exception as e:
             command_result = f"Error: {e}"
 
+    
+    # log the command
+        if cmd:
+            admin_logger.info(f"Admin {current_user.username} executed command: {cmd} at {datetime.utcnow()}")
+            flash(f"Command executed: {cmd}", "success")
 
-    if form.validate_on_submit():
-        cmd = form.command.data.strip()
-        try:
-            if cmd.startswith('/remove stock '):
-                parts = cmd.split()
-                if len(parts) == 4:
-                    _, _, name, price = parts
-                    price = float(price)
-                    if Stock.query.filter_by(name=name).first():
-                        command_result = f"Stock {name} already exists."
-                    else:
-                        stock = Stock.query.filter_by(name=name).first()
-                        db.session.remove(stock)
-                        db.session.commit()
-                        command_result = f"Stock {name} removed."
-                else:
-                    command_result = "Usage: /remove stock <name> <price>"
-            else:
-                command_result = "Unknown command."
-        except Exception as e:
-            command_result = f"Error: {e}"
-
-
+    
     return render_template('admin/dashboard.html',
                            user_count=user_count,
                            forum_count=forum_count,

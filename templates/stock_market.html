@@ -136,6 +136,7 @@
         <div class="profile-card-main">
             <div class="profile-card-header">
                 <h1>Stock Market</h1>
+                <a href="{{ url_for('my_investments') }}" class="btn btn-primary mb-3">View My Investments</a>
             </div>
             <div class="profile-stats-grid">
                 <div class="profile-stat">
@@ -173,7 +174,7 @@
                     <td>
                         {% set inv = investments|selectattr('stock_id', 'equalto', stock.id)|first %}
                         {% if inv and inv.shares > 0 and not stock.is_rugged %}
-                            <form method="post" action="{{ url_for('sell_stock', stock_id=stock.id) }}" style="display:inline;">
+                            <form method="post" action="{{ url_for('sell_stock', stock_id=stock.id) }}" >
                                 {{ sell_forms[stock.id].hidden_tag() }}
                                 {{ sell_forms[stock.id].shares(class_="form-control", min=1, max=inv.shares, style="width:60px;display:inline-block;") }}
                                 {{ sell_forms[stock.id].submit(class_="btn btn-primary") }}
@@ -182,8 +183,8 @@
                     </td>
                   </tr>
                   <tr>
-                    <td colspan="6">
-                      <canvas id="stockChart-{{ stock.symbol }}" height="80"></canvas>
+                    <td colspan="4" style="background: #23243a; border-radius: 12px;">
+                      <canvas id="stockChart-{{ stock.symbol }}" width="400" height="200"></canvas>
                     </td>
                   </tr>
                   {% endfor %}
@@ -230,10 +231,8 @@ function updateStockPrices() {
             .map(d => ({ x: d.timestamp, y: d.price })),
           borderColor: branchColors[idx % branchColors.length],
           fill: false,
-          tension: 1,
-          pointRadius: 1,
-          showLine: true,
-          type: 'line'
+          tension: 0.3,
+          pointRadius: 2
         }));
         // Update chart and preserve view
         const chartId = 'stockChart-{{ stock.symbol }}';
@@ -249,8 +248,7 @@ function updateStockPrices() {
         }
       });
   {% endfor %}
-  // Update every 60 seconds (60000 ms)
-  setTimeout(updateStockPrices, 60000);
+  
 }
 
 // Initialize charts
@@ -281,10 +279,8 @@ window.addEventListener('DOMContentLoaded', function() {
             .map(d => ({ x: d.timestamp, y: d.price })),
           borderColor: branchColors[idx % branchColors.length],
           fill: false,
-          tension: 1,
-          pointRadius: 1,
-          showLine: true,
-          type: 'line'
+          tension: 0.3,
+          pointRadius: 2
         }));
         const ctx = document.getElementById('stockChart-{{ stock.symbol }}').getContext('2d');
         stockCharts['stockChart-{{ stock.symbol }}'] = new Chart(ctx, {
@@ -296,14 +292,48 @@ window.addEventListener('DOMContentLoaded', function() {
             animation: false,
             responsive: true,
             plugins: {
-              legend: { display: true }
+              legend: { display: true, position: 'top' },
+              title: {
+                display: true,
+                text: '{{ stock.name }} ({{ stock.symbol }}) Price History',
+                color: '#ffd700',
+                font: { size: 18, family: "'Cinzel', serif" }
+              },
+              tooltip: {
+                enabled: true,
+                mode: 'nearest',
+                intersect: false,
+                callbacks: {
+                  label: function(context) {
+                    return ' $' + context.parsed.y.toFixed(2) + ' @ ' + new Date(context.parsed.x).toLocaleString();
+                  }
+                }
+              }
             },
             parsing: false,
             scales: {
               x: {
                 type: 'time',
-                time: { unit: 'hour' },
-                display: true
+                time: { unit: 'hour', tooltipFormat: 'PPpp' },
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Time',
+                  color: '#8be9fd',
+                  font: { size: 14 }
+                },
+                grid: { color: '#23243a' }
+              },
+              y: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Price ($)',
+                  color: '#8be9fd',
+                  font: { size: 14 }
+                },
+                grid: { color: '#23243a' },
+                beginAtZero: true
               }
             }
           }
@@ -311,8 +341,7 @@ window.addEventListener('DOMContentLoaded', function() {
       });
   {% endfor %}
 
-  // Update every 60 seconds (60000 ms)
-  setTimeout(updateStockPrices, 60000);
+  setTimeout(updateStockPrices, 10000);
 });
 </script>
 {% endblock %}

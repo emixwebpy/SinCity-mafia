@@ -9,6 +9,36 @@ from wtforms.validators import DataRequired, NumberRange, Optional, Length,Valid
 from models.constants import CITIES
 from models.character import Character
 
+
+
+
+
+class GatherPoolForm(FlaskForm):
+    credits = SelectField('Credits', choices=[('0.25', '0.25'), ('0.5', '0.50'), ('0.75', '0.75'), ('1', '1.00')])
+    submit = SubmitField('Contribute')
+class NotifyCrewForm(FlaskForm):
+    submit = SubmitField('Notify Crew')
+class CancelCreditOfferForm(FlaskForm):
+    offer_id = HiddenField()
+    submit = SubmitField('Cancel')
+class CreateGiveawayForm(FlaskForm):
+    credits = IntegerField('Credits to Give Away', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Create Giveaway Code')
+class CreateCreditOfferForm(FlaskForm):
+    credits = IntegerField('Credits to Sell', validators=[DataRequired(), NumberRange(min=1)])
+    price = IntegerField('Price per Credit (in-game $)', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('List Offer')
+
+class BuyCreditOfferForm(FlaskForm):
+    offer_id = HiddenField(validators=[DataRequired()])
+    submit = SubmitField('Buy')
+class BuyCreditsForm(FlaskForm):
+    submit = SubmitField('Buy Credits')
+class MTXForm(FlaskForm):
+    buy_money = SubmitField('Buy $1,000,000 in-game money (Mock)')
+    buy_xp = SubmitField('Buy 500 XP (Mock)')
+    buy_kills = SubmitField('Buy 5 Extra Kills (Mock)')
+    buy_bodyguards = SubmitField('Buy 2 Extra Bodyguards (Mock)')
 class KillCharacterForm(FlaskForm):
     submit = SubmitField('Kill Current Character')
 class UserSettingsForm(FlaskForm):
@@ -17,36 +47,27 @@ class UserSettingsForm(FlaskForm):
     new_password = PasswordField('New Password', validators=[Optional(), Length(min=6)])
     confirm_password = PasswordField('Confirm New Password', validators=[EqualTo('new_password', message='Passwords must match'), Optional()])
     submit = SubmitField('Update Settings')
-
 class StealForm(FlaskForm):
     target_name = StringField('Target Character Name', validators=[DataRequired()])
     submit = SubmitField('Attempt Steal')
-
 class RenameTerritoryForm(FlaskForm):
     custom_name = StringField('Custom Name', validators=[Length(max=64), Optional()])
     theme = StringField('Theme', validators=[Length(max=64), Optional()])
     submit = SubmitField('Update')
-
 class ClaimTerritoryForm(FlaskForm):
     submit = SubmitField('Claim')
-
 class StartTakeoverForm(FlaskForm):
     submit = SubmitField('Start Takeover')
-
 class ResolveTakeoverForm(FlaskForm):
     submit = SubmitField('Resolve Takeover')
-
 class CrewPayoutForm(FlaskForm):
     submit = SubmitField('Collect Crew Payout')
-
 class HireBodyguardForm(FlaskForm):
     num = IntegerField('How many bodyguards do you want to hire?', validators=[DataRequired(), NumberRange(min=1, max=5)])
     submit = SubmitField('Hire')
-
 class EditBioForm(FlaskForm):
     bio = TextAreaField('Bio', validators=[Length(max=1000)])
     submit = SubmitField('Save Bio')
-
 class CreateForumForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=100)])
     description = TextAreaField('Description', validators=[DataRequired()])
@@ -319,24 +340,20 @@ class DepositForm(FlaskForm):
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Deposit')
 class BuyStockForm(FlaskForm):
-    shares = IntegerField('Shares', validators=[DataRequired(), NumberRange(min=1)])
+    shares = IntegerField('Shares', validators=[DataRequired(), NumberRange(min=1, max= 60)])
     submit = SubmitField('Buy')
-
 class SellStockForm(FlaskForm):
     shares = IntegerField('Shares', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Sell')
-
 class RugStockForm(FlaskForm):
     submit = SubmitField('Rug')
 class WithdrawForm(FlaskForm):
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Withdraw')
-
 class TransferForm(FlaskForm):
     recipient = StringField('Recipient', validators=[DataRequired()])
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Transfer')
-
 class GatherResourcesForm(FlaskForm):
     submit = SubmitField('Gather Random Amount')
 class MinigameForm(FlaskForm):
@@ -350,7 +367,6 @@ class ContributeResourcesForm(FlaskForm):
     resource_type = SelectField('Resource Type', choices=[('supplies', 'Supplies')], validators=[DataRequired()])
     amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Contribute Resources')
-
 class GatherResourcesForm(FlaskForm):
     submit = SubmitField('Gather Resources')
 class DummyRemoveForm(FlaskForm):

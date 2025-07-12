@@ -990,7 +990,15 @@
           {% endif %}
         </div>
       {% endif %}
+
+
+
+
       <div class="sidebar-nav" style="width:100%;height:100%;overflow-y:auto;">
+
+
+
+
         <!-- Admin -->
         {% if current_user.is_authenticated and current_user.is_admin %}
         <div class="sidebar-category">
@@ -1005,6 +1013,19 @@
           </div>
         </div>
         {% endif %}
+
+
+        <div class="sidebar-category">
+          <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
+            <i class="fas fa-users"></i>&nbsp;Community
+            <span class="collapse-arrow"><i class="fas fa-chevron-down"></i></span>
+          </div>
+          <div class="sidebar-subnav">
+            <a href="{{ url_for('mtx') }}" class="{% if request.endpoint == 'mtx' %}active{% endif %}">
+              <i class="fas fa-users"></i> <span>Store</span>
+            </a>
+          </div>
+        </div>
         {% if current_character.in_jail == 0 %}
         <!-- Player management -->
         <div class="sidebar-category">
@@ -1037,6 +1058,10 @@
           </div>
         </div>
         {% endif %}
+
+
+
+
         {% if current_character.in_jail == 0 %}
         <!-- Dealings -->
         <div class="sidebar-category">
@@ -1065,6 +1090,10 @@
           </div>
         </div>
         {% endif %}
+
+
+
+
         <!-- Crime -->
         <div class="sidebar-category">
           <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">
@@ -1096,6 +1125,9 @@
             {% endif %}
           </div>
         </div>
+
+
+        <!-- Crew management -->
         {% if current_character.in_jail == 0 %}
         <div class="sidebar-category">
           <div class="sidebar-category-title collapsible" onclick="toggleSidebarCategory(this)">

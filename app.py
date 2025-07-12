@@ -1,5 +1,8 @@
+from multiprocessing import pool
+import uuid
 from flask import current_app as app
-
+from math import ceil
+from random import randint
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, Blueprint, session
 from flask_mail import Mail, Message
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -7,12 +10,12 @@ from flask_wtf import CSRFProtect
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-import  logging, random, os, logging
+import  logging, random, os, logging, secrets
 from markupsafe import Markup, escape
 from itsdangerous import URLSafeTimedSerializer
 from PIL import Image
 from flask_limiter import Limiter
-from extensions import db, login_manager, mail, migrate, csrf
+from extensions import *
 
 app = Flask(__name__)
 
@@ -61,11 +64,14 @@ from models.event import CityEvent
 from models.bank import *
 from models.stock import *
 from models.record_stock_prices import *
+from models.credit_market import *
+from models.credit_giveaway import *
+from models.gather_pool import *
 
 app.register_blueprint(admin_bp)
 logging.getLogger('flask_limiter').setLevel(logging.ERROR)
 with app.app_context():
-    db.create_all()
+    
     seed_territories()
     seed_drugs()
     seed_territory_claimers()
@@ -159,7 +165,57 @@ def forums():
         flash(f"You are in jail for {mins}m {secs}s.", "danger")
         return redirect(url_for('jail'))
     return render_template('forums.html', forums=forums, character=character, online_characters=online_characters, online_users=online_users)
-
+@app.route('/create_giveaway', methods=['GET', 'POST'])
+@login_required
+def create_giveaway():
+    form = CreateGiveawayForm()
+    if form.validate_on_submit():
+        if current_user.credits < form.credits.data:
+            flash('Not enough credits!', 'danger')
+            return redirect(url_for('credit_market'))
+        code = secrets.token_urlsafe(8)
+        giveaway = CreditGiveaway(
+            code=code,
+            credits=form.credits.data,
+            creator_id=current_user.id
+        )
+        current_user.credits -= form.credits.data
+        db.session.add(giveaway)
+        db.session.commit()
+        link = url_for('redeem_giveaway', _external=True) + f'?ref={code}'
+        flash(Markup(f'Giveaway code created! <a href="{link}">{link}</a>'), 'success')
+        return redirect(url_for('credit_market'))
+    return render_template('create_giveaway.html', form=form)
+@app.route('/redeem')
+@login_required
+def redeem_giveaway():
+    code = request.args.get('ref')
+    if not code:
+        flash('No code provided.', 'danger')
+        return redirect(url_for('credit_market'))
+    giveaway = CreditGiveaway.query.filter_by(code=code, claimed_by_id=None).first()
+    if not giveaway:
+        flash('Invalid or already claimed code.', 'danger')
+        return redirect(url_for('credit_market'))
+    giveaway.claimed_by_id = current_user.id
+    giveaway.claimed_at = datetime.utcnow()
+    current_user.credits += giveaway.credits
+    db.session.commit()
+    flash(f'You claimed {giveaway.credits} credits!', 'success')
+    return redirect(url_for('credit_market'))
+@app.route('/claim_giveaway/<code>')
+@login_required
+def claim_giveaway(code):
+    giveaway = CreditGiveaway.query.filter_by(code=code, claimed_by_id=None).first()
+    if not giveaway:
+        flash('Invalid or already claimed code.', 'danger')
+        return redirect(url_for('credit_market'))
+    giveaway.claimed_by_id = current_user.id
+    giveaway.claimed_at = datetime.utcnow()
+    current_user.credits += giveaway.credits
+    db.session.commit()
+    flash(f'You claimed {giveaway.credits} credits!', 'success')
+    return redirect(url_for('credit_market'))
 @app.route('/forum/<int:forum_id>')
 @login_required
 def forum_view(forum_id):
@@ -866,7 +922,7 @@ def hire_bodyguard():
         return redirect(url_for('jail'))
     max_hire = MAX_BODYGUARDS - (character.bodyguards or 0)
     form = HireBodyguardForm()
-    form.num.validators[1].max = max_hire  # Dynamically set max
+    form.num.validators[1].max = max_hire
 
     if form.validate_on_submit():
         num = form.num.data
@@ -958,7 +1014,7 @@ def kill(character_name):
 
     # Update kill count if the target was killed
     if killed:
-        current_user.kills = (current_user.kills or 0) + 1
+        attacker.kills = (attacker.kills or 0) + 1
         db.session.commit()
 
     return redirect(url_for('profile_by_id', char_id=target.id))
@@ -1342,13 +1398,20 @@ def send_crew_message():
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
 def login():
+    user = User.query.filter_by(id=current_user.id).first() if current_user.is_authenticated else None
+    
     form = LoginForm()
     next_page = request.args.get('next')
+    
+       
     if form.validate_on_submit():
         username = form.username.data.strip()
         password = form.password.data
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
+            if getattr(user, "banned", False):
+                flash('Your account has been banned. Please contact admin support on discord.', 'danger')
+                return redirect(url_for('login'))
             if not user.email_verified:
                 flash('Please verify your email before logging in.', 'warning')
                 return redirect(url_for('login'))
@@ -1371,7 +1434,7 @@ def login():
     if current_user.is_authenticated:
         character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     total_users = User.query.count()
-    total_characters = Character.query.count()
+    total_characters = Character.query.filter(Character.master_id.isnot(None)).count()
     total_dead_characters = Character.query.filter_by(is_alive=False).count()
     total_crews = Crew.query.count()
     return render_template(
@@ -1383,7 +1446,23 @@ def login():
         total_crews=total_crews,
         character=character
     )
-
+@app.route('/notify_crew_jail', methods=['POST'])
+@login_required
+def notify_crew_jail():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character or not character.in_jail or not character.crew_id:
+        flash("You must be in jail and in a crew to notify your crew.", "danger")
+        return redirect(url_for('jail'))
+    crew_members = CrewMember.query.filter_by(crew_id=character.crew_id).all()
+    for member in crew_members:
+        notif = Notification(
+            user_id=member.user_id,
+            message=f"{character.name} is in jail and needs help!"
+        )
+        db.session.add(notif)
+    db.session.commit()
+    flash("Your crew has been notified!", "success")
+    return redirect(url_for('jail'))
 @app.route('/create_character', methods=['GET', 'POST'])
 @login_required
 def create_character():
@@ -1473,9 +1552,12 @@ def get_messages():
         'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')
     } for msg in reversed(messages)]) 
 
-@app.route('/jail')
+@app.route('/jail', methods=['GET', 'POST'])
 @login_required
 def jail():
+    pool = JailGatherPool.query.first()
+    notify_crew_form = NotifyCrewForm()
+    form = GatherPoolForm()
     now = datetime.utcnow()
     # List all currently jailed, alive characters
     jailed_characters = Character.query.filter(
@@ -1487,7 +1569,7 @@ def jail():
     # Get the current user's alive character
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     current_character = character  # For template compatibility
-
+    
     online_timeout = datetime.utcnow() - timedelta(minutes=5)
     online_users = User.query.filter(User.last_seen >= online_timeout).all()
     online_characters = []
@@ -1495,6 +1577,60 @@ def jail():
         char = Character.query.filter_by(master_id=u.id, is_alive=True).first()
         if char:
             online_characters.append(char)
+    allowed_values = [0.25, 0.5, 0.75, 1.0]
+    remaining = round(1.0 - pool.total_credits, 2)
+    choices = [(str(v), f"{v:.2f}") for v in allowed_values if v <= remaining and v > 0]
+    form.credits.choices = choices
+
+    if form.validate_on_submit():
+        credits = float(form.credits.data)
+        allowed = [float(x[0]) for x in choices]
+        if credits not in allowed:
+            flash("You can only contribute 0.25, 0.50, 0.75, or 1 credit.", "danger")
+        elif current_user.credits < credits:
+            flash("Not enough credits.", "danger")
+        elif pool.total_credits + credits > 1.0:
+            flash(f"Pool can only accept up to 1 credit before reset. Current in pool: {pool.total_credits:.2f}", "warning")
+        else:
+            current_user.credits -= credits
+            pool.total_credits += credits
+            db.session.add(JailGatherContribution(user_id=current_user.id, credits=credits))
+            db.session.commit()
+            flash(f"Contributed {credits} credits to the gather pool!", "success")
+
+            # If pool is now full (>= 1), spawn entities and reset
+            if pool.total_credits >= 1.0:
+                # Calculate total entities to spawn
+                total_credits = pool.total_credits
+                total_entities = 0
+                entities_to_spawn = ceil(total_credits * randint(10, 25))
+                for _ in range(entities_to_spawn):
+    # Try up to 10 times to find a unique name
+                    for _ in range(10):
+                        dummy_name = f"Dummy {randint(1000, 9999)}"
+                        if not Character.query.filter_by(name=dummy_name).first():
+                            break
+                        dummy_name = None
+                    if not dummy_name:
+                        # fallback: use a UUID or timestamp to guarantee uniqueness
+                        import uuid
+                        dummy_name = f"Dummy-{uuid.uuid4()}"
+                    dummy = Character(
+                        name=dummy_name,
+                        health=100,
+                        money=0,
+                        level=1,
+                        is_alive=True,
+                        in_jail=True,
+                        jail_until=datetime.utcnow() + timedelta(minutes=30),
+                        master_id=None
+                    )
+                    db.session.add(dummy)
+                pool.total_credits = 0  # Reset pool after spawning
+                db.session.commit()
+                flash(f"Spawned {entities_to_spawn} dummy jail entities!", "info")
+        return redirect(url_for('jail'))
+    
 
     return render_template(
         "jail.html",
@@ -1504,8 +1640,12 @@ def jail():
         character=character,  # always the alive character
         current_character=current_character,
         online_characters=online_characters,
-        online_users=online_users
+        online_users=online_users,
+        notify_crew_form=notify_crew_form,
+        pool=pool,
+        form=form
     )
+
 
 @app.route('/breakout/<int:char_id>', methods=['POST'])
 @login_required
@@ -1518,12 +1658,13 @@ def breakout(char_id):
         target.jail_until = None
         db.session.commit()
         # --- Add notification for the broken out user ---
-        notif = Notification(
-            user_id=target.master_id,
-            message=f"You were broken out of jail by {actor.name}!",
-        )
-        db.session.add(notif)
-        db.session.commit()
+        if target.master_id is not None:
+            notif = Notification(
+                user_id=target.master_id,
+                message=f"You were broken out of jail by {actor.name}!",
+            )
+            db.session.add(notif)
+            db.session.commit()
         flash(f"You successfully broke {target.name} out of jail!", "success")
     # Checks
     if not actor:
@@ -1540,11 +1681,13 @@ def breakout(char_id):
         return redirect(url_for('jail'))
 
     # Breakout logic
-    success_chance = 0.25  # 25% chance to succeed
+    success_chance = 1  # 100% chance to succeed
     if random.random() < success_chance:
         target.in_jail = False
         target.jail_until = None
+        actor.xp += 50
         db.session.commit()
+
         flash(f"You successfully broke {target.name} out of jail!", "success")
     else:
         # Fail: actor goes to jail for 2-6 minutes
@@ -2084,18 +2227,9 @@ def stock_market():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     stocks = Stock.query.all()
     investments = StockInvestment.query.filter_by(character_id=character.id).all()
-    
-
-
-    buy_forms = {}
-    sell_forms = {}
-    rug_forms = {}
-
-    for stock in stocks:
-        buy_forms[stock.id] = BuyStockForm(prefix=f"buy_{stock.id}")
-        sell_forms[stock.id] = SellStockForm(prefix=f"sell_{stock.id}")
-        rug_forms[stock.id] = RugStockForm(prefix=f"rug_{stock.id}")
-
+    buy_forms = {stock.id: BuyStockForm(prefix=f"buy_{stock.id}") for stock in stocks}
+    sell_forms = {stock.id: SellStockForm(prefix=f"sell_{stock.id}") for stock in stocks}
+    rug_forms = {stock.id: RugStockForm(prefix=f"rug_{stock.id}") for stock in stocks}
     return render_template(
         'stock_market.html',
         stocks=stocks,
@@ -2105,7 +2239,16 @@ def stock_market():
         sell_forms=sell_forms,
         rug_forms=rug_forms
     )
-
+@app.route('/my_investments')
+@login_required
+def my_investments():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    if not character:
+        flash("No active character found.", "danger")
+        return redirect(url_for('dashboard'))
+    investments = StockInvestment.query.filter_by(character_id=character.id).all()
+    stocks = {s.id: s for s in Stock.query.all()}
+    return render_template('my_investments.html', character=character, investments=investments, stocks=stocks)
 
 @app.route('/api/stock/<symbol>/history')
 def stock_price_history(symbol):
@@ -2133,6 +2276,11 @@ def buy_stock(stock_id):
         return redirect(url_for('stock_market'))
     shares = form.shares.data
     cost = shares * stock.price
+    # Calculate total shares owned by the character
+    total_shares = sum(inv.shares for inv in StockInvestment.query.filter_by(character_id=character.id).all())
+    if total_shares + shares > 60:
+        flash("You cannot own more than 60 shares in total.", "danger")
+        return redirect(url_for('stock_market'))
     if shares <= 0 or character.money < cost:
         flash("Invalid purchase.", "danger")
         return redirect(url_for('stock_market'))
@@ -2143,8 +2291,19 @@ def buy_stock(stock_id):
     else:
         investment = StockInvestment(character_id=character.id, stock_id=stock.id, shares=shares, buy_price=stock.price)
         db.session.add(investment)
+    # Optional: price increases slightly after buy
+    
     db.session.commit()
-    flash(f"Bought {shares} shares of {stock.name}.", "success")
+    # Record in history
+    history = StockPriceHistory(
+        stock_id=stock.id,
+        price=stock.price,
+        timestamp=datetime.utcnow(),
+        branch_id=1  # Or your branch logic
+    )
+    db.session.add(history)
+    db.session.commit()
+    flash(f"Bought {shares} shares of ({stock.symbol}) {stock.name}.", "success")
     return redirect(url_for('stock_market'))
 
 @app.route('/sell_stock/<int:stock_id>', methods=['POST'])
@@ -2161,16 +2320,24 @@ def sell_stock(stock_id):
     if not investment or shares <= 0 or shares > investment.shares or stock.is_rugged:
         flash("Invalid sale.", "danger")
         return redirect(url_for('stock_market'))
-    if stock.price <= 0:
-        flash("The stock is no longer available for resale. Stock market has either crashed or is in a state of disarray.", "danger")
-        return redirect(url_for('stock_market'))
     proceeds = shares * stock.price
     character.money += proceeds
     investment.shares -= shares
     if investment.shares == 0:
         db.session.delete(investment)
+    # Optional: price decreases slightly after sell
+    stock.price = int(round(max(1, stock.price - 1)))
     db.session.commit()
-    flash(f"Sold {shares} shares of {stock.name}.", "success")
+    # Record in history
+    history = StockPriceHistory(
+        stock_id=stock.id,
+        price=stock.price,
+        timestamp=datetime.utcnow(),
+        branch_id=1  # Or your branch logic
+    )
+    db.session.add(history)
+    db.session.commit()
+    flash(f"Sold {shares} shares of ({stock.symbol}) {stock.name} for ${proceeds}", "success")
     return redirect(url_for('stock_market'))
 
 
@@ -2697,16 +2864,16 @@ def godfathers_page():
     step_down_form = StepDownGodfatherForm()
     #check if godfather is dead if so remove character from godfather
     crew = Crew.query.get(character.crew_id) if character and character.crew_id else None
-    if crew:
-        godfather = Godfather.query.filter_by(city=crew.city).first()
-        # Only remove if there is no godfather, and the current user's character is NOT the godfather for this city
-        if not godfather or (godfather.character_id != character.id):
-            # Only remove if the current character is not the godfather for this city
-            character.crew_id = None
-            character.crime_group_id = None
-            db.session.commit()
-            flash("Your crew's Godfather is no longer active. You have been removed from the crew.", "warning")
-            return redirect(url_for('dashboard'))
+    # if crew:
+    #     godfather = Godfather.query.filter_by(city=crew.city).first()
+    #     # Only remove if there is no godfather, and the current user's character is NOT the godfather for this city
+    #     if not godfather or (godfather.character_id != character.id):
+    #         # Only remove if the current character is not the godfather for this city
+    #         character.crew_id = None
+    #         character.crime_group_id = None
+    #         db.session.commit()
+    #         flash("Your crew's Godfather is no longer active. You have been removed from the crew.", "warning")
+    #         return redirect(url_for('dashboard'))
     if character.in_jail and character.jail_until and character.jail_until > datetime.utcnow():
         remaining = character.jail_until - datetime.utcnow()
         mins, secs = divmod(int(remaining.total_seconds()), 60)
@@ -2861,6 +3028,170 @@ def approve_crew_request(req_id):
     flash(f"Crew '{req.crew_name}' approved and created.", "success")
     return redirect(url_for('crew_requests'))
 
+
+@app.route('/buy_credits', methods=['GET', 'POST'])
+@login_required
+def buy_credits():
+    buy_credits_form = BuyCreditsForm()
+    if request.method == 'POST':
+        amount = int(request.form.get('amount', 500))
+        if amount == 500:
+            price = 500
+            success_url = url_for('credits_success', _external=True)
+        elif amount == 1200:
+            price = 1000
+            success_url = url_for('credits_success_10', _external=True)
+        elif amount == 2500:
+            price = 2000
+            success_url = url_for('credits_success_20', _external=True)
+        else:
+            price = 500
+            success_url = url_for('credits_success', _external=True)
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': f'{amount} Credits'},
+                    'unit_amount': price,  # $5.00, $10.00, or $20.00 in cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=success_url,
+            cancel_url=url_for('buy_credits', _external=True),
+            metadata={'user_id': current_user.id}
+        )
+        return redirect(session.url)
+    return render_template('buy_credits.html', buy_credits_form=buy_credits_form)
+@app.route('/credits_success')
+@login_required
+def credits_success():
+    user = User.query.get(current_user.id)
+    if user.credits is None:
+        user.credits = 0
+    user.credits += 500  # Add credits after successful payment
+    db.session.commit()
+    flash("500 credits added to your account!", "success")
+    return redirect(url_for('mtx'))
+@app.route('/credits_success_10')
+@login_required
+def credits_success_10():
+    user = User.query.get(current_user.id)
+    if user.credits is None:
+        user.credits = 0
+    user.credits += 1200
+    db.session.commit()
+    flash("1,200 credits added to your account!", "success")
+    return redirect(url_for('mtx'))
+
+@app.route('/credits_success_20')
+@login_required
+def credits_success_20():
+    user = User.query.get(current_user.id)
+    if user.credits is None:
+        user.credits = 0
+    user.credits += 2500
+    db.session.commit()
+    flash("2,500 credits added to your account!", "success")
+    return redirect(url_for('mtx'))
+@app.route('/mtx', methods=['GET', 'POST'])
+@login_required
+def mtx():
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    user = User.query.get(current_user.id)
+    form = MTXForm()
+    prices = {'buy_money': 100, 'buy_xp': 50, 'buy_kills': 75, 'buy_bodyguards': 75}
+    if form.validate_on_submit():
+        if form.buy_money.data and user.credits >= prices['buy_money']:
+            character.money += 1_000_000
+            user.credits -= prices['buy_money']
+            flash("You purchased $1,000,000 in-game money!", "success")
+        elif form.buy_xp.data and user.credits >= prices['buy_xp']:
+            character.xp += 500
+            user.credits -= prices['buy_xp']
+            flash("You purchased 500 XP!", "success")
+        elif form.buy_kills.data and user.credits >= prices['buy_kills']:
+            character.kills += getattr(character, 'kills', 0) + 5
+            user.credits -= prices['buy_kills']
+            flash("You purchased 5 extra kills!", "success")
+        elif form.buy_bodyguards.data and user.credits >= prices['buy_bodyguards']:
+            character.bodyguards = getattr(character, 'bodyguards', 0) + 2
+            user.credits -= prices['buy_bodyguards']
+            flash("You purchased 2 extra bodyguards!", "success")
+        else:
+            flash("Not enough credits!", "danger")
+        db.session.commit()
+        return redirect(url_for('mtx'))
+    return render_template('mtx.html', character=character, form=form, user=user, prices=prices)
+@app.route('/credit_market', methods=['GET', 'POST'])
+@login_required
+def credit_market():
+    create_form = CreateCreditOfferForm()
+    buy_form = BuyCreditOfferForm()
+    giveaway_form = CreateGiveawayForm()
+    offers = CreditOffer.query.filter_by(is_active=True).order_by(CreditOffer.created_at.desc()).all()
+    user = User.query.get(current_user.id)
+    character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
+    now = datetime.utcnow()
+    expire_time = timedelta(minutes=1)  # Set your desired expiration time here
+    cancel_forms = {offer.id: CancelCreditOfferForm(offer_id=offer.id) for offer in offers}
+    # Remove claimed giveaways older than X time
+    old_claimed = CreditGiveaway.query.filter(
+        CreditGiveaway.claimed_by_id.isnot(None),
+        CreditGiveaway.claimed_at < now - expire_time
+    ).all()
+    for g in old_claimed:
+        db.session.delete(g)
+    db.session.commit()
+    giveaways = CreditGiveaway.query.order_by(CreditGiveaway.created_at.desc()).all()
+    # Create offer
+    if create_form.validate_on_submit() and create_form.submit.data:
+        credits = create_form.credits.data
+        price = create_form.price.data
+        if user.credits is None or user.credits < credits:
+            flash("Not enough credits to list.", "danger")
+        else:
+            offer = CreditOffer(seller_id=user.id, credits=credits, price=price)
+            user.credits -= credits
+            db.session.add(offer)
+            db.session.commit()
+            flash("Offer listed!", "success")
+        return redirect(url_for('credit_market'))
+
+    # Buy offer
+    if buy_form.validate_on_submit() and buy_form.submit.data:
+        offer = CreditOffer.query.get(int(buy_form.offer_id.data))
+        if not offer or not offer.is_active:
+            flash("Offer not available.", "danger")
+        elif character.money < offer.price * offer.credits:
+            flash("Not enough money.", "danger")
+        elif offer.seller_id == user.id:
+            flash("You can't buy your own offer.", "danger")
+        else:
+            character.money -= offer.price * offer.credits
+            buyer = User.query.get(user.id)
+            buyer.credits = (buyer.credits or 0) + offer.credits
+            offer.is_active = False
+            db.session.commit()
+            flash(f"Bought {offer.credits} credits for ${offer.price * offer.credits}!", "success")
+        return redirect(url_for('credit_market'))
+
+    return render_template('credit_market.html', offers=offers, create_form=create_form, buy_form=buy_form, user=user, character=character, giveaway_form=giveaway_form,giveaways=giveaways, cancel_forms=cancel_forms)
+
+@app.route('/cancel_credit_offer/<int:offer_id>', methods=['POST'])
+@login_required
+def cancel_credit_offer(offer_id):
+    offer = CreditOffer.query.get_or_404(offer_id)
+    if offer.seller_id != current_user.id or not offer.is_active:
+        flash("Cannot cancel this offer.", "danger")
+    else:
+        user = User.query.get(current_user.id)
+        user.credits = (user.credits or 0) + offer.credits
+        offer.is_active = False
+        db.session.commit()
+        flash("Offer canceled and credits returned.", "info")
+    return redirect(url_for('credit_market'))
 @app.route('/deny_crew_request/<int:req_id>', methods=['POST'])
 @login_required
 def deny_crew_request(req_id):
@@ -2903,6 +3234,7 @@ def earn():
     jail_chance = 0.50
     if random.random() < jail_chance:
         jail_minutes = random.randint(1, 5)
+        character.xp = 15
         character.in_jail = True
         character.jail_until = datetime.utcnow() + timedelta(minutes=jail_minutes)
         db.session.commit()
@@ -3133,36 +3465,57 @@ def earn_status():
 
     return jsonify({'seconds_remaining': seconds_remaining})
 
+
+
+def add_dummy_jail_entity_if_needed():
+    pool = JailGatherPool.query.first()
+    if not pool or pool.total_credits < 10:  # Set your threshold
+        return
+    # Check if anyone is in jail
+    jailed_count = Character.query.filter(
+        Character.in_jail == True,
+        Character.is_alive == True,
+        Character.jail_until != None,
+        Character.jail_until > datetime.utcnow()
+    ).count()
+    if jailed_count == 0:
+        # Add a dummy entity to jail (not a real user)
+        dummy = Character(
+            name="Mysterious Stranger",
+            health=100,
+            money=0,
+            level=1,
+            is_alive=True,
+            in_jail=True,
+            jail_until=datetime.utcnow() + timedelta(minutes=30),
+            master_id=None
+        )
+        db.session.add(dummy)
+        pool.total_credits = 0  # Reset pool
+        db.session.commit()
+
 @app.route('/upgrade', methods=['POST'])
 @login_required
 def upgrade():
-    PREMIUM_COST = 1500000
+    PREMIUM_COST = 50
     PREMIUM_DAYS = 30
     now = datetime.utcnow()
-
-    # Get the active character
+    user = User.query.get(current_user.id)
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
     if not character:
         flash("You must have a character to upgrade to premium.", "danger")
         return redirect(url_for('dashboard'))
-
-    # Check if character has enough money
-    if character.money < PREMIUM_COST:
-        flash(f'You need at least ${PREMIUM_COST} to upgrade to premium.', 'danger')
+    if user.credits is None or user.credits < PREMIUM_COST:
+        flash(f'You need at least {PREMIUM_COST} credits to upgrade to premium.', 'danger')
         return redirect(url_for('dashboard'))
-
-    # Deduct money from character
-    character.money -= PREMIUM_COST
-
-    # Update user's premium status
-    if current_user.premium_until and current_user.premium_until > now:
-        current_user.premium_until += timedelta(days=PREMIUM_DAYS)
+    user.credits -= PREMIUM_COST
+    if user.premium_until and user.premium_until > now:
+        user.premium_until += timedelta(days=PREMIUM_DAYS)
     else:
-        current_user.premium_until = now + timedelta(days=PREMIUM_DAYS)
-        current_user.premium = True
-
+        user.premium_until = now + timedelta(days=PREMIUM_DAYS)
+        user.premium = True
     db.session.commit()
-    flash(f'Your account has been upgraded to premium for {PREMIUM_DAYS} days for ${PREMIUM_COST}!', 'success')
+    flash(f'Your account has been upgraded to premium for {PREMIUM_DAYS} days for {PREMIUM_COST} credits!', 'success')
     return redirect(url_for('dashboard'))
 
 @app.route('/profile/id/<int:char_id>', methods=['GET', 'POST'])

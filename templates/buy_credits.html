@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Buy Credits{% endblock %}
+{% block content %}
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 32px 32px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+.profile-card-header h1 {
+    color: #ffd700;
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: 2px;
+    font-family: 'Cinzel', serif;
+}
+.btn-primary {
+    background: #ffd700;
+    color: #181824;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+.btn-primary:hover {
+    background: #ffe066;
+    color: #181824;
+}
+.btn-secondary {
+    background: #23243a;
+    color: #ffd700;
+    border: 1px solid #ffd70055;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-top: 10px;
+    margin-left: 0;
+    transition: background 0.2s;
+}
+.btn-secondary:hover {
+    background: #34355b;
+    color: #ffd700;
+}
+.form-label, label {
+    color: #8be9fd;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.form-control {
+    background: #23243a;
+    color: #fff;
+    border: 1px solid #8be9fd55;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-main { padding: 24px 12px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<div class="profile-card-container">
+  <div class="profile-card">
+    <div class="profile-card-main">
+      <div class="profile-card-header">
+        <h1>Buy Credits</h1>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <b>Credits let you buy in-game money, XP, kills, and bodyguards.</b>
+      </div>
+      <form method="post">
+        {{ buy_credits_form.hidden_tag() }}
+        <div class="mb-3">
+          <label for="amount" class="form-label"><b>Select Credit Package:</b></label>
+          <select name="amount" id="amount" class="form-control" required>
+            <option value="500">$5.00 - 500 Credits</option>
+            <option value="1200">$10.00 - 1,200 Credits</option>
+            <option value="2500">$20.00 - 2,500 Credits</option>
+          </select>
+        </div>
+        {{ buy_credits_form.submit(class_="btn btn-primary") }}
+      </form>
+      <div style="margin-top:20px;">
+        <a href="{{ url_for('mtx') }}" class="btn btn-secondary">Back to Microtransactions</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

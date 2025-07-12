@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Credit Market{% endblock %}
+{% block content %}
+<style>
+.profile-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 36px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.profile-card {
+    background: linear-gradient(120deg, #181824 60%, #23243a 100%);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px #00000044;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 340px;
+    max-width: 900px;
+    width: 100%;
+}
+.profile-card-main {
+    flex: 1;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+.profile-list {
+    
+    
+    
+    width: 766px;
+    max-width: 700px;
+    margin: 0 auto;
+    border-top: none;
+}
+.profile-table {
+    width: 100%;
+    color: #f5f6fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Cinzel', serif;
+}
+.profile-table th, .profile-table td {
+    padding: 1.1rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border: none;
+    background: none;
+}
+.profile-table th {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid #8be9fd55;
+    text-shadow: 0 1px 8px #000;
+}
+.profile-table tr {
+    background: rgba(40,42,54,0.85);
+    transition: background 0.2s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000022;
+}
+.profile-table tr:hover {
+    background: #34355b;
+}
+@media (max-width: 900px) {
+    .profile-card-container { flex-direction: column; align-items: center; }
+    .profile-card { flex-direction: column; min-width: 0; }
+    .profile-card-main { padding: 24px 12px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<div class="profile-card-container">
+  <div class="profile-card">
+    <div class="profile-card-main">
+      <h1>Player Credit Market</h1>
+      <form method="post" style="margin-bottom: 24px;">
+          {{ create_form.hidden_tag() }}
+          <div style="display: flex; gap: 12px; align-items: center;">
+              {{ create_form.credits.label }} {{ create_form.credits(size=4, class_="form-control") }}
+              {{ create_form.price.label }} {{ create_form.price(size=8, class_="form-control") }}
+              {{ create_form.submit(class_="btn btn-primary") }}
+          </div>
+      </form>
+      <div class="profile-list">
+        <table class="profile-table">
+            <tr>
+                <th>Credits</th>
+                <th>Price per Credit</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+            {% for offer in offers %}
+            <tr>
+                <td>{{ offer.credits }}</td>
+                <td>${{ offer.price }}</td>
+                <td>${{ offer.price * offer.credits }}</td>
+                <td>
+                    {% if offer.seller_id == user.id %}
+                        <form method="post" action="{{ url_for('cancel_credit_offer', offer_id=offer.id) }}">
+                            {{ cancel_forms[offer.id].hidden_tag() }}
+                            {{ cancel_forms[offer.id].offer_id }}
+                            {{ cancel_forms[offer.id].submit(class_="btn btn-warning") }}
+                        </form>
+                    {% else %}
+                        <form method="post">
+                            {{ buy_form.hidden_tag() }}
+                            {{ buy_form.offer_id(value=offer.id) }}
+                            {{ buy_form.submit(class_="btn btn-success", value="Buy") }}
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        <!-- Giveaway creation form -->
+        <form method="post" action="{{ url_for('create_giveaway') }}" style="margin-bottom: 24px;">
+            {{ giveaway_form.hidden_tag() }}
+            <div style="display: flex; gap: 12px; align-items: center;">
+                {{ giveaway_form.credits.label }} {{ giveaway_form.credits(size=4, class_="form-control") }}
+                {{ giveaway_form.submit(class_="btn btn-info") }}
+            </div>
+        </form>
+
+        <div class="profile-list" style="margin-top: 24px;">
+            <h3>Your Giveaway Links</h3>
+            <table class="profile-table">
+                <tr>
+                    
+                    <th>Credits</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                    <th>Claimed By</th>
+                </tr>
+                {% for giveaway in giveaways if giveaway.creator_id == user.id %}
+                <tr>
+                    
+                    <td>{{ giveaway.credits }}</td>
+                    <td>
+                        <a href="{{ url_for('redeem_giveaway', ref=giveaway.code) }}">
+                            {{ url_for('redeem_giveaway', _external=True) }}?ref={{ giveaway.code }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if giveaway.claimed_by_id %}
+                            Claimed
+                        {% else %}
+                            Unclaimed
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if giveaway.claimed_by_id %}
+                            Claimed by {{ giveaway.claimer.character.name if giveaway.claimer else 'Unknown' }}
+                        {% else %}
+                            Unclaimed
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

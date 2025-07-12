@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
     last_crime_time = db.Column(db.DateTime, nullable=True)
     gun_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'), nullable=True)
     gun = db.relationship('ShopItem', foreign_keys=[gun_id])
+    credits = db.Column(db.Integer, default=0)
     character = db.relationship('Character', backref='master', uselist=False, foreign_keys='Character.master_id')
     characters = db.relationship(
         'Character',
@@ -32,7 +33,7 @@ class User(db.Model, UserMixin):
         foreign_keys='Character.master_id',
         overlaps="character,master"
     )
-    kills = db.Column(db.Integer, default=0)
+    banned = db.Column(db.Boolean, default=False)
     linked_characters = db.relationship('Character', foreign_keys='Character.user_id')
 
     def set_password(self, password):
@@ -45,4 +46,4 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
     def __repr__(self):
         return f'<User {self.username}>'
-
+    

@@ -9,12 +9,12 @@ BODYGUARD_LASTNAMES = [
     "Caruso", "Santoro", "Bruno", "DeAngelis", "Sartori", "Caputo", "Martini", "Pellegrini", "Sorrentino", "Fiore"
 ]
 STOCK_MARKETS = [
-    {"name": "MafiaTech", "symbol": "MFT", "price": 100},
-    {"name": "CrimeBank", "symbol": "CBK", "price": 250},
-    {"name": "BlackMarket", "symbol": "BLK", "price": 75},
-    {"name": "GunsRUs", "symbol": "GRU", "price": 150},
-    {"name": "IllicitImports", "symbol": "IMP", "price": 200},
-    
+    {"name": "MafiaTech", "symbol": "MFT", "price": 100, "branch_id": 1},
+    {"name": "CrimeBank", "symbol": "CBK", "price": 250, "branch_id": 2},
+    {"name": "BlackMarket", "symbol": "BLK", "price": 75, "branch_id": 3},
+    {"name": "GunsRUs", "symbol": "GRU", "price": 150, "branch_id": 4},
+    {"name": "IllicitImports", "symbol": "IMP", "price": 200, "branch_id": 5},
+
 ]
 DRUG_LIST = [
     ("Cocaine", "Cocaine"),

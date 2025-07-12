@@ -538,16 +538,11 @@
                     {{ command_form.command.label }}<br>
                     {{ command_form.command(size=60, list="admin-command-suggestions", autocomplete="off") }}
                     <datalist id="admin-command-suggestions">
-                    <option value="/add stock MafiaCoin 3000">
-                    <option value="/remove stock MafiaCoin">
-                    <option value="/set stock MafiaCoin 5000">
-                    <option value="/list stocks">
-                    <option value="/ban user username">
-                    <option value="/unban user username">
-                    <option value="/reset password username">
-                    <option value="/promote user username">
-                    <option value="/demote user username">
-                    <!-- Add more as needed -->
+                    
+                    <option value="/promote id">
+                    <option value="/demote id">
+                    <option value="/ban id">
+                    <option value="/unban id">
                     </datalist>
                     {{ command_form.submit() }}
                 </div>
@@ -606,16 +601,10 @@
 
 <script>
     const suggestions = [
-    "/add stock MafiaCoin 3000",
-    "/remove stock MafiaCoin",
-    "/set stock MafiaCoin 5000",
-    "/list stocks",
+    "/promote id",
+    "/demote id",
     "/ban user username",
-    "/unban user username",
-    "/reset password username",
-    "/promote user username",
-    "/demote user username"
-    // Add more as needed
+    "/unban user username"
     ];
 
     const input = document.querySelector('input[name="command"]');
