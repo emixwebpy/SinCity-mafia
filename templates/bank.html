@@ -201,11 +201,11 @@
             <div class="profile-stats-grid">
                 <div class="profile-stat">
                     <span class="profile-label">Bank Balance</span>
-                    <span class="profile-value">${{ account.balance }}</span>
+                    <span class="profile-value">$ {{ "{:,.0f}".format(account.balance) }}</span>
                 </div>
                 <div class="profile-stat">
                     <span class="profile-label">Cash on Hand</span>
-                    <span class="profile-value">${{ character.money }}</span>
+                    <span class="profile-value">$ {{ "{:,.0f}".format(character.money) }}</span>
                 </div>
             </div>
             <div class="bank-form-section">
@@ -213,17 +213,17 @@
                 <form class="bank-form" method="post" action="{{ url_for('bank') }}">
                     {{ deposit_form.hidden_tag() }}
                     <label for="deposit-amount">Amount</label>
-                    {{ deposit_form.amount(class_="form-control", id="deposit-amount") }}
+                    {{ deposit_form.amount(class_="form-control", id="deposit-amount", min=0, max=character.money) }}
                     {{ deposit_form.submit(class_="btn btn-primary") }}
                 </form>
-                <h3>Withdraw</h3>
+                <!-- ... -->
                 <form class="bank-form" method="post" action="{{ url_for('bank') }}">
                     {{ withdraw_form.hidden_tag() }}
                     <label for="withdraw-amount">Amount</label>
                     {{ withdraw_form.amount(class_="form-control", id="withdraw-amount") }}
                     {{ withdraw_form.submit(class_="btn btn-primary") }}
                 </form>
-                <h3>Transfer</h3>
+                <!-- ... -->
                 <form class="bank-form" method="post" action="{{ url_for('bank') }}">
                     {{ transfer_form.hidden_tag() }}
                     <label for="transfer-recipient">Recipient</label>
@@ -263,28 +263,5 @@
         </div>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const depositForm = document.querySelector('.bank-form[action="{{ url_for("bank") }}"]');
-    if (depositForm) {
-        depositForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch(depositForm.action, {
-                method: 'POST',
-                body: new FormData(depositForm),
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update balance, show message, etc.
-                    location.reload(); // Or update the DOM manually for a true SPA feel
-                } else {
-                    alert(data.message || "Error");
-                }
-            });
-        });
-    }
-});
-</script>
+
 {% endblock %}

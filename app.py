@@ -2453,69 +2453,79 @@ def territory_minigame(x, y):
 @login_required
 def bank():
     character = Character.query.filter_by(master_id=current_user.id, is_alive=True).first()
-    if not character:
-        flash("No active character found.", "danger")
-        return redirect(url_for('dashboard'))
-    # Ensure bank account exists
-    if not character.bank_account:
+    account = BankAccount.query.filter_by(character_id=character.id).first()
+    if not account:
         account = BankAccount(character_id=character.id, balance=0)
         db.session.add(account)
         db.session.commit()
-    else:
-        account = BankAccount.query.filter_by(character_id=character.id).first()
 
-    deposit_form = DepositForm()
-    withdraw_form = WithdrawForm()
-    transfer_form = TransferForm()
+    deposit_form = DepositForm(prefix="deposit")
+    withdraw_form = WithdrawForm(prefix="withdraw")
+    transfer_form = TransferForm(prefix="transfer")
+    message = None
 
-    # Handle deposit
-    if deposit_form.validate_on_submit() and deposit_form.submit.data:
+    # Deposit
+    if deposit_form.submit.data and deposit_form.validate_on_submit():
         amount = deposit_form.amount.data
-        if character.money == amount:
+        if character.money >= amount:
             character.money -= amount
             account.balance += amount
-            db.session.add(BankTransaction(account_id=account.id, type='deposit', amount=amount, details='Deposit'))
+            db.session.add(BankTransaction(account_id=account.id, type="deposit", amount=amount, details="Deposit"))
             db.session.commit()
-            flash(f"Deposited ${amount} to your bank account.", "success")
+            flash(f"Deposited ${amount} into your bank account.", "success")
+            
         else:
-            flash("Not enough cash.", "danger")
-        return redirect(url_for('bank'))
+            flash("Not enough cash to deposit.", "danger")
 
-    # Handle withdraw
-    if withdraw_form.validate_on_submit() and withdraw_form.submit.data:
+    # Withdraw
+    elif withdraw_form.submit.data and withdraw_form.validate_on_submit():
         amount = withdraw_form.amount.data
         if account.balance >= amount:
-            character.money += amount
             account.balance -= amount
-            db.session.add(BankTransaction(account_id=account.id, type='withdraw', amount=amount, details='Withdraw'))
+            character.money += amount
+            db.session.add(BankTransaction(account_id=account.id, type="withdraw", amount=amount, details="Withdraw"))
             db.session.commit()
             flash(f"Withdrew ${amount} from your bank account.", "success")
         else:
-            flash("Not enough bank balance.", "danger")
-        return redirect(url_for('bank'))
+            flash("Not enough bank balance to withdraw.", "danger")
 
-    # Handle transfer
-    if transfer_form.validate_on_submit() and transfer_form.submit.data:
+    # Transfer
+    elif transfer_form.submit.data and transfer_form.validate_on_submit():
         recipient_name = transfer_form.recipient.data.strip()
         amount = transfer_form.amount.data
-        recipient = Character.query.filter_by(name=recipient_name, is_alive=True).first()
-        if not recipient or not recipient.bank_account:
+        recipient_char = Character.query.filter_by(name=recipient_name, is_alive=True).first()
+        if not recipient_char:
             flash("Recipient not found.", "danger")
-        elif account.balance < amount:
-            flash("Not enough bank balance.", "danger")
+        elif recipient_char.id == character.id:
+            flash("You can't send money to yourself.", "danger")
         else:
-            account.balance -= amount
-            recipient.bank_account.balance += amount
-            db.session.add(BankTransaction(account_id=account.id, type='transfer', amount=amount, details=f'Transfer to {recipient_name}'))
-            db.session.add(BankTransaction(account_id=recipient.bank_account.id, type='transfer', amount=amount, details=f'Transfer from {character.name}'))
-            db.session.commit()
-            flash(f"Transferred ${amount} to {recipient_name}.", "success")
-        return redirect(url_for('bank'))
+            recipient_account = BankAccount.query.filter_by(character_id=recipient_char.id).first()
+            if not recipient_account:
+                recipient_account = BankAccount(character_id=recipient_char.id, balance=0)
+                db.session.add(recipient_account)
+                db.session.commit()
+            if account.balance >= amount:
+                account.balance -= amount
+                recipient_account.balance += amount
+                db.session.add(BankTransaction(account_id=account.id, type="transfer", amount=amount, details=f"To {recipient_char.name}"))
+                db.session.add(BankTransaction(account_id=recipient_account.id, type="transfer", amount=amount, details=f"From {character.name}"))
+                db.session.commit()
+                flash(f"Transferred ${amount} to {recipient_char.name}.", "success")
+            else:
+                flash("Not enough bank balance to transfer.", "danger")
 
-    transactions = BankTransaction.query.filter_by(account_id=account.id).order_by(BankTransaction.timestamp.desc()).limit(20).all()
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify(success=True, message="Deposited!")
-    return render_template('bank.html', character=character, account=account, deposit_form=deposit_form, withdraw_form=withdraw_form, transfer_form=transfer_form, transactions=transactions)
+    transactions = BankTransaction.query.filter_by(account_id=account.id).order_by(BankTransaction.timestamp.desc()).limit(10).all()
+
+    return render_template(
+        "bank.html",
+        character=character,
+        account=account,
+        deposit_form=deposit_form,
+        withdraw_form=withdraw_form,
+        transfer_form=transfer_form,
+        transactions=transactions,
+        message=message
+    )
 
 @app.route('/start_takeover/<int:x>/<int:y>', methods=['POST'])
 @login_required

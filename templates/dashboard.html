@@ -281,7 +281,7 @@
                 </div>
                 <div class="dashboard-stat">
                     <span class="dashboard-label">Cash</span>
-                    <span class="dashboard-value">$ {{ character.money }}</span>
+                    <span class="dashboard-value">$ {{ "{:,.0f}".format(character.money) }}</span>
                 </div>
                 
                 <div class="dashboard-stat">

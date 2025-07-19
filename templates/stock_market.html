@@ -141,7 +141,7 @@
             <div class="profile-stats-grid">
                 <div class="profile-stat">
                     <span class="profile-label">Your Balance</span>
-                    <span class="profile-value">${{ '%.2f' % character.money }}</span>
+                    <span class="profile-value">$ {{ "{:,.0f}".format(character.money) }}</span>
                 </div>
                 <div class="profile-stat">
                     <span class="profile-label">Your Investments</span>
@@ -161,7 +161,7 @@
                   {% for stock in stocks %}
                   <tr>
                     <td>{{ stock.name }}</td>
-                    <td data-stock-symbol="{{ stock.symbol }}">${{ '%.2f' % stock.price }}</td>
+                    <td data-stock-symbol="{{ stock.symbol }}">${{ "{:,.0f}".format(stock.price) }}</td>
                     <td>
                         {% if not stock.is_rugged %}
                             <form method="post" action="{{ url_for('buy_stock', stock_id=stock.id) }}" style="display:inline;">
